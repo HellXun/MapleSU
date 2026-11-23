@@ -2,6 +2,7 @@ package dev.maplesu.manager.workmode.ui
 
 import androidx.compose.runtime.Immutable
 import dev.maplesu.manager.workmode.ModeCapabilities
+import dev.maplesu.manager.workmode.UltraOnlyPolicy
 import dev.maplesu.manager.workmode.WorkMode
 import dev.maplesu.manager.workmode.detect.ModeState
 import dev.maplesu.manager.workmode.gating.ModeGate
@@ -36,6 +37,15 @@ fun decideWorkModeEntry(
     /** 存在未完成切换 journal（本版无切换服务，固定 false；接线后由 App 侧查询提供）。 */
     pendingSwitch: Boolean,
 ): WorkModeEntryPolicy {
+    // Ultra-only：没有第二个模式可切，首页卡与设置行不再出现；
+    // 仅在尚未安装时保留安装卡，保证首次部署 Ultra 的入口还在。
+    if (UltraOnlyPolicy.ENABLED) {
+        return WorkModeEntryPolicy(
+            showHomeCard = false,
+            showInstallCard = state == ModeState.NOT_INSTALLED,
+            showSettingsRow = false,
+        )
+    }
     if (stealthLooksStealthy) return WorkModeEntryPolicy.NONE
     if (pendingSwitch) return WorkModeEntryPolicy.ALL
     return when (state) {
@@ -110,6 +120,9 @@ internal fun currentWorkModeHiddenMask(): Boolean {
 
 fun currentWorkModeEntryPolicy(): WorkModeEntryPolicy {
     val state = ModeRuntimeState.currentStateOrIndeterminate()
+    // Ultra-only：入口结果与隐藏态无关，跳过 currentWorkModeHiddenMask()
+    // —— 它会读 Lite 隐藏状态，属于组合期的额外 IO/root 探测。
+    if (UltraOnlyPolicy.ENABLED) return decideWorkModeEntry(state, false, pendingSwitch = false)
     val hidden = runCatching { currentWorkModeHiddenMask() }.getOrDefault(false)
     return decideWorkModeEntry(state, hidden, pendingSwitch = false)
 }
