@@ -104,6 +104,29 @@ jobs:
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Build SDK and consumer
         run: ./gradlew.bat :maplesu-client:assembleRelease :maplesu-consumer:assembleDebug --no-daemon --no-build-cache --no-configuration-cache --max-workers=2
+      - name: Seed host dependency cache for specgen
+        run: |
+          # buildJailbreakProviders resolves host jars straight out of the Gradle
+          # module cache, before Kotlin compilation would populate it. Seed the
+          # exact coordinates tools/specgen/specgen/product.py asks for.
+          $root = Join-Path $env:USERPROFILE ".gradle\caches\modules-2\files-2.1"
+          $deps = @(
+            @('org.jetbrains.kotlin','kotlin-stdlib','2.4.20'),
+            @('org.jetbrains','annotations','13.0'),
+            @('org.jetbrains.kotlinx','kotlinx-serialization-json-jvm','1.11.0'),
+            @('org.jetbrains.kotlinx','kotlinx-serialization-core-jvm','1.11.0'),
+            @('org.jetbrains.kotlin','kotlin-compiler-embeddable','2.4.20'),
+            @('org.jetbrains.kotlinx','kotlinx-coroutines-core-jvm','1.11.0')
+          )
+          foreach ($d in $deps) {
+            $dir = Join-Path $root "$($d[0])\$($d[1])\$($d[2])"
+            if ((Test-Path $dir) -and (Get-ChildItem $dir -Recurse -Filter *.jar -ErrorAction SilentlyContinue)) { continue }
+            $seed = Join-Path $dir 'seed'
+            New-Item -ItemType Directory -Force -Path $seed | Out-Null
+            $url = "https://repo1.maven.org/maven2/$($d[0].Replace('.','/'))/$($d[1])/$($d[2])/$($d[1])-$($d[2]).jar"
+            Invoke-WebRequest -Uri $url -OutFile (Join-Path $seed "$($d[1])-$($d[2]).jar")
+            if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          }
       - name: Build debug Manager
         if: inputs.variant != 'release'
         env:
