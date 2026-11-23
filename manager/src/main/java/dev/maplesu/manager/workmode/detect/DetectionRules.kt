@@ -1,5 +1,6 @@
 package dev.maplesu.manager.workmode.detect
 
+import dev.maplesu.manager.workmode.UltraOnlyPolicy
 import dev.maplesu.manager.workmode.WorkMode
 import dev.maplesu.manager.workmode.control.schema.currentMode
 
@@ -49,11 +50,15 @@ object DetectionRules {
         val root = facts.root
         val local = facts.local
 
+        // Ultra-only 构建：KSU 证据一律视为不存在，裁决链只会落到 A（Ultra）分支。
+        // 上游的 B 态判断全部保留在下方，把 UltraOnlyPolicy.ENABLED 置 false 即可恢复双模式。
+        val ultraOnly = UltraOnlyPolicy.ENABLED
+
         // §2.3 必要条件：B 态要求 version>0（responded 且版本可读）。
-        val ksuKernelPresent = ksu.responded && ksu.version > 0
-        val ksuOwner = ksuKernelPresent && ksu.isManager
+        val ksuKernelPresent = !ultraOnly && ksu.responded && ksu.version > 0
+        val ksuOwner = !ultraOnly && ksuKernelPresent && ksu.isManager
         val ksuBranchUntrusted =
-            ksu.responded && !ksu.isManager && ksu.uapi == facts.ksuBranchUapi
+            !ultraOnly && ksu.responded && !ksu.isManager && ksu.uapi == facts.ksuBranchUapi
 
         val state: ModeState
         val rule: Rule
@@ -78,7 +83,7 @@ object DetectionRules {
                 reasons = listOf(Reason.KSU_BRANCH_UNTRUSTED)
             }
 
-            ksu.responded && !ksu.isManager -> {
+            !ultraOnly && ksu.responded && !ksu.isManager -> {
                 state = ModeState.FOREIGN_SU
                 rule = Rule.R4_FOREIGN_KSU
                 reasons = listOf(Reason.FOREIGN_KSU_KERNEL)
@@ -169,7 +174,8 @@ object DetectionRules {
 
     /** 首次进入工作模式页/安装页时"默认选中"谁（只影响界面默认值，不启动任何后端）。 */
     fun defaultSelectedMode(state: ModeState): WorkMode? = when (state) {
-        ModeState.MODE_B_ACTIVE, ModeState.MODE_B_KERNEL_ONLY -> WorkMode.KSU
+        // Ultra-only 下 B 态不可达；万一读到残留状态，默认也回落到 Ultra。
+        ModeState.MODE_B_ACTIVE, ModeState.MODE_B_KERNEL_ONLY -> WorkMode.LITE
         ModeState.MODE_A_ACTIVE, ModeState.MODE_A_INSTALLED_UNBOUND -> WorkMode.LITE
         ModeState.FOREIGN_SU, ModeState.NOT_INSTALLED, ModeState.INDETERMINATE -> null
     }
