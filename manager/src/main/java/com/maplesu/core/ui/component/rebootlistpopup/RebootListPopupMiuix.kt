@@ -21,10 +21,9 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme
 fun RebootListPopupMiuix(
     modifier: Modifier = Modifier,
     alignment: PopupPositionProvider.Align = PopupPositionProvider.Align.TopEnd,
-    lateLoad: Boolean = false,
 ) {
     val showTopPopup = remember { mutableStateOf(false) }
-    val onReboot = rememberRebootAction(lateLoad)
+    val onReboot = rememberRebootAction()
     IconButton(
         modifier = modifier,
         onClick = { showTopPopup.value = true },

@@ -41,24 +41,6 @@ class ModeSwitchStatusTest {
     )
 
     @Test
-    fun waitingForRebootStatusOffersRollbackAndResume() {
-        val status = requireNotNull(
-            ModeSwitchStatusProjector.project(
-                record(SwitchStateNames.REBOOT_REQUIRED).copy(error = SwitchRecordError()),
-            ),
-        )
-        assertTrue(status.pending)
-        assertTrue(status.rebootRequired)
-        assertTrue(status.canRollback)
-        assertTrue(status.canResumeReboot)
-        assertTrue(status.canExport)
-        assertFalse(status.requiresExternalRecovery)
-        assertNull(status.externalRecovery)
-        assertEquals(WorkMode.LITE, status.fromMode)
-        assertEquals(WorkMode.LITE, status.toMode)
-    }
-
-    @Test
     fun observedRebootDisablesResumeButKeepsVerificationData() {
         val status = ModeSwitchStatusProjector.project(
             record(SwitchStateNames.REBOOT_REQUIRED).copy(error = SwitchRecordError()), bootIdChanged = true,

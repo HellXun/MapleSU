@@ -48,15 +48,13 @@ fun getRebootListOption(): List<RebootListOption> {
     }
 }
 
-/** Dispatch off-main; confirm a device reboot when the temporary root session would be lost. */
+/** Dispatch off-main; a reboot is a plain device action once temporary root is gone. */
 @Composable
-fun rememberRebootAction(lateLoad: Boolean = false): (String) -> Unit {
+fun rememberRebootAction(): (String) -> Unit {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val inFlight = remember { AtomicBoolean(false) }
     val failed = stringResource(R.string.reboot_request_failed)
-    val title = stringResource(R.string.reboot)
-    val message = stringResource(R.string.jailbreak_reboot_warning)
     val submit: (String) -> Unit = remember(context, scope, failed) {
         { reason ->
             if (inFlight.compareAndSet(false, true)) {
@@ -73,25 +71,13 @@ fun rememberRebootAction(lateLoad: Boolean = false): (String) -> Unit {
             }
         }
     }
-    var pendingReason by remember { mutableStateOf("") }
-    val confirmDialog = rememberConfirmDialog(onConfirm = { submit(pendingReason) })
-
-    return remember(title, message, confirmDialog, lateLoad, submit) {
-        { reason ->
-            if (lateLoad && reason != "soft_reboot") {
-                pendingReason = reason
-                confirmDialog.showConfirm(title = title, content = message)
-            } else {
-                submit(reason)
-            }
-        }
-    }
+    return submit
 }
 
 @Composable
-fun RebootListPopup(lateLoad: Boolean = false) {
+fun RebootListPopup() {
     when (LocalUiMode.current) {
-        UiMode.Miuix -> RebootListPopupMiuix(lateLoad = lateLoad)
-        UiMode.Material -> RebootListPopupMaterial(lateLoad = lateLoad)
+        UiMode.Miuix -> RebootListPopupMiuix()
+        UiMode.Material -> RebootListPopupMaterial()
     }
 }

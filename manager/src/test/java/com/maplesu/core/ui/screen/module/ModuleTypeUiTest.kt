@@ -33,13 +33,6 @@ class ModuleTypeUiTest {
     }
 
     @Test
-    fun ksuModeKsuModuleIsSupported() {
-        val routing = ModuleTypeUi.routeWithChoice(evidence(ModuleType.KERNELSU), WorkMode.LITE)
-        assertTrue(routing.ok)
-        assertEquals(ModuleInstallBackend.KSU_DAEMON, routing.backend)
-    }
-
-    @Test
     fun ksuModeUltraModuleIsUnsupportedAndDialogDisabled() {
         val ev = evidence(ModuleType.MAPLESU)
         val routing = ModuleTypeUi.routeWithChoice(ev, WorkMode.LITE)

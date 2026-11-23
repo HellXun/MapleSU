@@ -57,19 +57,6 @@ class UltraColdStartDetectorTest {
         }
     }
 
-    @Test fun currentKsuAlwaysWinsOverTheOtherModesRootProof() = runBlocking {
-        val result = DefaultModeDetector(
-            ksuProbe = KsuKernelProbe { KsuFacts(true, 100, 7, true) },
-            ultraPort = object : UltraEnvironmentPort {
-                override fun state() = UltraState.UNKNOWN
-                override fun observe(allowRefresh: Boolean) = UltraEnvironmentObservation(UltraState.UNKNOWN, true)
-            },
-            bootIdSource = BootIdSource { "boot" },
-        ).detect(request)
-        assertEquals(ModeState.MODE_B_KERNEL_ONLY, result.state)
-        assertEquals(RootChannelKind.KSU_NATIVE, result.rootChannel)
-    }
-
     @Test fun startupAndRespondingKsuNeverRefreshUltraRoot() = runBlocking {
         for (ksu in listOf(KsuFacts(), KsuFacts(true, 100, 7, true))) {
             val requests = if (ksu.responded) listOf(request) else listOf(request.copy(allowRootProbe = false,
@@ -151,14 +138,6 @@ class UltraColdStartDetectorTest {
         assertEquals(true, result.trace.single { it.id == "L3" }.ok)
     }
 
-    @Test fun faultDoesNotOverrideAnActiveKsuKernel() = runBlocking {
-        val calls = mutableListOf<String>()
-        val result = detector(UltraState.FAULT, calls,
-            KsuFacts(responded = true, version = 100, uapi = 7, isManager = true)).detect(request)
-        assertEquals(RootChannelKind.KSU_NATIVE, result.rootChannel)
-        assertEquals(ModeState.MODE_B_KERNEL_ONLY, result.state)
-    }
-
     @Test fun uninstalledOrUnknownUltraRetainsLegacyHandshakeAndChannel() = runBlocking {
         for (state in UltraState.entries.filterNot { it == UltraState.RUNNING || it == UltraState.FAULT }) {
             val calls = mutableListOf<String>()
@@ -233,35 +212,6 @@ class UltraColdStartDetectorTest {
             assertEquals(if (proof.state == UltraState.FAULT) null else RootChannelKind.LITE_ULTRA, result.rootChannel)
             assertNull(result.trace.single { it.id == "M1" }.ok)
             assertEquals("ultraIdentityConfirmedControlPlaneDeferred", result.trace.single { it.id == "M1" }.detail)
-        }
-    }
-
-    @Test fun respondingKsuKeepsItsRulesAndEvidencePathDespiteConfirmedPro() = runBlocking {
-        for ((ksu, rule) in listOf(
-            KsuFacts(true, 100, 7, true) to DetectionRules.Rule.R2_KSU_KERNEL_ONLY,
-            KsuFacts(true, 100, 7, false) to DetectionRules.Rule.R3_KSU_BRANCH_UNTRUSTED,
-            KsuFacts(true, 100, 8, false) to DetectionRules.Rule.R4_FOREIGN_KSU,
-        )) for (proof in listOf(UltraEnvironmentObservation(UltraState.RUNNING),
-            UltraEnvironmentObservation(UltraState.FAULT), UltraEnvironmentObservation(UltraState.UNKNOWN, true))) {
-            var rootOpens = 0
-            val result = DefaultModeDetector(
-                ksuProbe = KsuKernelProbe { ksu },
-                ultraPort = object : UltraEnvironmentPort {
-                    override fun state() = proof.state
-                    override fun observe(allowRefresh: Boolean) = proof
-                },
-                bootIdSource = BootIdSource { "boot" },
-                rootEvidenceReader = object : RootEvidenceReader {
-                    override fun open(channel: RootChannelKind): RootEvidenceSession? {
-                        assertEquals(RootChannelKind.KSU_NATIVE, channel)
-                        rootOpens++
-                        return null
-                    }
-                },
-            ).detect(request)
-            assertEquals("$ksu / $proof", rule, result.rule)
-            assertEquals(if (ksu.isManager) 1 else 0, rootOpens)
-            assertTrue(result.trace.single { it.id == "M1" }.detail != "ultraIdentityConfirmedControlPlaneDeferred")
         }
     }
 

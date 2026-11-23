@@ -317,14 +317,6 @@ object CrashReporter {
 lateinit var ksuApp: KernelSUApplication
 
 class KernelSUApplication : Application(), ViewModelStoreOwner {
-    override fun attachBaseContext(base: android.content.Context) {
-        val providerProcess = Application.getProcessName() == base.packageName
-        rikka.shizuku.ShizukuProvider.enableMultiProcessSupport(providerProcess)
-        super.attachBaseContext(base)
-        if (!providerProcess) {
-            runCatching { rikka.shizuku.ShizukuProvider.requestBinderForNonProviderProcess(this) }
-        }
-    }
 
     companion object {
         fun setEnableOnBackInvokedCallback(appInfo: ApplicationInfo, enable: Boolean) {

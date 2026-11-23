@@ -113,10 +113,6 @@
     <string name="send_log">Send logs</string>
     <string name="log_export_failed">Logs could not be saved. Please try another location.</string>
     <string name="safe_mode">Safe mode</string>
-    <string name="jailbreak_mode">Jailbreak mode</string>
-    <string name="home_jailbreak">Jailbreak</string>
-    <string name="jailbreak_timeout">Jailbreak may have failed, please check logs</string>
-    <string name="jailbreak_reboot_warning">You are in Jailbreak mode. Rebooting will lose root access, and you will have to jailbreak again after the device starts up. Reboot anyway?</string>
     <string name="safe_mode_module_disabled">Module installation is disabled in safe mode</string>
     <string name="reboot_to_apply">Reboot to take effect</string>
     <string name="module_magisk_conflict">Modules are unavailable due to a conflict with Magisk!</string>
@@ -212,8 +208,6 @@
     <string name="download_probe_failed">Failed to probe the image: %1$s</string>
     <string name="install_inactive_slot">Install to inactive slot (After OTA)</string>
     <string name="install_inactive_slot_warning">Your device will be **FORCED** to boot to the current inactive slot after a reboot!\nOnly use this option after OTA is done.\nContinue?</string>
-    <string name="jailbreak_flash_warning">You are in **Jailbreak mode**. Flashing a partition on a device with a **locked bootloader** will break AVB (Android Verified Boot) and may cause the device to **fail to boot**.\n\nMake sure your bootloader is unlocked before proceeding!</string>
-    <string name="jailbreak_flash_warning_countdown">Continue (%1$d)</string>
     <string name="install_next">Next</string>
     <string name="install_select_partition">Select partition</string>
     <string name="install_upload_lkm_file">Use local LKM file</string>
@@ -324,8 +318,6 @@
     <string name="settings_enable_glass">Liquid glass</string>
     <string name="settings_enable_glass_summary">Enable liquid glass effect for floating bottom bar.</string>
     <string name="show_only_primary_user_apps">Show only primary user apps</string>
-    <string name="settings_auto_jailbreak">Auto jailbreak</string>
-    <string name="settings_auto_jailbreak_summary">Automatically use Magica to escalate privileges when Permissive SELinux is detected at boot. Requires granting autostart permission to this app.</string>
     <string name="settings_soft_reboot">Soft restart instead of reboot</string>
     <string name="settings_soft_reboot_summary">Use soft restart instead of a full reboot when installing, updating, or toggling modules.</string>
     <string name="allow_shell">Always grant Root to Shell</string>
@@ -412,7 +404,6 @@
     <string name="ultra_env_update_unverified">The installed Ultra environment build cannot be confirmed. Tap to upgrade to %1$s: it reinstalls over the current environment to write a verifiable build identity.</string>
     <string name="ultra_env_update_unverified_confirm">Reinstall %1$s over the current environment to write a verifiable build identity.\n\nThe device restarts a few seconds after it succeeds, so save your work first.</string>
     <string name="hook_su_channel">Hook superuser session</string>
-    <string name="hook_su_running">Jailbreak mode active · Superuser access available</string>
 
     <string name="work_mode_images_title">Select boot images</string>
     <string name="work_mode_images_normal">No usable backup was found. Select boot to patch and install Normal.</string>

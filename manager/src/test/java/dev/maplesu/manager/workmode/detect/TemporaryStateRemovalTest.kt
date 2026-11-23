@@ -12,7 +12,7 @@ class TemporaryStateRemovalTest {
         assertNull(EnvironmentSnapshotCodec.decode(values))
     }
 
-    @Test fun realSuWithoutMapleModeDoesNotPersistAnInstalledState() {
+    @Test fun realSuWithoutMapleModeNeverPersistsAnInstalledState() {
         val store = EnvironmentStateStore(InMemoryEnvironmentStatePersistence())
         val probes = object : EnvironmentProbes {
             override fun suPresent() = true
@@ -20,10 +20,10 @@ class TemporaryStateRemovalTest {
             override fun ksuNormal() = false
         }
         val outcome = EnvironmentResolver(probes, store).resolve("boot")
-        assertEquals(EnvironmentVerdict.NOT_INSTALLED, outcome.verdict)
+        assertEquals(EnvironmentVerdict.UNKNOWN, outcome.verdict)
         assertNull(outcome.mode)
         assertNull(store.snapshot()?.mode)
-        assertEquals(listOf("ultraCurrent", "su", "ultra", "ksu"), outcome.probes)
+        assertEquals(listOf("ultraCurrent", "su", "ultra"), outcome.probes)
     }
 
     @Test fun directInstallationDoesNotDependOnModeRootRouting() {

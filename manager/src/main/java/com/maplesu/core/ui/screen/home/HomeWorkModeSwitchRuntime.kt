@@ -198,7 +198,7 @@ internal fun homeWorkModeSwitchCaption(mode: WorkMode?): String? = when (mode) {
 @Composable
 internal fun homeWorkModeSwitchBlockedText(block: HomeWorkModeSwitchBlock): String? = when (block) {
     HomeWorkModeSwitchBlock.NONE -> null
-    HomeWorkModeSwitchBlock.JAILBREAK_ACTIVE -> stringResource(R.string.work_mode_jailbreak_blocked)
+    HomeWorkModeSwitchBlock.JAILBREAK_ACTIVE -> stringResource(R.string.work_mode_not_available)
     HomeWorkModeSwitchBlock.SWITCH_PENDING -> stringResource(R.string.work_mode_blocker_pending_switch)
     HomeWorkModeSwitchBlock.MODE_UNDETERMINED -> stringResource(R.string.work_mode_not_available)
     HomeWorkModeSwitchBlock.STEALTH_MASKED -> stringResource(R.string.work_mode_blocker_stealth)

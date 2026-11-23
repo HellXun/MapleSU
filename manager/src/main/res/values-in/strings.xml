@@ -92,10 +92,6 @@
     <string name="show_system_apps">Tampilkan aplikasi sistem</string>
     <string name="send_log">Kirim log</string>
     <string name="safe_mode">Mode aman</string>
-    <string name="jailbreak_mode">Mode jailbreak</string>
-    <string name="home_jailbreak">Jailbreak</string>
-    <string name="jailbreak_timeout">Proses jailbreak mungkin gagal, harap periksa log</string>
-    <string name="jailbreak_reboot_warning">Anda sedang berada dalam mode jailbreak. Memulai ulang normal akan menghilangkan akses Root, dan Anda harus melakukan jailbreak lagi setelah perangkat menyala. Tetap ingin mulai ulang?</string>
     <string name="safe_mode_module_disabled">Pemasangan modul dinonaktifkan pada mode aman</string>
     <string name="reboot_to_apply">Mulai ulang untuk menerapkan</string>
     <string name="module_magisk_conflict">Modul tidak tersedia karena konflik dengan Magisk!</string>
@@ -191,8 +187,6 @@
     <string name="download_probe_failed">Gagal memeriksa image: %1$s</string>
     <string name="install_inactive_slot">Pasang ke slot tidak aktif (Setelah OTA)</string>
     <string name="install_inactive_slot_warning">Perangkat Anda akan **DIPAKSA** untuk boot ke slot tidak aktif saat ini setelah mulai ulang!\nGunakan opsi ini hanya setelah proses OTA selesai.\nLanjutkan?</string>
-    <string name="jailbreak_flash_warning">Anda sedang berada dalam **Mode jailbreak**. Memasang partisi pada perangkat dengan **bootloader terkunci** akan merusak AVB (Android Verified Boot) dan dapat menyebabkan perangkat **gagal untuk boot**.\n\nPastikan bootloader Anda sudah terbuka sebelum melanjutkan!</string>
-    <string name="jailbreak_flash_warning_countdown">Lanjutkan (%1$d)</string>
     <string name="install_next">Berikutnya</string>
     <string name="install_select_partition">Pilih partisi</string>
     <string name="install_upload_lkm_file">Gunakan berkas LKM lokal</string>
@@ -297,8 +291,6 @@
     <string name="settings_enable_glass">Kaca cair</string>
     <string name="settings_enable_glass_summary">Aktifkan efek kaca cair (liquid glass) untuk bilah bawah mengambang</string>
     <string name="show_only_primary_user_apps">Hanya tampilkan aplikasi pengguna utama</string>
-    <string name="settings_auto_jailbreak">Jailbreak otomatis</string>
-    <string name="settings_auto_jailbreak_summary">Secara otomatis menggunakan Magica untuk meningkatkan hak akses ketika SELinux Permissive terdeteksi saat boot. Membutuhkan pemberian izin mulai otomatis ke aplikasi ini.</string>
     <string name="settings_soft_reboot">Mulai ulang lunak</string>
     <string name="settings_soft_reboot_summary">Gunakan mulai ulang lunak alih-alih mulai ulang normal saat memasang, memperbarui, atau mengaktifkan/menonaktifkan modul.</string>
     <string name="allow_shell">Selalu berikan izin akses Root ke Shell</string>

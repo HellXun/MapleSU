@@ -135,17 +135,6 @@ class ModuleInstallRouterTest {
     }
 
     @Test
-    fun ksuModeRoutesKsuDaemonAndRejectsPro() {
-        val ksu = ModuleInstallRouter.route(WorkMode.LITE, ModuleType.KERNELSU)
-        assertTrue(ksu.ok)
-        assertEquals(ModuleInstallBackend.KSU_DAEMON, ksu.backend)
-        val ultra = ModuleInstallRouter.route(WorkMode.LITE, ModuleType.MAPLESU)
-        assertFalse(ultra.ok)
-        assertEquals(ModuleInstallRouter.UNSUPPORTED_IN_MODE, ultra.code)
-        assertTrue(ultra.reason.contains("not supported"))
-    }
-
-    @Test
     fun unresolvedModeNeverDefaultsToLite() {
         val routing = ModuleInstallRouter.route(null, ModuleType.KERNELSU)
         assertFalse(routing.ok)

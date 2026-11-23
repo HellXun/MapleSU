@@ -129,7 +129,7 @@ class GrantMergeTest {
         val current = Fixtures.shared(revision = 5)
         val merged = merge(current, allowObserved(), writer = WorkMode.LITE, at = 9_000L)
         assertEquals(6, merged.revision)
-        assertEquals("B", merged.lastWriter)
+        assertEquals("A", merged.lastWriter)
         assertEquals(9_000L, merged.updatedAt)
     }
 

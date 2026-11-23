@@ -31,10 +31,10 @@ fun RebootDropdownItems(onItemClick: (String) -> Unit) {
 }
 
 @Composable
-fun RebootListPopupMaterial(lateLoad: Boolean = false) {
+fun RebootListPopupMaterial() {
     var expanded by remember { mutableStateOf(false) }
 
-    val onReboot = rememberRebootAction(lateLoad)
+    val onReboot = rememberRebootAction()
 
     IconButton(onClick = { expanded = true }) {
         Icon(

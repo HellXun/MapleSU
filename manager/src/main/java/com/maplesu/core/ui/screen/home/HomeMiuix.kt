@@ -163,7 +163,6 @@ fun HomePagerMiuix(
                     state.liteInstalled || state.isManager && state.ksuVersion != null,
                     state.showLiteChecking,
                 ),
-                lateLoad = state.isLateLoadMode,
             )
         },
         popupHost = { },
@@ -371,7 +370,6 @@ private fun TopBar(
     barColor: Color,
     ultra: UltraWordmarkState?,
     showReboot: Boolean,
-    lateLoad: Boolean,
 ) {
     BlurredBar(backdrop) {
         Box {
@@ -385,7 +383,7 @@ private fun TopBar(
             largeTitleColor = if (ultra?.visible == true || titleFile != null) Color.Transparent else MiuixTheme.colorScheme.onSurface,
             titleColor = if (ultra?.visible == true || titleFile != null) Color.Transparent else MiuixTheme.colorScheme.onSurface,
             actions = {
-                if (showReboot) RebootListPopupMiuix(lateLoad = lateLoad)
+                if (showReboot) RebootListPopupMiuix()
             },
             scrollBehavior = scrollBehavior
         )
@@ -466,9 +464,6 @@ internal fun StatusCard(
                 val workingState = buildString {
                     if (state.isSafeMode && !state.showSafeModeBanner) {
                         append(" [${stringResource(id = R.string.safe_mode)}]")
-                    }
-                    if (state.isLateLoadMode) {
-                        append(" [${stringResource(id = R.string.jailbreak_mode)}]")
                     }
                 }
                 val workingMode = when (state.lkmMode) {

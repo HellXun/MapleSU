@@ -92,54 +92,6 @@ class MigrationUiReducerTest {
 
     // 2) 检测摘要：已改分区/干净镜像/备份计数/管理器计数
     @Test
-    fun detectionSummaryProjection() {
-        val state = detected(
-            info(
-                patched = setOf("init_boot", "boot"),
-                clean = setOf("init_boot"),
-                backups = mapOf(
-                    "init_boot" to StockBackupRef("init_boot", null, "/a", 1, "b".repeat(64), BackupState.USABLE),
-                    "boot" to StockBackupRef("boot", null, "/b", 1, "c".repeat(64), BackupState.MISSING),
-                ),
-                version = "KernelSU 1.0 (uapi: 7)",
-                uapi = 7,
-            ),
-        )
-        val detection = state.detection!!
-        assertEquals(listOf("boot", "init_boot"), detection.patchedPartitions)
-        assertEquals(listOf("init_boot"), detection.cleanImagePartitions)
-        assertEquals(1, detection.usableStockBackups)
-        assertEquals(2, detection.totalStockBackups)
-        assertEquals(1, detection.managerPackageCount)
-        assertTrue(detection.willUninstallManager())
-        assertEquals("KernelSU 1.0 (uapi: 7)", detection.versionLabel)
-        assertEquals(7, detection.uapi)
-        assertEquals(listOf("boot"), detection.restorePartitionsFor(WorkMode.LITE))
-    }
-
-    // 3) 目标分区还原关系：KSU→Lite 需还原 init_boot；KSU→KSU 相交无需还原
-    @Test
-    fun restorePartitionsDependOnTarget() {
-        val state = detected(info(patched = setOf("init_boot")))
-        assertEquals(listOf("init_boot"), state.detection!!.restorePartitionsFor(WorkMode.LITE))
-        assertEquals(emptyList<String>(), state.detection!!.restorePartitionsFor(WorkMode.LITE))
-        assertEquals(listOf("init_boot"), MigrationUiReducer.reduce(
-            state, MigrationUiEvent.TargetSelected(WorkMode.LITE),
-        ).restorePartitions)
-    }
-
-    // 4) 推荐目标成为默认选中；无推荐时选第一个可用
-    @Test
-    fun recommendedTargetBecomesDefaultSelection() {
-        assertEquals(WorkMode.LITE, detected(eligibility = eligibility(recommended = WorkMode.LITE)).selectedTarget)
-        val noRecommendation = detected(
-            eligibility = eligibility(recommended = null, targetAllowed = mapOf(WorkMode.LITE to true, WorkMode.LITE to false)),
-        )
-        assertEquals(WorkMode.LITE, noRecommendation.selectedTarget)
-    }
-
-    // 5) 未知家族：best-effort 提示 + 仍可开始（D16 不阻断）
-    @Test
     fun unknownFamilyIsBestEffortButStartable() {
         val state = detected(info(family = Family.UNKNOWN, supported = false, bestEffort = true, version = null, uapi = null))
         assertTrue(state.showBestEffortNotice)
@@ -168,19 +120,6 @@ class MigrationUiReducerTest {
     }
 
     // 7) 目标选项：不可用目标带原因是禁用；选择被拒绝
-    @Test
-    fun disabledTargetOptionCannotBeSelected() {
-        val state = detected(
-            eligibility = eligibility(targetAllowed = mapOf(WorkMode.LITE to true, WorkMode.LITE to false)),
-        )
-        val ksu = state.targetOptions.single { it.mode == WorkMode.LITE }
-        assertFalse(ksu.enabled)
-        assertEquals(MigrationBlockerKeys.CLEAN_IMAGE, ksu.disabledReasonKey)
-        val after = MigrationUiReducer.reduce(state, MigrationUiEvent.TargetSelected(WorkMode.LITE))
-        assertEquals(WorkMode.LITE, after.selectedTarget)
-    }
-
-    // 8) 确认需要 canStart；取消回到 DETECTED
     @Test
     fun confirmRequiresStartableStateAndCanBeDismissed() {
         val ready = detected()

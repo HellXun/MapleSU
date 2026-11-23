@@ -72,10 +72,6 @@
     <string name="show_system_apps">顯示系統 App</string>
     <string name="send_log">傳送日誌</string>
     <string name="safe_mode">安全模式</string>
-    <string name="jailbreak_mode">越獄模式</string>
-    <string name="home_jailbreak">越獄</string>
-    <string name="jailbreak_timeout">越獄可能失敗，請檢查日誌</string>
-    <string name="jailbreak_reboot_warning">現正處於越獄模式，重新啟動將失去 Root 權限，開機後需重新越獄。確定要重啟嗎？</string>
     <string name="safe_mode_module_disabled">安全模式下禁止安裝模組</string>
     <string name="reboot_to_apply">重新啟動後生效</string>
     <string name="module_magisk_conflict">模組已停用，因與 Magisk 有衝突！</string>
@@ -167,8 +163,6 @@
     <string name="download_probe_failed">偵測映像失敗：%1$s</string>
     <string name="install_inactive_slot">安裝至非活動插槽（OTA 後）</string>
     <string name="install_inactive_slot_warning">重新啟動後將強制由目前非活動插槽開機！請僅在 OTA 完成後才使用此選項</string>
-    <string name="jailbreak_flash_warning">現正處於**越獄模式**。在 **Bootloader 鎖定**的裝置上刷入分割區會破壞 AVB 驗證，或導致**無法開機**。\n\n操作前請確保 Bootloader 已解鎖！</string>
-    <string name="jailbreak_flash_warning_countdown">繼續 (%1$d)</string>
     <string name="install_next">下一步</string>
     <string name="install_select_partition">選取分割區</string>
     <string name="install_upload_lkm_file">使用本地 LKM 檔案</string>
@@ -276,8 +270,6 @@
     <string name="settings_enable_glass">液態玻璃</string>
     <string name="settings_enable_glass_summary">為懸浮底部欄啟用液態玻璃效果</string>
     <string name="show_only_primary_user_apps">僅顯示主要使用者 App</string>
-    <string name="settings_auto_jailbreak">自動越獄</string>
-    <string name="settings_auto_jailbreak_summary">開機時若偵測到寬容模式 SELinux，將自動使用 Magica 提升權限（需授予本程式背景啟動權限）</string>
     <string name="settings_soft_reboot">以軟重啟替代重新啟動</string>
     <string name="settings_soft_reboot_summary">安裝、更新或開關模組時以軟重啟替代完整重新啟動</string>
     <string name="allow_shell">保持向 Shell 授予 Root 權限</string>

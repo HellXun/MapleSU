@@ -208,23 +208,6 @@ class MigrationDetectorTest {
     }
 
     @Test
-    fun recommendsKsuForKsuFamilyWhenTargetAllowed() {
-        val info = ExternalRootInfo(
-            family = Family.KSU_UPSTREAM,
-            patchedPartitions = setOf("init_boot"),
-            supported = true,
-            cleanImagePartitions = setOf("init_boot"),
-        )
-        val space = SpaceEstimator.estimate(
-            mapOf("boot" to 100L, "init_boot" to 100L),
-            setOf("init_boot"), setOf("init_boot"), 0, 0, 1_000L,
-        )
-        val eligibility = MigrationDetector.eligibility(info, Fixtures.device(), space)
-        assertEquals(WorkMode.LITE, eligibility.recommendedTarget)
-        assertEquals(MigrationDetector.TARGET_REASON_KSU, eligibility.recommendedReason)
-    }
-
-    @Test
     fun unavailableProbeNeverFabricatesEvidence() {
         val probe = UnavailableExternalRootProbeReader.read()
         assertEquals(-1, probe.suUid)

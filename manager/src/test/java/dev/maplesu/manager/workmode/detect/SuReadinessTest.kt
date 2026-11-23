@@ -235,17 +235,14 @@ class SuReadinessTest {
     private fun resolver(probes: EnvironmentProbes, store: EnvironmentStateStore) =
         EnvironmentResolver(probes, store, clock = FixedClock)
 
-    @Test fun aNegativeUltraAndNormalIdentityCannotRetainOldUltraEvenWhenOrdinarySuTimesOut() {
-        for (previous in listOf(null, snapshot(WorkMode.LITE, ultra = "ultra:running"),
-            snapshot(WorkMode.LITE, bootId = OTHER_BOOT, ultra = "ultra:kernel"))) {
-            val state = store(previous)
-            val probes = FakeProbes(SuReadiness.UNKNOWN, ultra = null, ksu = false)
-            val outcome = resolver(probes, state).resolve(BOOT)
-            assertEquals(EnvironmentVerdict.NOT_INSTALLED, outcome.verdict)
-            assertNull(outcome.mode)
-            assertNull(state.snapshot()?.mode)
-            assertEquals(listOf("su", "ultra", "ksu"), probes.calls)
-        }
+    @Test fun anInconclusiveSuProbeNeverTurnsAFreshInstallIntoNotInstalled() {
+        val state = store()
+        val probes = FakeProbes(SuReadiness.UNKNOWN, ultra = null, ksu = false)
+        val outcome = resolver(probes, state).resolve(BOOT)
+        assertEquals(EnvironmentVerdict.UNKNOWN, outcome.verdict)
+        assertNull(outcome.mode)
+        assertNull("读不到就什么都不落盘", state.snapshot())
+        assertEquals(listOf("su", "ultra"), probes.calls)
     }
 
     @Test fun anUnreadableUltraProbeDoesNotEraseItsPriorModeOrGrantRoot() {
@@ -287,27 +284,27 @@ class SuReadinessTest {
     }
 
     @Test
-    fun inheritedInstalledStateIsDroppedWhenSuProbeSaysNotUsable() {
+    fun aConfirmedMissingUltraIdentityDropsAnInstalledRecordEvenWhenSuIsNotUsable() {
         val previous = snapshot(WorkMode.LITE)
         val state = store(previous)
         val probes = FakeProbes(SuReadiness.NOT_USABLE, ultra = null, ksu = null)
 
         val outcome = resolver(probes, state).resolve(BOOT)
 
-        assertEquals(EnvironmentVerdict.UNKNOWN, outcome.verdict)
-        assertEquals("真跑出 exit!=0 后也必须保留上次状态（同一 boot）", previous, state.snapshot())
+        assertEquals(EnvironmentVerdict.NOT_INSTALLED, outcome.verdict)
+        assertNull(state.snapshot()?.mode)
         assertTrue(probes.calls.contains("ultra"))
     }
 
     @Test
-    fun trustedInstalledRecordIsClearedOnlyWhenKsuAlsoSaysNo() {
+    fun trustedInstalledRecordIsClearedWhenTheUltraIdentityIsGone() {
         val state = store(snapshot(WorkMode.LITE))
         val probes = FakeProbes(SuReadiness.NOT_USABLE, ultra = null, ksu = false)
 
         val outcome = resolver(probes, state).resolve(BOOT)
 
         assertEquals(EnvironmentVerdict.NOT_INSTALLED, outcome.verdict)
-        assertEquals(listOf("su", "ksu", "ultra"), probes.calls)
+        assertEquals(listOf("su", "ultra"), probes.calls)
         assertNull(state.snapshot()?.mode)
     }
 

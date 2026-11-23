@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="ui_d_env_hook_summary">Jailbreak environment · checked at %1$s</string>
+    <string name="ui_d_env_hook_summary">Hook environment · checked at %1$s</string>
     <string name="ui_d_env_hook_removal">This environment runs in memory and ends after a full reboot.</string>
 </resources>

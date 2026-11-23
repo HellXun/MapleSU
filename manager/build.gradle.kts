@@ -839,8 +839,6 @@ androidComponents.onVariants { variant ->
 }
 
 dependencies {
-    implementation("dev.rikka.shizuku:api:13.1.5")
-    implementation("dev.rikka.shizuku:provider:13.1.5")
     implementation(project(":image-core"))
     implementation(project(":installer-core"))
     implementation(libs.androidx.activity.compose)

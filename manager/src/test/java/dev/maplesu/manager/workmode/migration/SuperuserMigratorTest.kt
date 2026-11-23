@@ -97,22 +97,6 @@ class SuperuserMigratorTest {
     }
 
     @Test
-    fun denyRecordBecomesDenyIntentWithoutPendingGrant() {
-        val bytes = allowlist(records = listOf(Triple("com.example.a", 10123, false)))
-        val plan = migrator.plan(
-            Fixtures.MIGRATION_ID,
-            WorkMode.LITE,
-            AuthSource.KSU_ALLOWLIST,
-            inventory(Fixtures.packageFacts(10123, "com.example.a")),
-            allowlistBytes = bytes,
-        )
-        val intent = plan.intents.single()
-        assertEquals(GrantIntent.DENY, intent.decision)
-        assertEquals("B_KSU", plan.pendingBackend)
-        assertNull(intent.pending)
-    }
-
-    @Test
     fun sharedUidIsStaleNotGranted() {
         val bytes = allowlist(records = listOf(Triple("com.example.a", 10123, true)))
         val plan = migrator.plan(
@@ -231,16 +215,6 @@ class SuperuserMigratorTest {
         )
         assertTrue(plan.stale.any { it.uid == 10125 && it.reason == "POLICY_NOT_DECIDED" })
         assertTrue(plan.stale.any { it.uid == 10126 })
-    }
-
-    @Test
-    fun noneSourceProducesEmptyPlanWithBackend() {
-        val plan = migrator.plan(
-            Fixtures.MIGRATION_ID, WorkMode.LITE, AuthSource.NONE,
-            inventory(),
-        )
-        assertTrue(plan.intents.isEmpty())
-        assertEquals("B_KSU", plan.pendingBackend)
     }
 
     @Test

@@ -152,7 +152,6 @@ private fun ThemeThreeStatus(state: HomeUiState, actions: HomeActions, modifier:
     val protectedText = state.showSafeModeBanner || state.isSafeMode || state.isLateLoadMode
     val title = when {
         state.isSafeMode -> stringResource(R.string.home_safe_mode_title)
-        state.isLateLoadMode -> stringResource(R.string.jailbreak_mode)
         else -> STATUS_CARD_TEXT
     }
     val mode = when (state.lkmMode) { true -> "LKM"; false -> "GKI"; null -> "" }

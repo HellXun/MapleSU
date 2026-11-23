@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="ui_d_env_hook_summary">越狱工作环境 · %1$s 检查</string>
+    <string name="ui_d_env_hook_summary">Hook 工作环境 · %1$s 检查</string>
     <string name="ui_d_env_hook_removal">当前环境运行于内存，完整重启后结束。</string>
 </resources>

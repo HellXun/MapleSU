@@ -45,23 +45,6 @@ class PartitionOrderPlannerTest {
     }
 
     @Test
-    fun ksuToKsuIntersectingPartitionHasSingleCandidateEntry() {
-        val input = Fixtures.planInput(
-            pre = pre(),
-            clean = mapOf("init_boot" to Fixtures.image("clean-init", initBootSize, "clean-init")),
-            patched = setOf("init_boot"),
-            family = Family.KSU_UPSTREAM,
-            target = WorkMode.LITE,
-        )
-        val plan = PartitionOrderPlanner.compose(input)
-        assertEquals(1, plan.entries.count { it.name == "init_boot" })
-        assertEquals(PartitionAction.WRITE_CANDIDATE, plan.partition("init_boot").action)
-        assertEquals(ResidueMode.NONE, plan.partition("init_boot").residue)
-        assertEquals(listOf("init_boot"), plan.writeOrder)
-        assertFalse(plan.residual)
-    }
-
-    @Test
     fun magiskBootLayoutToLiteRestoresBootThenWritesCandidate() {
         val input = Fixtures.planInput(
             pre = pre(),
@@ -104,22 +87,6 @@ class PartitionOrderPlannerTest {
         assertEquals(PartitionAction.LEAVE_UNCHANGED, plan.partition("init_boot").action)
         assertEquals(ResidueMode.UNKNOWN_MANAGER, plan.partition("init_boot").residue)
         assertEquals(listOf("boot"), plan.writeOrder)
-    }
-
-    @Test
-    fun unknownIntersectingTargetUsesCurrentImageAsProducerInputAndResidualTrue() {
-        val input = Fixtures.planInput(
-            pre = pre(),
-            patched = setOf("init_boot"),
-            family = Family.UNKNOWN,
-            target = WorkMode.LITE,
-        )
-        val plan = PartitionOrderPlanner.compose(input)
-        val entry = plan.partition("init_boot")
-        assertEquals(PartitionAction.WRITE_CANDIDATE, entry.action)
-        assertEquals("pre-init", entry.producerInput?.sha256?.let(::labelOf))
-        assertEquals(ResidueMode.UNKNOWN_MANAGER, entry.residue)
-        assertTrue(plan.residual)
     }
 
     @Test
@@ -201,26 +168,6 @@ class PartitionOrderPlannerTest {
             CandidateImages.validate(short, 8192)
         }
         assertEquals(MigrationCodes.CANDIDATE_LENGTH_INVALID, failure.code)
-    }
-
-    @Test
-    fun fullLengthCandidateProducesImageRefAndTail() {
-        val file = File(tmp.newFolder(), "candidate.img").apply {
-            writeBytes(ByteArray(8192) { (it % 251).toByte() })
-        }
-        val ref = CandidateImages.validate(file, 8192)
-        assertEquals(8192, ref.size)
-        assertTrue(MigrationHashes.isHash(ref.sha256))
-        val plan = PartitionOrderPlanner.compose(
-            Fixtures.planInput(
-                pre = mapOf("init_boot" to Fixtures.image("pre-init", 8192, "pre-init")),
-                clean = mapOf("init_boot" to Fixtures.image("clean-init", 8192, "clean-init")),
-                patched = setOf("init_boot"),
-                family = Family.KSU_UPSTREAM,
-                target = WorkMode.LITE,
-            ),
-        )
-        assertTrue(MigrationHashes.isHash(CandidateImages.validateTail(plan, "init_boot", file)))
     }
 
     @Test

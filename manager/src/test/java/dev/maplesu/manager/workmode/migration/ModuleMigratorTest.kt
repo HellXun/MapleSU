@@ -132,28 +132,6 @@ class ModuleMigratorTest {
     }
 
     @Test
-    fun ksuTargetRestoresKsuModulesDirectly() {
-        val dir = moduleDir()
-        val result = migrator().migrate(
-            listOf(candidate(dir, origin = ModuleOrigin.KSU)),
-            WorkMode.LITE,
-        )
-        assertEquals(ModuleDecision.RESTORE_DIRECT, result.items.single().decision)
-    }
-
-    @Test
-    fun ksuTargetDisablesUnverifiedMagiskModules() {
-        val dir = moduleDir()
-        val result = migrator().migrate(
-            listOf(candidate(dir, origin = ModuleOrigin.MAGISK)),
-            WorkMode.LITE,
-        )
-        val item = result.items.single()
-        assertEquals(ModuleDecision.IMPORT_DISABLED, item.decision)
-        assertEquals(MigrationCodes.MODULE_ORIGIN_MAGISK_UNVERIFIED, item.reason)
-    }
-
-    @Test
     fun sourceDisableFlagIsCarriedToReport() {
         val dir = moduleDir()
         val result = migrator().migrate(

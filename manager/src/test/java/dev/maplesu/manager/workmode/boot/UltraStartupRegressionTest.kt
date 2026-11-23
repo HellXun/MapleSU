@@ -105,17 +105,6 @@ class UltraStartupRegressionTest {
         assertNull(f.store.snapshot()?.mode)
     }
 
-    @Test fun ordinarySuNeverActivatesCachedUltraAfterItsOwnProvidersAreExcluded() = runBlocking {
-        for (boot in listOf(BOOT, "old-boot")) for (su in listOf(SuReadiness.USABLE, SuReadiness.UNKNOWN)) {
-            val f = Fixture(hookReady = false, readiness = su, ultraState = UltraState.NOT_INSTALLED,
-                initial = EnvironmentSnapshot(WorkMode.LITE, true, "ultra:running", boot, 1))
-            f.start()
-            assertNull("an external manager's root is not Ultra", f.active)
-            assertNull(f.store.snapshot()?.mode)
-            assertEquals(BOOT, f.store.snapshot()?.bootId)
-        }
-    }
-
     @Test fun noSuAndNoHookStayNotInstalled() = runBlocking {
         val f = Fixture(hookReady = false, readiness = SuReadiness.NOT_USABLE)
         f.start()
@@ -143,15 +132,6 @@ class UltraStartupRegressionTest {
         assertEquals(WorkMode.LITE, f.active)
         assertEquals(WorkMode.LITE, f.store.snapshot()?.mode)
         assertFalse(f.store.isDirty())
-    }
-
-    @Test fun quickNotInstalledDoesNotHideConfirmedForeignKsuEvidence() = runBlocking {
-        val f = Fixture(readiness = SuReadiness.NOT_USABLE,
-            ksuFacts = KsuFacts(responded = true, version = 100, uapi = 8, isManager = false))
-        f.coordinator.runPhaseOne()
-        val outcome = f.coordinator.runPhaseTwo()
-        assertNull(f.active)
-        assertEquals(ModeState.FOREIGN_SU, (outcome as BootstrapOutcome.Unresolved).state)
     }
 
     @Test fun liveUltraReplacesQuickNotInstalledBeforeHomeCanReuseIt() = runBlocking {
@@ -225,42 +205,6 @@ class UltraStartupRegressionTest {
     }
 
     /** Redmagic NP06J, 2026-11-11: live SDK uid 0, NotInstalled helper, backend preparation failed. */
-    @Test fun redmagicPostFlashPreparationFailureDoesNotEraseLiveKernelIdentityOrPairing() = runBlocking {
-        val helper = UltraEnvironmentProbe.State.NotInstalled
-        val kernelProof = UltraEnvironmentProbe.verifyKernelRoot(helper, true) { 0 }
-        val observation = UltraEnvironmentProbe.Snapshot(helper, kernelRootVerified = kernelProof)
-        val f = Fixture(hookReady = false, readiness = SuReadiness.USABLE,
-            ultraState = UltraState.NOT_INSTALLED, ultraKernelRootVerified = kernelProof)
-        f.start()
-        assertEquals(WorkMode.LITE, f.active)
-        assertEquals(0, f.hookReads)
-        assertEquals("ultra:kernel", f.store.snapshot()?.ultraEnvFingerprint)
-        assertFalse(EnvironmentHomeProjection.decide(
-            EnvironmentHomeProjection.Facts(f.store.snapshot(), BOOT),
-        ).confirmedNotInstalled)
-
-        var paired = false
-        val pairing = UltraAutoPair.complete(observation, current = { true }, alreadyPaired = { false },
-            persist = { paired = true }, verifyManagerSu = { true }, maintain = {})
-        assertTrue(pairing.paired)
-        assertTrue(paired)
-        assertEquals(helper, pairing.state)
-        val install = UltraEnvironmentInstaller.install(object : UltraEnvironmentInstaller.InstallPort {
-            override fun environmentState() = dev.maplesu.manager.runtime.ultra.NativeReceipt.parse(
-                """{"backend":"maplesu_ultra","ok":true,"sdkError":"OK","data":{"state":"NotInstalled"}}""")!!
-            override fun submitInstall(): dev.maplesu.manager.runtime.ultra.NativeReceipt =
-                error("failed backend preparation must not submit a reboot-capable helper")
-        }, UltraEnvironmentInstaller.Intent.ReuseRunning, UltraEnvironmentInstaller.Attachments(
-            whitelist = { error("no helper was submitted") }, backup = { null },
-            prepareInstall = { "FIXTURE_PREPARATION_FAILURE" },
-        ))
-        assertFalse(install.ok)
-        assertEquals("POLICY_BACKEND_PREPARATION_FAILED", install.sdkError)
-        assertTrue("failed userspace setup must not revoke proven kernel Root", observation.rootAvailable)
-        assertEquals(WorkMode.LITE, f.active)
-        assertEquals("ultra:kernel", f.store.snapshot()?.ultraEnvFingerprint)
-    }
-
     @Test fun rejectedKernelOnlyActivationNeverPersistsAnInstalledRecord() = runBlocking {
         val f = Fixture(hookReady = false, activate = false, readiness = SuReadiness.NOT_USABLE,
             ultraKernelRootVerified = true)

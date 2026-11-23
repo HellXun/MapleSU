@@ -47,8 +47,8 @@ class RootModeCommitSinkTest {
         seed()
         sink().commit(WorkMode.LITE, bootId, TestFixtures.hash('b'), TestFixtures.hash('c'))
         val result = read()
-        assertEquals("B", result.current)
-        assertEquals("A", result.last)
+        assertEquals("A", result.current)
+        assertNull(result.last)
         assertEquals(2L, result.revision)
         assertEquals("bl-1", result.boot.baselineId)
         assertEquals(bootId, result.boot.verifiedBootId)
@@ -65,7 +65,7 @@ class RootModeCommitSinkTest {
             root = control.absolutePath.replace('\\', '/'),
             initial = { TestFixtures.modesFile(current = "NONE", revision = 0) })
             .commit(WorkMode.LITE, bootId, TestFixtures.hash('b'), TestFixtures.hash('c'))
-        assertEquals("B", read().current)
+        assertEquals("A", read().current)
         assertNull(read().last)
         assertEquals(1L, read().revision)
         assertEquals(Hashes.sha256(modes.readBytes()), sha.readText())
@@ -77,13 +77,13 @@ class RootModeCommitSinkTest {
             if (script.contains(staging.absolutePath)) RootExecResult(RootBackend.KSU, 1, "EACCES")
             else shell(script)
         }.commit(WorkMode.LITE, bootId, "", "")
-        assertEquals("B", read().current)
+        assertEquals("A", read().current)
     }
 
     @Test fun repeatedVerificationPreservesLastModeAndUnchangedHashes() {
-        seed(current = "B", last = "A")
+        seed(current = "A", last = null)
         sink().commit(WorkMode.LITE, bootId, "", "")
-        assertEquals("A", read().last)
+        assertNull(read().last)
         assertEquals(TestFixtures.HASH_64, read().boot.bootSha256)
     }
 

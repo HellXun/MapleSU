@@ -135,7 +135,6 @@ fun HomePagerMaterial(
                     state.liteInstalled || state.isManager && state.ksuVersion != null,
                     state.showLiteChecking,
                 ),
-                lateLoad = state.isLateLoadMode,
             )
         },
         contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
@@ -278,11 +277,10 @@ private fun TopBar(
     scrollBehavior: TopAppBarScrollBehavior? = null,
     ultra: UltraWordmarkState? = null,
     showReboot: Boolean = false,
-    lateLoad: Boolean = false,
 ) {
     LargeFlexibleTopAppBar(
         title = { ThemeHomeTitle { UltraTitleMaterial(ultra, ThemeHomeTitleText(stringResource(R.string.app_name))) } },
-        actions = { if (showReboot) RebootListPopup(lateLoad = lateLoad) },
+        actions = { if (showReboot) RebootListPopup() },
         colors = expressiveTopAppBarColors(),
         windowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
         scrollBehavior = scrollBehavior
@@ -486,14 +484,6 @@ internal fun MaterialStatusCard(
                             Spacer(Modifier.width(8.dp))
                             StatusTag(
                                 label = stringResource(id = R.string.safe_mode),
-                                contentColor = MaterialTheme.colorScheme.onErrorContainer,
-                                backgroundColor = MaterialTheme.colorScheme.errorContainer
-                            )
-                        }
-                        if (ksuActive && state.isLateLoadMode) {
-                            Spacer(Modifier.width(8.dp))
-                            StatusTag(
-                                label = stringResource(id = R.string.jailbreak_mode),
                                 contentColor = MaterialTheme.colorScheme.onErrorContainer,
                                 backgroundColor = MaterialTheme.colorScheme.errorContainer
                             )

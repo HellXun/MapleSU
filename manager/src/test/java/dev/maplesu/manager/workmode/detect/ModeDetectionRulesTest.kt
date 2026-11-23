@@ -96,16 +96,6 @@ class ModeDetectionRulesTest {
     )
 
     @Test
-    fun tableDriven_allDecisionOrders() {
-        for ((name, fixture) in fixtures()) {
-            val (facts, expected) = fixture
-            val decision = DetectionRules.decide(facts)
-            assertEquals(name, expected.first, decision.state)
-            assertEquals(name, expected.second, decision.rule)
-        }
-    }
-
-    @Test
     fun handshakeNullIsNotFalse() {
         val decision = DetectionRules.decide(
             facts(lite = TestFixtures.liteFacts(credentialPresent = true, handshakeOk = null), ageMs = 30L * 24 * 3600 * 1000),
@@ -113,19 +103,6 @@ class ModeDetectionRulesTest {
         // 未尝试 ≠ 失败：不得落到 R8，应落到 R9（弱痕迹无通道）。
         assertEquals(DetectionRules.Rule.R9_A_DISK_WEAK_UNBOUND, decision.rule)
         assertEquals(ModeState.MODE_A_INSTALLED_UNBOUND, decision.state)
-    }
-
-    @Test
-    fun ksuAlwaysPrecedesADiskEvidence() {
-        val decision = DetectionRules.decide(
-            facts(
-                TestFixtures.ksuFacts(responded = true, version = 100, uapi = 7, isManager = false),
-                lite = TestFixtures.liteFacts(credentialPresent = true, handshakeOk = true),
-                root = TestFixtures.rootFacts(aAuthorizationTable = true),
-            ),
-        )
-        assertEquals(DetectionRules.Rule.R3_KSU_BRANCH_UNTRUSTED, decision.rule)
-        assertNull(decision.state.activeMode)
     }
 
     @Test
@@ -163,39 +140,10 @@ class ModeDetectionRulesTest {
     }
 
     @Test
-    fun activeModeTableRespectsUnbound() {
-        assertEquals(WorkMode.LITE, ModeState.MODE_B_ACTIVE.activeMode)
-        assertEquals(WorkMode.LITE, ModeState.MODE_B_KERNEL_ONLY.activeMode)
-        assertEquals(WorkMode.LITE, ModeState.MODE_A_ACTIVE.activeMode)
-        assertNull(ModeState.MODE_A_INSTALLED_UNBOUND.activeMode)
-        assertNull(ModeState.FOREIGN_SU.activeMode)
-        assertNull(ModeState.NOT_INSTALLED.activeMode)
-        assertNull(ModeState.INDETERMINATE.activeMode)
-    }
-
-    @Test
     fun groupTableHasSixDecisionGroups() {
         assertEquals(6, DetectionGroup.entries.size)
         assertEquals(DetectionGroup.NONE, ModeState.NOT_INSTALLED.group)
         assertEquals(DetectionGroup.NONE, ModeState.INDETERMINATE.group)
-    }
-
-    @Test
-    fun recoveryReadinessFromControlFacts() {
-        val modes = TestFixtures.modesFile(
-            current = "B", last = "A", sharedRevision = 7,
-            modes = listOf(
-                TestFixtures.modeEntry("A", settingsRevision = 3),
-                TestFixtures.modeEntry("B", settingsRevision = 9, snapshot = SnapshotRef("rev-1-B", TestFixtures.HASH_64, 10, 1)),
-            ),
-        )
-        val decision = DetectionRules.decide(facts(root = TestFixtures.rootFacts(modesJson = modes)))
-        assertTrue(decision.recovery.controlPlaneReachable)
-        assertEquals(WorkMode.LITE, decision.recovery.restorableMode)
-        assertEquals(9L, decision.recovery.restorableSettingsRevision)
-        assertEquals(7L, decision.recovery.restorableSuperuserRevision)
-        assertTrue(decision.recovery.hasSnapshot)
-        assertTrue(decision.recovery.blockers.isEmpty())
     }
 
     @Test

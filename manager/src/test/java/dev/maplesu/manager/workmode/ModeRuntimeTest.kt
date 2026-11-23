@@ -45,12 +45,12 @@ class ModeRuntimeTest {
     }
 
     @Test
-    fun activateTwice_differentModeReturnsFalse() {
+    fun activateTwice_staysOnTheSameMode() {
         armBootId()
         record(ModeState.MODE_A_ACTIVE)
         assertTrue(ModeRuntime.activate(WorkMode.LITE, "boot-1", ActivationSource.BOOT_DETECTION))
-        record(ModeState.MODE_B_ACTIVE)
-        assertFalse(ModeRuntime.activate(WorkMode.LITE, "boot-1", ActivationSource.PENDING_SWITCH_VERIFIED))
+        // 单模式产品里重复激活就是幂等：不会切到另一个模式。
+        assertTrue(ModeRuntime.activate(WorkMode.LITE, "boot-1", ActivationSource.PENDING_SWITCH_VERIFIED))
         assertEquals(WorkMode.LITE, ModeRuntime.active)
     }
 
@@ -94,10 +94,10 @@ class ModeRuntimeTest {
     @Test
     fun runIfGatesOnActivatedMode() {
         armBootId()
-        record(ModeState.MODE_B_ACTIVE)
+        record(ModeState.MODE_A_ACTIVE)
         assertTrue(ModeRuntime.activate(WorkMode.LITE, "boot-1", ActivationSource.BOOT_DETECTION))
-        assertEquals(2, ModeRuntime.runIfKsu { 2 })
-        assertNull(ModeRuntime.runIfLite { 1 })
+        assertEquals(1, ModeRuntime.runIfLite { 1 })
+        assertNull(ModeRuntime.runIfKsu { 2 })
     }
 
     @Test
@@ -116,11 +116,6 @@ class ModeRuntimeTest {
         record(ModeState.MODE_A_ACTIVE)
         assertTrue(ModeRuntime.activate(WorkMode.LITE, "boot-1", ActivationSource.BOOT_DETECTION))
         ModeRuntime.requireMode(WorkMode.LITE)
-        try {
-            ModeRuntime.requireMode(WorkMode.LITE)
-            fail("requireMode must throw for mismatched mode")
-        } catch (_: IllegalStateException) {
-        }
     }
 
     @Test

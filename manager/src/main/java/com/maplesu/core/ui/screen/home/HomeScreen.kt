@@ -113,18 +113,8 @@ fun HomePager(
         onManageModules = { navigator.push(Route.Module) },
         onFeedbackClick = { openFeedbackInBrowser(context) },
     )
-    // 唯一落点：工作模式选择框（WorkModeNavigation.Destination.SWITCH_SHEET）。
-    var showWorkModeSheet by rememberSaveable { mutableStateOf(false) }
-    val jailbreakModeDialog = rememberInfoDialog()
-    val jailbreakModeTitle = stringResource(R.string.work_mode_switch_button)
-    val jailbreakModeMessage = stringResource(R.string.work_mode_jailbreak_blocked)
-    val onOpenWorkMode: () -> Unit = {
-        if (workModeSwitch.blocked == HomeWorkModeSwitchBlock.JAILBREAK_ACTIVE) {
-            jailbreakModeDialog.show(jailbreakModeTitle, jailbreakModeMessage)
-        } else if (workModeSwitch.enabled) {
-            showWorkModeSheet = true
-        }
-    }
+    // Ultra-only：工作模式切换入口已移除，首页只保留安装、模块与反馈动作。
+    val onOpenWorkMode: () -> Unit = {}
 
     // W20/W21 外部 Root 迁移入口：有 root、未识别本机模式且非安全模式时显示；
     // 隐身时 HomeUiState 已被 asStealthKernelNotReady 归一化 ⇒ 条件自然为 false（00 §3.8 隐身互斥）。
