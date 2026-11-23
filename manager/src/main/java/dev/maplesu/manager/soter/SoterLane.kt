@@ -90,8 +90,8 @@ object SoterLane {
 
     /** Idempotent; safe from any thread and from process start. */
     fun start(context: Context) {
-        // Application.onCreate also runs in secondary processes (`:magica_boot`); the lane
-        // may only own a binding in the main process, which is also the provider's process.
+        // Application.onCreate also runs in secondary processes; the lane may only own a
+        // binding in the main process, which is also the provider's process.
         val processName = runCatching { android.app.Application.getProcessName() }.getOrNull()
         if (processName != null && processName != context.packageName) return
         if (!started.compareAndSet(false, true)) return
