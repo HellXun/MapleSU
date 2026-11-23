@@ -87,11 +87,7 @@ class ModuleRepositoryImpl(
             dev.maplesu.manager.runtime.ultra.UltraSdkCredentials.hookWithoutSdk(ksuApp),
             dev.maplesu.manager.runtime.ultra.UltraEnvironmentProbe.usesUltraBackend(ksuApp),
         ) else emptyList(),
-        if (requestedMode == WorkMode.KSU) listOf(
-            ksuPortFactory,
-            ModuleBackendPorts.ksuFactory,
-            dev.maplesu.manager.workmode.backend.KsuBackendRegistry.rootShellExecutor(),
-        ) else listOf(litePort),
+        listOf(litePort),
     )
 
     override suspend fun getModules(): Result<List<Module>> {

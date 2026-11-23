@@ -3,14 +3,6 @@ package dev.maplesu.manager.workmode.service
 import android.content.Context
 import android.content.pm.PackageManager
 import android.util.Log
-import dev.maplesu.manager.ksu.KsuCandidateCommitPort
-import dev.maplesu.manager.ksu.KsuCommitResult
-import dev.maplesu.manager.ksu.KsuInstallProducer
-import dev.maplesu.manager.ksu.KsuProduceResult
-import dev.maplesu.manager.ksu.KsuRootCommandRunner
-import dev.maplesu.manager.ksu.KsuShellResult
-import dev.maplesu.manager.ksu.LibsuRootCommandRunner
-import dev.maplesu.manager.ksu.ensureNormalBootUserland
 import dev.maplesu.manager.ultrakernel.UltraKernelFlow
 import dev.maplesu.manager.ultrakernel.UltraKernelContextAssets
 import dev.maplesu.manager.modules.UltraRootKeyStore
@@ -71,7 +63,6 @@ object ModeSwitchRuntime {
         hooks: SwitchQuiesceHooks? = null,
         snapshots: ModeSwitchSnapshots? = null,
         mirrorProvider: ModeSwitchMirrorProvider? = null,
-        ksuBridge: KsuSwitchProducerBridge? = null,
         modeCommit: ModeCommitSink? = null,
         environment: ModeSwitchAppEnvironment? = null,
         client: ModeSwitchClient? = null,
@@ -109,11 +100,9 @@ object ModeSwitchRuntime {
             val ordinaryClient = if (client != null) runtimeClient else ServiceResumeModeSwitchClient(
                 runtimeClient, ServiceClientModeSwitchClient(appContext),
             ) { hasServiceHistory(durableRoot) }
+            // Ultra-only：只有 Ultra 候选生产者。Normal 的 KSU LKM 生产者随后端一起删除。
             val producers = buildMap<WorkMode, SwitchCandidateProducer> {
                 buildLiteProducer(appContext)?.let { put(WorkMode.LITE, it) }
-                put(WorkMode.KSU, KsuSwitchCandidateProducer(
-                    ksuBridge ?: defaultKsuBridge(appContext, durableRoot),
-                ))
             }
             val runtimeSnapshots = snapshots ?: defaultSnapshots(appContext)
             val durableCommit = modeCommit ?: runCatching {
@@ -201,20 +190,10 @@ object ModeSwitchRuntime {
                         else pinnedRoot.uninstallUltra(key)
                     },
                 ),
+                // Normal（KernelSU）后端已移除：切换流程不再引导 ksud 用户态。
                 normalBootUserland = {
-                    val result = ensureNormalBootUserland(
-                        File(appContext.applicationInfo.nativeLibraryDir),
-                        KsuRootCommandRunner { command, _ ->
-                            val executed = durableRoot(command)
-                            KsuShellResult(if (executed.ok) executed.code else executed.code.takeUnless { it == 0 } ?: -1,
-                                executed.output.lines(), listOf(executed.detail))
-                        },
-                        onStdout = { Log.i(TAG, "normal-boot: $it") },
-                        onStderr = { Log.w(TAG, "normal-boot: $it") },
-                    )
-                    if (result.ok) dev.maplesu.manager.installer.InstallMoveOutcome.OK else
-                        dev.maplesu.manager.installer.InstallMoveOutcome.failed(
-                            result.failureCode ?: dev.maplesu.manager.ksu.KsuBootstrap.CODE_INSTALL_FAILED, result.detail)
+                    dev.maplesu.manager.installer.InstallMoveOutcome.failed(
+                        "NORMAL_BACKEND_REMOVED", "ultra-only build")
                 },
                 defaultSigning = { request ->
                     dev.maplesu.manager.installer.LenovoModeSwitchSigning.open(appContext, request) {
@@ -292,13 +271,7 @@ object ModeSwitchRuntime {
             assets = UltraKernelContextAssets(context),
             receiptsDirectory = dev.maplesu.manager.compat.UltraStateStorage.flash(context.filesDir),
             retainedOriginals = listOf(File(dev.maplesu.manager.compat.UltraStateStorage.flash(context.filesDir), "base-stock.img")),
-            daemon = File(context.applicationInfo.nativeLibraryDir, "libksud_ksu.so").absolutePath,
-            runner = KsuRootCommandRunner { command, _ ->
-                val result = runner(command)
-                KsuShellResult(result.code, result.output.lines(), listOf(result.detail))
-            },
             logger = { line -> Log.i(TAG, line) },
-            appUid = android.os.Process.myUid(),
         )
         return UltraRootModeSwitchClient(
             runner = runner,
@@ -344,88 +317,6 @@ object ModeSwitchRuntime {
         }
     }.getOrNull()
 
-    /** W12 KSU 生产者：libksud_ksu.so / root shell 任一不可用 → 明确错误码。 */
-    private fun defaultKsuBridge(
-        context: Context,
-        execute: (String) -> RootExecResult,
-    ): KsuSwitchProducerBridge =
-        KsuSwitchProducerBridge { input ->
-            runCatching {
-                val daemon = File(context.applicationInfo.nativeLibraryDir, "libksud_ksu.so")
-                if (!daemon.isFile) {
-                    return@runCatching dev.maplesu.manager.workmode.switch.CandidateResult(
-                        null, "", 0, "PRODUCE_KSU_UNAVAILABLE", "libksud_ksu.so missing",
-                    )
-                }
-                val runner = KsuRootCommandRunner { command, _ ->
-                    val result = execute(command)
-                    KsuShellResult(result.code, result.output.lines(), listOf(result.detail))
-                }
-                // 多 KMI：先问 ksud 本次 APK 到底内嵌了哪些 `kernelsu.ko`
-                // （`boot-info supported-kmis` = 资产名去掉 `_kernelsu.ko` 后缀）。
-                // 拿不到就保持 null（目录未知）：producer 不猜，ksud 按 --kmi 查资产，缺了硬失败。
-                val kmiCatalog: Set<String>? = runCatching {
-                    val command = dev.maplesu.manager.ksu.KsuCommands.bootInfo(
-                        daemon.absolutePath,
-                        dev.maplesu.manager.ksu.KsuBootInfoSubcommand.SUPPORTED_KMIS,
-                    )
-                    val result = runner.run(
-                        dev.maplesu.manager.ksu.KsuInstallProducer.shellJoin(command),
-                        dev.maplesu.manager.ksu.KsuTimeouts.COMMAND_MS,
-                    )
-                    if (result.code == 0) {
-                        result.out.map { it.trim() }.filter { it.isNotEmpty() }.toSet()
-                    } else {
-                        null
-                    }
-                }.getOrNull()
-                val producer = KsuInstallProducer(
-                    daemonPath = daemon.absolutePath,
-                    runner = runner,
-                    workRoot = dev.maplesu.manager.ksu.KsuCandidateWorkspaces.switch(input.workDir),
-                    commit = KsuCandidateCommitPort { _, _ ->
-                        KsuCommitResult.NoTransaction("PRODUCE_ONLY", "facade submits candidate")
-                    },
-                    switchSession = { null },
-                    kmiCatalog = { kmiCatalog },
-                    appUid = android.os.Process.myUid(),
-                )
-                when (val result = producer.produceCandidate(
-                    source = input.baselineImage,
-                    options = dev.maplesu.manager.ksu.KsuBootPatchOptions(
-                        kmi = input.kmi.ifBlank { null },
-                        partition = input.partition,
-                    ),
-                    onCommand = { receipt ->
-                        dev.maplesu.manager.ksu.KsuLog.record("switch-boot-patch", dev.maplesu.manager.runtime.ultra.UltraSdkLogging.redact(
-                            "argv=${receipt.argv} code=${receipt.result.code} stdout=${receipt.result.outText} stderr=${receipt.result.errText}"))
-                    },
-                )) {
-                    is KsuProduceResult.Produced -> {
-                        val image = fullSizeSwitchCandidate(result.candidate.candidate,
-                            File(input.workDir, "normal-candidate.img"), input.baselineImage.length())
-                        dev.maplesu.manager.workmode.switch.CandidateResult(
-                            image = image, sha256 = ModeSwitchHashes.sha256(image), size = image.length(),
-                            structureEvidence = "ksu:${result.candidate.form}",
-                        )
-                    }
-                    is KsuProduceResult.Rejected -> dev.maplesu.manager.workmode.switch.CandidateResult(
-                        null, "", 0, result.code, result.detail,
-                    )
-                }
-            }.getOrElse { error ->
-                dev.maplesu.manager.workmode.switch.CandidateResult(
-                    null, "", 0, "PRODUCE_KSU_UNAVAILABLE", error.message.orEmpty(),
-                )
-            }
-        }
-
-    // ------------------------------------------------------------------ 快照
-
-    /**
-     * W02 快照的 App 侧装配：App 私有数据写到 App 私有 storeRoot（无需 root），
-     * `AppSnapshotFacts` 读不到时 FileSnapshotService 返回 Skipped，切换按 fail-closed 阻断。
-     */
     private fun defaultSnapshots(context: Context): ModeSwitchSnapshots {
         val appDir = context.filesDir
         val storeRoot = File(context.filesDir, "workmode/snapshots")

@@ -9,7 +9,6 @@ import dev.maplesu.manager.workmode.control.ControlPlane
 import dev.maplesu.manager.workmode.control.schema.SharedSuperuserFile
 import dev.maplesu.manager.workmode.snapshot.SettingsMirror
 import dev.maplesu.manager.workmode.storage.ModePaths
-import dev.maplesu.manager.workmode.superuser.AndroidKsuIdentitySource
 import dev.maplesu.manager.workmode.superuser.DefaultSuperuserSync
 import dev.maplesu.manager.workmode.superuser.DirectRootScriptRunner
 import dev.maplesu.manager.workmode.superuser.RootScriptRunner
@@ -158,13 +157,8 @@ class AndroidSuperuserMirrorExporter(
 /** 生产 SuperuserSync 工厂：root 控制面 + 与当前模式匹配的后端（KSU 适配器仅 KSU 模式加载）。 */
 fun createProductionSuperuserSync(context: Context, mode: WorkMode,
                                   control: ControlPlane = RootShellControlPlane(context)): SuperuserSync {
-    val ksuAdapter = if (mode == WorkMode.KSU) {
-        runCatching { dev.maplesu.manager.ksu.KsuBackends.superuser() }.getOrNull()
-    } else {
-        null
-    }
-    val identities = if (ksuAdapter != null) AndroidKsuIdentitySource(context) else null
-    val backends = productionSuperuserBackends(context, mode, ksuAdapter, identities)
+    // Ultra-only：没有 KSU 超级用户适配器，后端列表只由 Ultra/Direct 组成。
+    val backends = productionSuperuserBackends(context, mode)
     return DefaultSuperuserSync(control, backends)
 }
 
@@ -220,7 +214,7 @@ fun createProductionSuperuserReconciler(context: Context,
             ModeRuntime.active == mode && when (mode) {
                 WorkMode.LITE -> true
                 WorkMode.KSU -> runCatching {
-                    dev.maplesu.manager.ksu.KsuBackends.natives().available
+                    false
                 }.getOrDefault(false)
             }
         },

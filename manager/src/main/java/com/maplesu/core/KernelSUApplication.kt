@@ -89,18 +89,10 @@ private val crashShellExecutor by lazy {
 /** 跑一条 root 命令拿 stdout。任何异常/超时都返回空串，调用方永远拿到字符串、永远不抛。 */
 private fun runCrashShellCommand(cmd: String, timeoutSeconds: Long = 20L): String {
     // mode-gate: app.crash_shell (04-ui-contract §1.3) —— 崩溃取证走 Lite root shell，
-    // 只允许已激活的 LITE 执行；KSU/未判定一律拒绝，返回空串（调用方已按"没抓到"处理）。
-    when (ModeRuntime.active) {
-        WorkMode.LITE -> Unit
-        WorkMode.KSU -> {
-            ModeGate.deny(ModeComponentIds.APP_CRASH_SHELL, ModeGateFormat.Reason.KSU)
-            return ""
-        }
-
-        null -> {
-            ModeGate.deny(ModeComponentIds.APP_CRASH_SHELL, ModeGateFormat.Reason.UNDETERMINED)
-            return ""
-        }
+    // 只允许已激活的 LITE 执行；未判定一律拒绝，返回空串（调用方已按"没抓到"处理）。
+    if (ModeRuntime.active == null) {
+        ModeGate.deny(ModeComponentIds.APP_CRASH_SHELL, ModeGateFormat.Reason.UNDETERMINED)
+        return ""
     }
     return runCatching {
         val task = crashShellExecutor.submit(
@@ -586,11 +578,6 @@ class KernelSUApplication : Application(), ViewModelStoreOwner {
                 dev.maplesu.manager.runtime.RootExecutionRouter.production(this),
             )
         }.onFailure { Log.w(TAG, "RootExec router unavailable (fail-closed)", it) }
-        // KSU 后端日志出口（Normal，2026-11-01）：`KsuLog` 默认只写内存环形缓冲，
-        // 这里接到 logcat，让 `ksu.unavailable` / `ksu.rejected` 在设备上可见
-        // （只挂 sink，不触碰任何后端、无 root 调用；LITE 下等价于多一条日志转发）。
-        runCatching { dev.maplesu.manager.workmode.backend.KsuBackendRegistry.installLogging() }
-            .onFailure { Log.w(TAG, "KSU log sink unavailable (ignored)", it) }
         // 隐藏模式生产后端接线（2026-10-30）：模式已判定才装，未判定/不支持 → 保持 null
         // （UI 得到 BACKEND_UNAVAILABLE，不假装可用）。依赖上面刚装好的 RootExec（B 通道），
         // 因此必须排在这之后；内部有界等待模式判定，不阻塞首帧、不起 root。

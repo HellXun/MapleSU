@@ -91,30 +91,3 @@ class AndroidUltraSuperuserPort(context: Context) : UltraSuperuserPort {
     override fun revoke(packageName: String): Boolean = UltraAuthorization.revoke(app, packageName)
 }
 
-/**
- * `B_KSU` 身份来源：PackageManager 全量应用 × 身份快照。
- *
- * 已知限制（U2 / 设备项）：当前只枚举 `Context` 对应 Android user 的包；内核 allowlist 里的
- * 非应用 uid（root/shell）与其它用户/已卸载包的 uid 无法表达 → 由 `count()` 差值记入
- * `unrepresentableCount`，不假装完整。
- */
-class AndroidKsuIdentitySource(context: Context) : KsuIdentitySource {
-    private val app = context.applicationContext
-    private val manager: PackageManager = app.packageManager
-    private val identities = AndroidApplicationIdentities(app)
-
-    override fun installedApplications(): List<KsuInstalledApp> = manager.getInstalledPackages(0)
-        .mapNotNull { info ->
-            val applicationInfo: ApplicationInfo = info.applicationInfo ?: return@mapNotNull null
-            if (applicationInfo.uid < 10_000) return@mapNotNull null
-            KsuInstalledApp(
-                packageName = info.packageName,
-                uid = applicationInfo.uid,
-                identity = identities.read(applicationInfo.uid)?.toIdentitySnapshot(),
-            )
-        }
-        .distinctBy { it.packageName to it.uid }
-
-    override fun identity(packageName: String, uid: Int): IdentitySnapshot? =
-        identities.read(uid)?.toIdentitySnapshot()
-}

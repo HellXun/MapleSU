@@ -49,16 +49,16 @@ object InstallTargetCodes {
     const val KSU_DOWNLOAD_PARTITION_UNSUPPORTED = "KSU_DOWNLOAD_PARTITION_UNSUPPORTED"
 
     /** 设备内核 release 读不到 / 解析不出 KMI。 */
-    const val KMI_UNPARSEABLE = KsuKmiDetection.CODE_UNPARSEABLE
+    const val KMI_UNPARSEABLE = "KMI_UNPARSEABLE"
 
     /** 解析出 KMI，但不在本分支实际构建的 Normal 矩阵内。 */
-    const val KMI_NOT_IN_MATRIX = KsuKmiSelector.CODE_NOT_IN_MATRIX
+    const val KMI_NOT_IN_MATRIX = "KMI_NOT_IN_MATRIX"
 
     /** 矩阵内有，但本次 APK 没打进该 KMI 的 `kernelsu.ko`。 */
-    const val KMI_ARTIFACT_MISSING = KsuKmiSelector.CODE_ARTIFACT_MISSING
+    const val KMI_ARTIFACT_MISSING = "KMI_ARTIFACT_MISSING"
 
     /** 内核代际与 `ro.board.platform` 矛盾。 */
-    const val KMI_KERNEL_PLATFORM_MISMATCH = KsuKmiDetection.CODE_MISMATCH
+    const val KMI_KERNEL_PLATFORM_MISMATCH = "KMI_KERNEL_PLATFORM_MISMATCH"
 }
 
 /**
@@ -177,11 +177,7 @@ sealed interface InstallTargetDecision {
  */
 object InstallTargetDispatch {
 
-    fun decide(request: InstallTargetRequest): InstallTargetDecision =
-        when (request.target) {
-            InstallTargetMode.ULTRA -> decideUltra(request)
-            InstallTargetMode.NORMAL -> decideNormal(request)
-        }
+    fun decide(request: InstallTargetRequest): InstallTargetDecision = decideUltra(request)
 
     /** Ultra routes an explicit carrier without claiming that its bridge artifact exists. */
     private fun decideUltra(request: InstallTargetRequest): InstallTargetDecision =
@@ -201,102 +197,6 @@ object InstallTargetDispatch {
         }
 
     /** File targets resolve their KMI from the actual source during candidate generation. */
-    private fun decideNormal(request: InstallTargetRequest): InstallTargetDecision {
-        val release = request.kernelRelease?.trim().orEmpty()
-        val detection = KsuKmiDetector.detect(release, request.boardPlatform, request.sdkInt)
-        val partition = when (val resolution =
-            InstallPartitionPolicy.resolve(InstallTargetMode.NORMAL, request.partition,
-                request.availablePartitions, detection.kmi)) {
-            is InstallPartitionResolution.Ready -> resolution.partition
-            is InstallPartitionResolution.Rejected -> return InstallTargetDecision.Blocked(
-                target = InstallTargetMode.NORMAL,
-                code = resolution.code,
-                blocker = resolution.blocker(),
-                detail = resolution.detail,
-            )
-        }
-
-        if (request.source != InstallSourceKind.CURRENT_PARTITION) {
-            return InstallTargetDecision.Ready(
-                target = InstallTargetMode.NORMAL,
-                path = InstallPatchPath.NORMAL_KSU_LKM,
-                workMode = WorkMode.KSU,
-                partition = partition.wire,
-            )
-        }
-
-        if (release.isEmpty()) {
-            return blocked(
-                code = InstallTargetCodes.KMI_UNPARSEABLE,
-                blocker = InstallTargetBlocker.KMI_UNPARSEABLE,
-                detail = "device kernel release is unknown; refusing to guess the KMI",
-            )
-        }
-        if (!detection.ok) {
-            // 归一化稳定码：检测层的 KMI_NOT_IN_MATRIX 与选择层的 KSU_KMI_NOT_IN_MATRIX 是同一件事，
-            // 对外只暴露后者（KSU 契约里的机器码），避免同一个 blocker 出现两个码。
-            val outOfMatrix = detection.code == KsuKmiDetection.CODE_NOT_IN_MATRIX
-            return InstallTargetDecision.Blocked(
-                target = InstallTargetMode.NORMAL,
-                code = if (outOfMatrix) InstallTargetCodes.KMI_NOT_IN_MATRIX else detection.code,
-                blocker = when (detection.code) {
-                    KsuKmiDetection.CODE_MISMATCH -> InstallTargetBlocker.KMI_KERNEL_PLATFORM_MISMATCH
-                    KsuKmiDetection.CODE_NOT_IN_MATRIX -> InstallTargetBlocker.KMI_NOT_IN_MATRIX
-                    else -> InstallTargetBlocker.KMI_UNPARSEABLE
-                },
-                detail = detection.detail.ifEmpty { detection.evidence },
-                kmi = detection.kmi,
-            )
-        }
-        val kmi = requireNotNull(detection.kmi)
-        return when (val selection = KsuKmiSelector.select(kmi, request.availableKmis)) {
-            is KsuKmiSelection.Ready -> InstallTargetDecision.Ready(
-                target = InstallTargetMode.NORMAL,
-                path = InstallPatchPath.NORMAL_KSU_LKM,
-                workMode = WorkMode.KSU,
-                partition = partition.wire,
-                kmi = selection.kmi,
-                kmiArtifact = selection.artifactName,
-                kmiCatalogKnown = true,
-            )
-
-            is KsuKmiSelection.Missing -> InstallTargetDecision.Blocked(
-                target = InstallTargetMode.NORMAL,
-                code = selection.code,
-                blocker = if (selection.code == KsuKmiSelector.CODE_ARTIFACT_MISSING) {
-                    InstallTargetBlocker.KMI_ARTIFACT_MISSING
-                } else {
-                    InstallTargetBlocker.KMI_NOT_IN_MATRIX
-                },
-                detail = selection.detail,
-                kmi = kmi,
-            )
-
-            // 目录未上报（旧装配）：选中的 KMI 仍然是设备事实推导出来的那一个，**不是**猜的；
-            // 产物是否存在由 ksud 的内嵌资产查找在产候选时硬失败（kmiCatalogKnown=false）。
-            is KsuKmiSelection.Unknown -> InstallTargetDecision.Ready(
-                target = InstallTargetMode.NORMAL,
-                path = InstallPatchPath.NORMAL_KSU_LKM,
-                workMode = WorkMode.KSU,
-                partition = partition.wire,
-                kmi = selection.kmi,
-                kmiArtifact = selection.artifactName,
-                kmiCatalogKnown = false,
-            )
-        }
-    }
-
-    private fun blocked(
-        code: String,
-        blocker: InstallTargetBlocker,
-        detail: String,
-    ): InstallTargetDecision = InstallTargetDecision.Blocked(
-        target = InstallTargetMode.NORMAL,
-        code = code,
-        blocker = blocker,
-        detail = detail,
-    )
-
     /** 分区被拒 → UI blocker（一码一文案；纯层不引用 `R`）。 */
     private fun InstallPartitionResolution.Rejected.blocker(): InstallTargetBlocker = when (code) {
         InstallPartitionPolicy.CODE_ULTRA_FIXED -> InstallTargetBlocker.PARTITION_FIXED

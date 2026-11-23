@@ -19,7 +19,6 @@ import dev.maplesu.manager.workmode.switch.SwitchJournalFactory
 import dev.maplesu.manager.installer.InstallerDeviceLock
 import dev.maplesu.manager.installer.InstallerPending
 import dev.maplesu.manager.installer.NoStockBaselineMaterializer
-import dev.maplesu.manager.ksu.KsuFileCommandRunner
 import dev.maplesu.manager.ultrakernel.UltraKernelContextAssets
 import java.io.File
 import java.io.IOException
@@ -63,8 +62,6 @@ internal object ServiceModeSwitchWiring {
             assets = UltraKernelContextAssets(context),
             receiptsDirectory = dev.maplesu.manager.compat.UltraStateStorage.flash(context.filesDir),
             retainedOriginals = listOf(File(dev.maplesu.manager.compat.UltraStateStorage.flash(context.filesDir), "base-stock.img")),
-            daemon = File(context.applicationInfo.nativeLibraryDir, "libksud_ksu.so").absolutePath,
-            runner = KsuFileCommandRunner(),
             logger = { line -> Log.i("MapleSU/ModeSwitch", line) },
         )
         val controlPlane = FileControlPlane(controlRoot, clock, bootIds)

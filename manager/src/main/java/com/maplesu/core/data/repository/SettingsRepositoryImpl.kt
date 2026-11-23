@@ -7,6 +7,7 @@ import android.util.Log
 import androidx.core.content.edit
 import com.materialkolor.PaletteStyle
 import com.materialkolor.dynamiccolor.ColorSpec
+import com.maplesu.core.Natives
 import com.maplesu.core.ksuApp
 import com.maplesu.core.ui.UiMode
 import com.maplesu.core.ui.screen.modulerepo.RepoSort
