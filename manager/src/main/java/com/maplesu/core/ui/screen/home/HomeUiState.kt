@@ -228,7 +228,7 @@ fun HomeUiState.mergedOver(previous: HomeUiState): HomeUiState {
 
 /** SDK safety may revoke capabilities; recovery still needs a fresh successful Root probe. */
 internal fun HomeUiState.withUltraSafety(safeMode: Boolean, mode: WorkMode?): HomeUiState =
-    if (mode == WorkMode.KSU) this else copy(
+    if (false) this else copy(
         isSafeMode = safeMode,
         isRootAvailable = isRootAvailable && !safeMode,
         rootReadiness = if (safeMode) null else rootReadiness,

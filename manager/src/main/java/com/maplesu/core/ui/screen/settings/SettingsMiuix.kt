@@ -67,7 +67,6 @@ import com.maplesu.core.ui.util.miuixBarColor
 import com.maplesu.core.ui.util.rememberBlurBackdrop
 import dev.maplesu.manager.workmode.ui.SettingsSection
 import dev.maplesu.manager.workmode.ui.SettingsStatusCopy
-import dev.maplesu.manager.workmode.ui.settingsStatusOf
 import dev.maplesu.manager.workmode.ui.workModeNameRes
 import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.Card
@@ -122,7 +121,6 @@ fun SettingPagerMiuix(
         enabled = !appearanceOnly && modePolicy.shows(SettingsSection.ULTRA_ULTRA_ENV) && !uiState.hiddenMasked,
     )
     val workModeEntry = uiState.workModeEntry
-    val bf = uiState.bFeatures
 
     Scaffold(
         topBar = {
@@ -251,16 +249,6 @@ fun SettingPagerMiuix(
                     }
                 }
 
-                // Ultra-only：Normal（KSU）专属内核设置行已移除，仅保留 SU 兼容。
-                val showSuCompat = modePolicy.shows(SettingsSection.SU_COMPAT) && uiState.managerValid
-                if (showSuCompat) {
-                    item(key = "ksu-features") {
-                        SettingsCardMiuix(Modifier.animateItem(fadeInSpec = tween(120), placementSpec = tween(160), fadeOutSpec = null)) {
-                            SuCompatRowMiuix(uiState, actions)
-                        }
-                    }
-                }
-
                 // 通用：检查模块更新 + 软重启 + WebView 调试（两模式都消费）。
                 val showModuleUpdate = modePolicy.shows(SettingsSection.MODULE_UPDATE) && uiState.managerValid
                 val showTuning = modePolicy.shows(SettingsSection.GENERAL_TUNING) && uiState.managerValid
@@ -296,72 +284,11 @@ fun SettingPagerMiuix(
                     }
                 }
 
-                // Normal（KSU）专属：App Profile 模板入口 + 内核形态只读行。
-                val showProfile = modePolicy.shows(SettingsSection.KSU_APP_PROFILE)
-                val showKernelMode = modePolicy.shows(SettingsSection.KSU_KERNEL_MODE)
-                if (showProfile || showKernelMode) {
-                    item(key = "ksu-profile") {
-                        SettingsCardMiuix(Modifier.animateItem(fadeInSpec = tween(120), placementSpec = tween(160), fadeOutSpec = null)) {
-                            if (showProfile) {
-                                ArrowRowMiuix(
-                                    title = stringResource(R.string.settings_profile_template),
-                                    summary = stringResource(R.string.settings_profile_template_summary),
-                                    icon = Icons.Rounded.Person,
-                                    onClick = actions.onOpenProfileTemplate,
-                                )
-                            }
-                            if (showKernelMode) {
-                                val title = stringResource(R.string.settings_kernel_mode)
-                                BasicComponent(
-                                    title = title,
-                                    summary = stringResource(
-                                        if (uiState.isLkmMode) R.string.settings_kernel_mode_lkm else R.string.settings_kernel_mode_builtin,
-                                    ),
-                                    startAction = { RowIconMiuix(Icons.Rounded.Memory, title) },
-                                )
-                            }
-                        }
-                    }
-                }
-
-                // W18 三卡（Normal 专属；能力门控 + 诚实降级，见 workmode/ui/SettingsBFeatures.kt）。
-                // 模式由 SettingsModePolicy 裁决；Ultra 下 bFeatures 恒 NONE，且 VM 不读 KSU 状态。
-                val showStealth = modePolicy.shows(SettingsSection.KSU_STEALTH) && bf.stealth.show
-                val showAppLock = modePolicy.shows(SettingsSection.KSU_APP_LOCK) && bf.appLock.show
-                val showWebAdmin = modePolicy.shows(SettingsSection.KSU_WEB_ADMIN) && bf.webAdmin.show
-                if (showStealth || showAppLock || showWebAdmin) {
-                    item(key = "ksu-b-features") {
-                        SettingsCardMiuix(Modifier.animateItem(fadeInSpec = tween(120), placementSpec = tween(160), fadeOutSpec = null)) {
-                            if (showStealth) StealthRowMiuix(uiState, actions)
-                            if (showAppLock) {
-                                val title = stringResource(R.string.work_mode_applock_title)
-                                BasicComponent(
-                                    title = title,
-                                    summary = stringResource(R.string.work_mode_applock_unavailable),
-                                    startAction = { RowIconMiuix(Icons.Rounded.Lock, title) },
-                                )
-                            }
-                            if (showWebAdmin) WebAdminRowsMiuix(uiState, actions)
-                        }
-                    }
-                }
-
-                // 卸载 + 日志 + 关于：与 KSU 一样放在最后。
-                val showNormalUninstall = modePolicy.shows(SettingsSection.KSU_UNINSTALL) &&
-                    uiState.managerValid && !uiState.hiddenMasked
+                // 卸载 + 日志 + 关于放在最后。
                 item(key = "last") {
-                    if (ultraPanel != null || showNormalUninstall || modePolicy.shows(SettingsSection.LOG_AND_ABOUT)) {
+                    if (ultraPanel != null || modePolicy.shows(SettingsSection.LOG_AND_ABOUT)) {
                         SettingsCardMiuix(Modifier.animateItem(fadeInSpec = tween(120), placementSpec = tween(160), fadeOutSpec = null)) {
                             ultraPanel?.let { panel -> UltraUninstallRowMiuix(panel) }
-                            if (showNormalUninstall) {
-                                ArrowRowMiuix(
-                                    title = stringResource(R.string.uninstall),
-                                    summary = null,
-                                    icon = Icons.Rounded.Delete,
-                                    onClick = { showUninstall = true },
-                                )
-                                UninstallDialog(show = showUninstall, onDismissRequest = { showUninstall = false })
-                            }
                             if (modePolicy.shows(SettingsSection.LOG_AND_ABOUT)) {
                                 ArrowRowMiuix(
                                     title = stringResource(R.string.send_log),
@@ -441,95 +368,8 @@ private fun SwitchRowMiuix(
     )
 }
 
-@Composable
-private fun SuCompatRowMiuix(uiState: SettingsUiState, actions: SettingsScreenActions) {
-    val items = listOf(
-        stringResource(R.string.settings_mode_enable_by_default),
-        stringResource(R.string.settings_mode_disable_always),
-    )
-    val summary = when {
-        uiState.suCompatStatus == "unsupported" -> stringResource(R.string.feature_status_unsupported_summary)
-        uiState.suCompatStatus == "unknown" -> stringResource(R.string.feature_status_unreadable_summary)
-        uiState.suCompatStatus == "managed" -> stringResource(R.string.feature_status_managed_summary)
-        // This switch looks like a revocation control, so while it is off its own summary has
-        // to state that delivered copies stay in place until they are revoked per application.
-        !uiState.isSuEnabled -> stringResource(R.string.maplesu_su_off_keeps_delivered)
-        else -> stringResource(R.string.settings_sucompat_summary)
-    }
-    val title = stringResource(R.string.settings_sucompat)
-    OverlayDropdownPreference(
-        title = title,
-        summary = summary,
-        items = items,
-        startAction = { RowIconMiuix(Icons.Rounded.AdminPanelSettings, title) },
-        enabled = uiState.suCompatStatus == "supported",
-        selectedIndex = if (uiState.isSuEnabled) 0 else 1,
-        onSelectedIndexChange = { actions.onSetSuCompatMode(if (it == 0) 0 else 2) },
-    )
-}
 
-@Composable
-private fun StealthRowMiuix(uiState: SettingsUiState, actions: SettingsScreenActions) {
-    val card = uiState.bFeatures.stealth
-    // 状态行只陈述事实：只有明确 ON 才说「已开启」；UNKNOWN 必须说「状态未知（读取失败）」。
-    val status = stringResource(SettingsStatusCopy.statusRes(settingsStatusOf(card)))
-    val title = stringResource(R.string.work_mode_stealth_title)
-    if (card.operable && !card.enabled) {
-        ArrowRowMiuix(
-            title = title,
-            summary = stringResource(R.string.normal_hidden_entry_summary),
-            icon = Icons.Rounded.VisibilityOff,
-            onClick = actions.onOpenNormalHidden,
-        )
-    } else if (card.operable) {
-        SwitchRowMiuix(
-            title = title,
-            summary = status + " · " + stringResource(R.string.work_mode_stealth_summary),
-            icon = Icons.Rounded.VisibilityOff,
-            checked = card.enabled,
-            onCheckedChange = actions.onSetStealthEnabled,
-        )
-    } else {
-        BasicComponent(
-            title = title,
-            summary = status + " · " + stringResource(R.string.work_mode_stealth_unavailable),
-            startAction = { RowIconMiuix(Icons.Rounded.VisibilityOff, title) },
-        )
-    }
-}
 
-@Composable
-private fun WebAdminRowsMiuix(uiState: SettingsUiState, actions: SettingsScreenActions) {
-    val card = uiState.bFeatures.webAdmin
-    val title = stringResource(R.string.work_mode_webadmin_title)
-    if (card.operable) {
-        SwitchRowMiuix(
-            title = title,
-            summary = stringResource(R.string.work_mode_webadmin_summary),
-            icon = Icons.Rounded.Language,
-            checked = card.enabled,
-            onCheckedChange = actions.onSetWebAdminEnabled,
-        )
-        ArrowRowMiuix(
-            title = stringResource(R.string.work_mode_webadmin_copy),
-            summary = null,
-            icon = Icons.Rounded.Language,
-            onClick = actions.onCopyWebAdminUrl,
-        )
-        ArrowRowMiuix(
-            title = stringResource(R.string.work_mode_webadmin_open),
-            summary = null,
-            icon = Icons.Rounded.Language,
-            onClick = actions.onOpenWebAdminUrl,
-        )
-    } else {
-        BasicComponent(
-            title = title,
-            summary = stringResource(R.string.work_mode_webadmin_unavailable),
-            startAction = { RowIconMiuix(Icons.Rounded.Language, title) },
-        )
-    }
-}
 
 @Composable
 private fun AppearanceBodyMiuix(uiState: SettingsUiState, actions: SettingsScreenActions) {

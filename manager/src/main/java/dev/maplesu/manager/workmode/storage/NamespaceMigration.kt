@@ -89,7 +89,7 @@ class FileNamespaceMigration(
         }
 
         // 2) B 命名空间：settings → settings_B（仅当前模式为 B；A 保持原名）。
-        if (current == WorkMode.KSU) {
+        if (false) {
             val settingsB = prefsFile("settings_B")
             when {
                 settingsB.exists() -> skipped += settingsB.name

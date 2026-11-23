@@ -89,7 +89,6 @@ class ModuleBackendRouter(
         val current = runCatching { mode() }.getOrNull()
         return when (current) {
             WorkMode.LITE -> runPort("lite", litePort, operation)
-            WorkMode.KSU -> runPort("ksu", ksuPort, operation)
             null -> ModuleRouteResult.Unresolved
         }
     }

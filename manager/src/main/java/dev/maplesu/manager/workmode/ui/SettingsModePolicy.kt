@@ -43,30 +43,6 @@ enum class SettingsSection {
     /** 通用：发送日志 / 关于。 */
     LOG_AND_ABOUT,
 
-    /** Normal 专属：传统 SU 命令支持（KSU `su_compat` 语义）。 */
-    SU_COMPAT,
-
-    /** Normal 专属：六项 KSU 内核设置行（具体行再受能力位约束）。 */
-    KSU_FEATURES,
-
-    /** Normal 专属：隐身模式（KSU 内核 stealth）。 */
-    KSU_STEALTH,
-
-    /** Normal 专属：应用锁（KSU 内核）。 */
-    KSU_APP_LOCK,
-
-    /** Normal 专属：网页管理器（ksud webadmin）。 */
-    KSU_WEB_ADMIN,
-
-    /** Normal 专属：App Profile 模板入口。 */
-    KSU_APP_PROFILE,
-
-    /** Normal 专属：内核形态（LKM / 内置）只读行。 */
-    KSU_KERNEL_MODE,
-
-    /** Normal 专属：卸载入口（两项走 KSU 既有 UninstallDialog）。 */
-    KSU_UNINSTALL,
-
     /** Ultra 专属：MapleSU_Ultra 工作环境卡（含卸载）。 */
     ULTRA_ULTRA_ENV,
 
@@ -88,21 +64,6 @@ enum class SettingsRow {
     SEND_LOG,
     ABOUT,
 
-    /** Normal 专属 */
-    SU_COMPAT,
-    KERNEL_UMOUNT,
-    SELINUX_HIDE,
-    SULOG,
-    ADB_ROOT,
-    SHELL_SU_ADB_ONLY,
-    UMOUNT_MODULES_DEFAULT,
-    KSU_STEALTH,
-    KSU_APP_LOCK,
-    KSU_WEB_ADMIN,
-    KSU_APP_PROFILE,
-    KSU_KERNEL_MODE,
-    KSU_UNINSTALL,
-
     /** Ultra 专属 */
     ULTRA_ENVIRONMENT,
     LITE_HIDDEN,
@@ -117,24 +78,6 @@ enum class SettingsRow {
  * 因此另一模式（以及未知模式）的 JNI/root/SDK 读取不会被"顺手"执行。
  */
 enum class SettingsDataSource {
-    /** 六项 KSU：Natives/ksud feature 读取。 */
-    KSU_FEATURES,
-
-    /** KSU 隐身：`Stealth.kernelState()`（= `Natives.stealthState()`）。 */
-    KSU_STEALTH,
-
-    /** KSU 应用锁：`Natives.appLockState()`。 */
-    KSU_APP_LOCK,
-
-    /** KSU 网页管理器：prefs `web_terminal_enabled`（+ 点击后 ksud）。 */
-    KSU_WEB_ADMIN,
-
-    /** 传统 SU 命令支持：`Natives.isSuEnabled()` / `isManager`。 */
-    SU_COMPAT,
-
-    /** 内核形态：`Natives.isLkmMode`（经 `SettingsRepository.isLkmMode()`）。 */
-    KSU_KERNEL_MODE,
-
     /** Ultra：Ultra 环境 / Ultra SDK 探测（`UltraAutoPair` / `UltraEnvironmentProbe`）。 */
     ULTRA_ENVIRONMENT,
 
@@ -146,20 +89,6 @@ enum class SettingsDataSource {
 /** 状态行三态：只有**明确 ON**才允许说"已开启"；UNKNOWN 必须说"状态未知/读取失败"。 */
 enum class SettingsStatus { ON, OFF, UNKNOWN }
 
-/**
- * [BFeatureCard] → 三态。
- *
- * `operable` 只在明确读到 0/1 时为 true（见 [BFeaturePolicy]），因此：
- *  - operable && enabled → [SettingsStatus.ON]
- *  - operable && !enabled → [SettingsStatus.OFF]
- *  - 其余（读失败 / 内核不支持）→ [SettingsStatus.UNKNOWN]
- */
-fun settingsStatusOf(card: BFeatureCard): SettingsStatus = when {
-    card.operable && card.enabled -> SettingsStatus.ON
-    card.operable -> SettingsStatus.OFF
-    else -> SettingsStatus.UNKNOWN
-}
-
 /** 纯函数：section → 行集合（顺序固定；`when` 穷尽，新增 section 编译器强制补行）。 */
 fun settingsRowsOf(section: SettingsSection): Set<SettingsRow> = when (section) {
     SettingsSection.APPEARANCE -> setOf(SettingsRow.APPEARANCE_ENTRY, SettingsRow.PERSONALIZATION_GROUP)
@@ -168,21 +97,6 @@ fun settingsRowsOf(section: SettingsSection): Set<SettingsRow> = when (section) 
     SettingsSection.GENERAL_TUNING -> setOf(SettingsRow.SOFT_REBOOT, SettingsRow.WEBVIEW_DEBUG)
     SettingsSection.WEBUI_SELF_CHECK -> setOf(SettingsRow.WEBUI_SELF_CHECK_ENTRY)
     SettingsSection.LOG_AND_ABOUT -> setOf(SettingsRow.SEND_LOG, SettingsRow.ABOUT)
-    SettingsSection.SU_COMPAT -> setOf(SettingsRow.SU_COMPAT)
-    SettingsSection.KSU_FEATURES -> setOf(
-        SettingsRow.KERNEL_UMOUNT,
-        SettingsRow.SELINUX_HIDE,
-        SettingsRow.SULOG,
-        SettingsRow.ADB_ROOT,
-        SettingsRow.SHELL_SU_ADB_ONLY,
-        SettingsRow.UMOUNT_MODULES_DEFAULT,
-    )
-    SettingsSection.KSU_STEALTH -> setOf(SettingsRow.KSU_STEALTH)
-    SettingsSection.KSU_APP_LOCK -> setOf(SettingsRow.KSU_APP_LOCK)
-    SettingsSection.KSU_WEB_ADMIN -> setOf(SettingsRow.KSU_WEB_ADMIN)
-    SettingsSection.KSU_APP_PROFILE -> setOf(SettingsRow.KSU_APP_PROFILE)
-    SettingsSection.KSU_KERNEL_MODE -> setOf(SettingsRow.KSU_KERNEL_MODE)
-    SettingsSection.KSU_UNINSTALL -> setOf(SettingsRow.KSU_UNINSTALL)
     SettingsSection.ULTRA_ULTRA_ENV -> setOf(SettingsRow.ULTRA_ENVIRONMENT)
     SettingsSection.ULTRA_HIDDEN -> setOf(SettingsRow.LITE_HIDDEN)
     SettingsSection.ULTRA_MODULE_POLICY -> setOf(SettingsRow.ULTRA_MODULE_POLICY_LOAD, SettingsRow.ULTRA_MODULE_POLICY_HIDE)
@@ -190,12 +104,6 @@ fun settingsRowsOf(section: SettingsSection): Set<SettingsRow> = when (section) 
 
 /** 纯函数：section → 允许的数据读取（通用 section 无模式专属读取 → 空集）。 */
 fun settingsDataSourcesOf(section: SettingsSection): Set<SettingsDataSource> = when (section) {
-    SettingsSection.SU_COMPAT -> setOf(SettingsDataSource.SU_COMPAT)
-    SettingsSection.KSU_FEATURES -> setOf(SettingsDataSource.KSU_FEATURES)
-    SettingsSection.KSU_STEALTH -> setOf(SettingsDataSource.KSU_STEALTH)
-    SettingsSection.KSU_APP_LOCK -> setOf(SettingsDataSource.KSU_APP_LOCK)
-    SettingsSection.KSU_WEB_ADMIN -> setOf(SettingsDataSource.KSU_WEB_ADMIN)
-    SettingsSection.KSU_KERNEL_MODE -> setOf(SettingsDataSource.KSU_KERNEL_MODE)
     SettingsSection.ULTRA_ULTRA_ENV -> setOf(SettingsDataSource.ULTRA_ENVIRONMENT)
     SettingsSection.ULTRA_HIDDEN -> setOf(SettingsDataSource.LITE_HIDDEN)
     SettingsSection.ULTRA_MODULE_POLICY -> setOf(SettingsDataSource.ULTRA_MODULE_POLICY)
@@ -204,9 +112,7 @@ fun settingsDataSourcesOf(section: SettingsSection): Set<SettingsDataSource> = w
     SettingsSection.WORK_MODE,
     SettingsSection.GENERAL_TUNING,
     SettingsSection.WEBUI_SELF_CHECK,
-    SettingsSection.LOG_AND_ABOUT,
-    SettingsSection.KSU_APP_PROFILE,
-    SettingsSection.KSU_UNINSTALL -> emptySet()
+    SettingsSection.LOG_AND_ABOUT -> emptySet()
 }
 
 /**
@@ -249,27 +155,13 @@ data class SettingsModePolicy(
             SettingsSection.ULTRA_MODULE_POLICY,
         )
 
-        /** 只有 MapleSU_Normal（KSU）显示。 */
-        val NORMAL_ONLY_SECTIONS: Set<SettingsSection> = setOf(
-            SettingsSection.SU_COMPAT,
-            SettingsSection.KSU_FEATURES,
-            SettingsSection.KSU_STEALTH,
-            SettingsSection.KSU_APP_LOCK,
-            SettingsSection.KSU_WEB_ADMIN,
-            SettingsSection.KSU_APP_PROFILE,
-            SettingsSection.KSU_KERNEL_MODE,
-            SettingsSection.KSU_UNINSTALL,
-        )
-
         val COMMON_ROWS: Set<SettingsRow> = rowsOf(COMMON_SECTIONS)
         val ULTRA_ONLY_ROWS: Set<SettingsRow> = rowsOf(ULTRA_ONLY_SECTIONS)
-        val NORMAL_ONLY_ROWS: Set<SettingsRow> = rowsOf(NORMAL_ONLY_SECTIONS)
 
         /** 纯函数入口：输入 `WorkMode?`，输出该模式可见的 section/row/读取许可。 */
         fun forMode(mode: WorkMode?): SettingsModePolicy {
             val sections: Set<SettingsSection> = when (mode) {
                 WorkMode.LITE -> COMMON_SECTIONS + ULTRA_ONLY_SECTIONS
-                WorkMode.KSU -> COMMON_SECTIONS + NORMAL_ONLY_SECTIONS
                 null -> COMMON_SECTIONS
             }
             return SettingsModePolicy(

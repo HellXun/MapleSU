@@ -131,17 +131,6 @@ fun SuperUserPagerMiuix(
                     TopAppBar(
                         color = barColor,
                         title = stringResource(R.string.superuser),
-                        navigationIcon = {
-                            IconButton(
-                                onClick = actions.onOpenSulog,
-                            ) {
-                                Icon(
-                                    imageVector = MiuixIcons.Notes,
-                                    tint = colorScheme.onSurface,
-                                    contentDescription = stringResource(R.string.settings_sulog)
-                                )
-                            }
-                        },
                         actions = {
                             Box {
                                 val showSortPopup = remember { mutableStateOf(false) }

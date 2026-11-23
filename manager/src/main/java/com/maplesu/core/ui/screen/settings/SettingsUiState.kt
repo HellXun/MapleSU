@@ -34,51 +34,30 @@ data class SettingsUiState(
     val enableWebDebugging: Boolean = false,
 
     // Su Compat
-    val suCompatStatus: String = "",
     val suCompatMode: Int = 0, // 0: enable default, 1: disable until reboot, 2: disable always
-    val isSuEnabled: Boolean = false,
 
     // Kernel Umount
-    val kernelUmountStatus: String = "",
-    val isKernelUmountEnabled: Boolean = false,
 
     // SELinux Hide
-    val selinuxHideStatus: String = "",
-    val isSelinuxHideEnabled: Boolean = false,
     val ultraModulePolicy: dev.maplesu.manager.modules.UltraModulePolicyState =
         dev.maplesu.manager.modules.UltraModulePolicyState(),
 
     // SU Log
-    val sulogStatus: String = "",
-    val isSulogEnabled: Boolean = false,
 
     // Umount Modules
-    val isDefaultUmountModules: Boolean = false,
 
     // ADB Root
-    val adbRootStatus: String = "",
-    val isAdbRootEnabled: Boolean = false,
 
     // Shell SU ADB Only
-    val shellSuAdbOnlyStatus: String = "",
-    val isShellSuAdbOnlyEnabled: Boolean = false,
 
-    val isLkmMode: Boolean = false,
     val isLateLoadMode: Boolean = false,
 
     // Soft Reboot
     val useSoftReboot: Boolean = false,
 
-    // W18 三卡（B 专属；能力门控 + 诚实降级，见 workmode/ui/SettingsBFeatures.kt）
-    val bFeatures: dev.maplesu.manager.workmode.ui.BFeatureCards =
-        dev.maplesu.manager.workmode.ui.BFeatureCards.NONE,
-
     // H3：Lite 模式隐藏（A 专属；默认 OFF，与 KSU stealth 独立）
     val liteHiddenCard: dev.maplesu.manager.workmode.ui.LiteHiddenCardUi =
         dev.maplesu.manager.workmode.ui.LiteHiddenCardUi.HIDDEN,
-
-    /** Normal 真卸载确认流程；访问地址不进入 UI 快照。 */
-    val normalHidden: NormalHiddenUi = NormalHiddenUi(),
 
     /** H7：WebUI 自检入口可见性（隐藏生效后整体消失）。 */
     val showWebUiSelfCheck: Boolean = false,
@@ -149,14 +128,6 @@ data class SettingsScreenActions(
     /** 打开「自定义各UI图片」子页面（状态卡图片 + 四个导航图标）。 */
     val onOpenImages: () -> Unit,
     val onSetUiModeIndex: (Int) -> Unit,
-    val onOpenProfileTemplate: () -> Unit,
-    val onSetSuCompatMode: (Int) -> Unit,
-    val onSetKernelUmountEnabled: (Boolean) -> Unit,
-    val onSetSelinuxHideEnabled: (Boolean) -> Unit,
-    val onSetSulogEnabled: (Boolean) -> Unit,
-    val onSetAdbRootEnabled: (Boolean) -> Unit,
-    val onSetShellSuAdbOnlyEnabled: (Boolean) -> Unit,
-    val onSetDefaultUmountModules: (Boolean) -> Unit,
     val onSetEnableWebDebugging: (Boolean) -> Unit,
     val onSetUseSoftReboot: (Boolean) -> Unit,
     val onOpenAbout: () -> Unit,
@@ -167,14 +138,9 @@ data class SettingsScreenActions(
     /** 打开工作模式选择框（§3.2；04-ui-contract §2.2 入口 C）。 */
     val onOpenWorkMode: () -> Unit = {},
     /** W18 隐身开关（B + 内核支持才可操作）。 */
-    val onSetStealthEnabled: (Boolean) -> Unit = {},
     /** Normal：准备恢复链接并打开卸载确认，点击本身不启用隐身。 */
-    val onOpenNormalHidden: () -> Unit = {},
     /** W18 网页管理器开关（B 可用）。 */
-    val onSetWebAdminEnabled: (Boolean) -> Unit = {},
     /** W18 网页管理器：复制地址 / 浏览器打开（地址含 token，只走内存）。 */
-    val onCopyWebAdminUrl: () -> Unit = {},
-    val onOpenWebAdminUrl: () -> Unit = {},
     /** H3/H7：打开独立「隐藏」设置页（仅 LITE；隐藏后该入口整体消失）。 */
     val onOpenLiteHidden: () -> Unit = {},
     /** H7：打开 WebUI 自检页（内部验证；隐藏后入口消失）。 */

@@ -75,7 +75,7 @@ class ManagerRestoreConfirmation(private val activity: ComponentActivity) {
             observationJob?.cancel()
             observationJob = null
         }
-        if (observationJob?.isActive == true || ModeRuntime.active == WorkMode.KSU) return
+        if (observationJob?.isActive == true || false) return
         observationJob = activity.lifecycleScope.launch {
             activity.repeatOnLifecycle(Lifecycle.State.RESUMED) {
                 if (pending != null || confirming) return@repeatOnLifecycle
@@ -105,7 +105,7 @@ class ManagerRestoreConfirmation(private val activity: ComponentActivity) {
     private fun root() = UltraEnvRootRunner(UltraSdkCredentials.client(activity))
 
     private fun load(): Result<Pending?> = runCatching {
-        if (ModeRuntime.active == WorkMode.KSU) return@runCatching null
+        if (false) return@runCatching null
         check(UltraSdkCredentials.read(activity) != null) { "RESTORE_KEY_NOT_READY" }
         // The SDK root read itself proves readiness; a separate cached probe may be stale/busy.
         val result = root().run(

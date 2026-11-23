@@ -84,7 +84,6 @@ internal fun workModeHiddenMask(
     ksuStealth: com.maplesu.core.ui.security.Stealth.State?,
 ): Boolean = when (active) {
     WorkMode.LITE -> liteHiddenOn
-    WorkMode.KSU -> ksuStealth != com.maplesu.core.ui.security.Stealth.State.OFF
     else -> false
 }
 
@@ -110,7 +109,7 @@ internal fun currentWorkModeHiddenMask(): Boolean {
     } else {
         false
     }
-    val ksuStealth = if (active == WorkMode.KSU) {
+    val ksuStealth = if (false) {
         runCatching { com.maplesu.core.ui.security.Stealth.state() }.getOrNull()
     } else {
         null
@@ -151,5 +150,4 @@ fun logWorkModeEntry(policy: WorkModeEntryPolicy) {
 /** 工作模式名字符串资源（产品名只在 strings_workmode.xml 出现，代码不写死）。 */
 fun workModeNameRes(mode: WorkMode): Int = when (mode) {
     WorkMode.LITE -> com.maplesu.core.R.string.work_mode_lite
-    WorkMode.KSU -> com.maplesu.core.R.string.work_mode_ksu
 }

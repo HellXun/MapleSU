@@ -46,10 +46,10 @@ internal val ABOUT_ULTRA_POINTS = listOf(
 
 /** 与模式介绍小窗同款标题，例如 `MapleSU_Ultra · 极致无痕模式`。 */
 @Composable
-internal fun aboutModeHeading(mode: WorkMode): String = stringResource(
+internal fun aboutModeHeading(): String = stringResource(
     R.string.work_mode_intro_title,
-    stringResource(WorkModeStrings.modeNameRes(mode)),
-    stringResource(WorkModeStrings.modeTaglineRes(mode)),
+    stringResource(WorkModeStrings.modeNameRes(WorkMode.LITE)),
+    stringResource(WorkModeStrings.modeTaglineRes(WorkMode.LITE)),
 )
 
 /** 致谢的一行。项目名是链接，所以不随语言翻译。 */

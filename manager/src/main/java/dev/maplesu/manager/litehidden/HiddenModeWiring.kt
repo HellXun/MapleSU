@@ -60,7 +60,7 @@ object HiddenModeWiring {
     /** 立即装配（模式已判定时）。返回是否真的装上了。 */
     fun installNow(context: Context): Boolean {
         val mode = ModeRuntime.active
-        if (mode != WorkMode.LITE && mode != WorkMode.KSU) {
+        if (mode != WorkMode.LITE && true) {
             HiddenModeBackends.current = null
             return false
         }

@@ -225,14 +225,6 @@ fun HomePagerMaterial(
             if (ultraEnvironment != null) {
                 UltraEnvironmentUpdateCardMaterial(ultraEnvironment)
             }
-            // 首页「切换工作模式」入口（Material）——紧贴状态卡下方，整行 tonal 按钮。
-            // 可见性/可用性全部来自 workModeSwitch（ModeRuntime.active 判定 + 切换事务 + 隐身），
-            // 与 Miuix 版共用同一份判据与同一个导航落点（WorkModeNavigation）。
-            HomeWorkModeSwitchEntryMaterial(
-                state = workModeSwitch,
-                onClick = onOpenWorkMode,
-                modifier = Modifier.fillMaxWidth(),
-            )
             // 「安装 / 激活系统环境」：2026-10-29 按用户要求从设置页移到首页。
             UltraEnvironmentInstallCardMaterial(
                 rememberUltraEnvironmentInstallPanel(state.environmentMode),

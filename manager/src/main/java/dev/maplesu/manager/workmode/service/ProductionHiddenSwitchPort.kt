@@ -24,22 +24,15 @@ import dev.maplesu.manager.workmode.switch.HookResult
 class ProductionHiddenSwitchPort(private val context: Context) : HiddenStateController {
 
     override fun state(mode: WorkMode): HiddenState = when (mode) {
-        WorkMode.KSU -> when (Stealth.state()) {
-            Stealth.State.ON -> HiddenState.ON
-            Stealth.State.OFF -> HiddenState.OFF
-            Stealth.State.UNKNOWN -> HiddenState.UNKNOWN
-        }
         // Lite App 级隐藏尚未交付：没有实现时不得假设"可能开着"，否则会永久阻断 A→B。
         WorkMode.LITE -> HiddenState.OFF
     }
 
     override fun setOff(mode: WorkMode): HookResult = when (mode) {
-        WorkMode.KSU -> setStealth(false)
         WorkMode.LITE -> HookResult.OK
     }
 
     override fun setOn(mode: WorkMode): HookResult = when (mode) {
-        WorkMode.KSU -> setStealth(true)
         WorkMode.LITE -> HookResult.failed("LITE_HIDDEN_UNSUPPORTED", "Ultra hidden not implemented")
     }
 

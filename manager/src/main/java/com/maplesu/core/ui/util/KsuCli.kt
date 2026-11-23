@@ -939,7 +939,7 @@ fun installBoot(
     return installStockTarget(
         requestedTarget, requireNotNull(resolvedPartition), bootUri, installationTaskId,
         restoreOriginalImage || changesUltraCarrier,
-        originalManagerPackage, existingRootConflictAccepted, variantId, null, null,
+        originalManagerPackage, existingRootConflictAccepted, variantId,
         onStdout, onStderr, onStage, selectedImageOnly = !downloaded,
         lenovoSigning = lenovoSigning,
         vivoInputs = vivoInputs,
@@ -959,7 +959,6 @@ internal fun installUltraKernelUpdate(taskId: String): FlashResult {
     return installStockTarget(
         target = InstallTargetMode.ULTRA, partition = partition, bootUri = null, taskId = taskId,
         restoreOriginal = false, originalManager = null, conflictAccepted = false, variantId = null,
-        kmiCatalog = null,
         onStdout = { Log.i(TAG, it) }, onStderr = { Log.w(TAG, it) }, onStage = {},
         selectedImageOnly = false, preservedCredential = credential,
         lenovoSigning = dev.maplesu.manager.installer.UltraKernelEnvironmentUpgrade.signingOptions(ksuApp),
@@ -978,7 +977,6 @@ private fun installStockTarget(
     originalManager: String?,
     conflictAccepted: Boolean,
     variantId: String?,
-    kmiCatalog: Collection<String>?,
     onStdout: (String) -> Unit,
     onStderr: (String) -> Unit,
     onStage: (InstallStage) -> Unit,
@@ -1062,75 +1060,55 @@ private fun installStockTarget(
         // Normal（KernelSU）LKM 候选生产已随 KSU 后端删除；这里显式失败，不静默改走 Ultra。
         throw InstallBuildStopped(FlashResult(78, "NORMAL_BACKEND_REMOVED", false, FlashOutcome.FAILED))
     }
-    try {
-        val active = ModeRuntime.active
-        if (active != null && active != target.workMode) {
-            InstallerServiceClient.rememberModeSwitchTask(ksuApp, id)
-            val facade = ModeSwitchRuntime.facadeOrNull() ?: ModeSwitchRuntime.initialize(ksuApp)
-            val progress: (String) -> Unit = { stage ->
-                val step = modeSwitchStepOf(stage, stage, stage)
-                onStage(when (step) {
-                    ModeSwitchStep.WRITE, ModeSwitchStep.RESTORE -> InstallStage.WRITING
-                    ModeSwitchStep.REBOOT -> InstallStage.AWAITING_REBOOT
-                    else -> InstallStage.PATCHING
-                })
-                if (step != null) onStdout(ksuApp.getString(WorkModeStrings.stepRes(step)))
-            }
-            if (bootUri == null) {
-                val result = kotlinx.coroutines.runBlocking(Dispatchers.IO) {
-                    facade.startSwitch(target.workMode, confirmHidden = true, onProgress = progress,
-                        requestedPartition = partition, requestedSwitchId = id,
-                        initBootArtifact = bridgeArtifact,
-                        signingMode = if (lenovoSigning.enabled) lenovoSigning.mode(partition).name else "",
-                        finalizeCandidate = if (lenovoSigning.enabled) { candidate, source ->
-                            signing.finish(candidate, source).also { bootCandidate = it }
-                        } else null)
-                }
-                if (result is SwitchOutcome.AwaitingReboot) {
-                    bootCandidate = result.candidate
-                    return written()
-                }
-                val converted = dev.maplesu.manager.installer.installerModeSwitchResult(result)
-                if (converted.imagesRequired != null) return converted
-                Log.w(TAG, "Mode installation stopped: $result")
-                onStderr(converted.err)
-                return converted
-            }
-            val source = File.createTempFile("switch-source-", ".img", ksuApp.cacheDir)
-            try {
-                copyInstallerImage(bootUri, source)
-                if (lenovoSigning.enabled) {
-                    // Preparation must precede signing: companions and restore hashes come
-                    // from the native PRE, never from an unprepared single-image writer.
-                    val candidate = buildPatched(source)
-                    val result = kotlinx.coroutines.runBlocking(Dispatchers.IO) {
-                        facade.startSwitch(target.workMode, confirmHidden = true, onProgress = progress,
-                            requestedPartition = partition, requestedSwitchId = id,
-                            initBootArtifact = bridgeArtifact,
-                            signingMode = lenovoSigning.mode(partition).name,
-                            finalizeCandidate = { patched, _ -> signing.finish(patched, source).also { bootCandidate = it } },
-                            providedCandidate = candidate)
-                    }
-                    if (result is SwitchOutcome.AwaitingReboot) {
-                        bootCandidate = result.candidate
-                        return written()
-                    }
-                    return dev.maplesu.manager.installer.installerModeSwitchResult(result).also { onStderr(it.err) }
-                }
-                val candidate = build(source)
-                val result = kotlinx.coroutines.runBlocking(Dispatchers.IO) {
-                    facade.installCommit(candidate, id, progress, target.workMode, initBootArtifact = bridgeArtifact)
-                }
-                if (result is InstallCommitOutcome.AwaitingReboot) return written()
-                result as InstallCommitOutcome.Rejected
-                Log.w(TAG, "Mode installation stopped: ${result.code} ${result.detail}")
-                val message = ksuApp.getString(if (result.requiresRecovery) R.string.install_image_recovery_required else R.string.install_image_patch_failed) +
-                    "\n" + dev.maplesu.manager.installer.installerFailureDiagnostic(null, result.code)
-                onStderr(message)
-                return FlashResult(1, message, false,
-                    if (result.requiresRecovery) FlashOutcome.RECOVERY_REQUIRED else FlashOutcome.FAILED)
-            } finally { source.delete() }
+    fun build(source: File): InstallCandidateImage {
+        val patched = buildPatched(source)
+        val compatible = if (dev.maplesu.manager.installer.VivoCompatibility.deviceSupported())
+            dev.maplesu.manager.installer.VivoCompatibility.prepareFiles(ksuApp, target.workMode, patched, vivoInputs, onStdout)
+            else patched
+        return signing.finish(compatible, source).also { bootCandidate = it }
+    }
+    fun publish(candidate: InstallCandidateImage): String {
+        if (!lenovoSigning.enabled && candidate.compatibilityImages.isEmpty())
+            return dev.maplesu.manager.BootCandidatePublisher.publish(ksuApp, candidate.image, candidate.sha256)
+        val images = linkedMapOf(candidate.partition to candidate.image).apply {
+            putAll(signing.companions(candidate.partition))
+            putAll(candidate.compatibilityImages.mapValues { it.value.image })
         }
+        val names = images.mapValues { (name, image) ->
+            "maplesu-patched-$name-${dev.maplesu.manager.workmode.Hashes.sha256(image).take(12)}.img"
+        }
+        val saved = dev.maplesu.manager.BootCandidatePublisher.publishAll(ksuApp,
+            images.map { (name, image) -> names.getValue(name) to dev.maplesu.manager.BootCandidatePublisher.Image(image,
+                dev.maplesu.manager.workmode.Hashes.sha256(image)) }.toMap())
+        images.keys.forEach { name -> onStdout("镜像输出路径 [$name]：${saved.getValue(names.getValue(name))}") }
+        onStdout("完整镜像组已输出。")
+        return saved.getValue(names.getValue(candidate.partition))
+    }
+    // 仅导出所选镜像（不写分区）：Ultra 的「只生成可刷镜像」路径走这里。
+    if (bootUri != null && selectedImageOnly) {
+        exportOnly = true
+        try {
+            val source = File.createTempFile("patch-source-", ".img", ksuApp.cacheDir)
+            val saved = dev.maplesu.manager.exportSelectedImage(
+                source,
+                copySource = { copyInstallerImage(bootUri, it) },
+                build = ::build,
+                publish = ::publish,
+            )
+            val message = ksuApp.getString(R.string.install_image_saved, saved)
+            onStdout(message)
+            return FlashResult(0, "", false, FlashOutcome.SAVED_ONLY, outputPath = saved)
+        } catch (stop: InstallBuildStopped) {
+            if (stop.result.code == 0) onStdout(stop.result.err) else onStderr(stop.result.err)
+            return stop.result
+        } catch (error: Exception) {
+            Log.w(TAG, "Selected image patch/export failed", error)
+            val message = ksuApp.getString(R.string.install_image_patch_failed) + " ${error.message.orEmpty()}"
+            onStderr(message)
+            return FlashResult(1, message, false, FlashOutcome.FAILED)
+        }
+    }
+    try {
         // First install and same-mode updates use the same root-owned stock/PRE transaction.
         val result = StockInstallFlow.install(
             ksuApp, id, target, partition, bootUri, restoreOriginal, originalManager, conflictAccepted,
@@ -1174,28 +1152,6 @@ private fun installStockTarget(
         if (bootUri != null && target == InstallTargetMode.ULTRA && partition == "boot" &&
             !dev.maplesu.manager.installer.VivoCompatibility.deviceSupported()) {
             return installBootFromChosenImage(bootUri, null, variantId, onStdout, onStderr, onStage)
-        }
-        if (bootUri != null) {
-            val source = File.createTempFile("normal-source-", ".img", ksuApp.cacheDir)
-            try {
-                copyInstallerImage(bootUri, source)
-                exportOnly = true
-                val candidate = build(source)
-                val saved = publish(candidate)
-                onStdout(ksuApp.getString(R.string.install_image_saved, saved))
-                val reason = ksuApp.getString(R.string.install_boot_saved_no_root)
-                onStdout(reason)
-                return FlashResult(0, reason, false, FlashOutcome.SAVED_ONLY)
-            } catch (stop: InstallBuildStopped) {
-                onStderr(stop.result.err)
-                return stop.result
-            } catch (failure: Exception) {
-                Log.w(TAG, "Normal image export failed", failure)
-                val message = ksuApp.getString(R.string.install_image_patch_failed) +
-                    "\n" + dev.maplesu.manager.installer.installerFailureDiagnostic(failure)
-                onStderr(message)
-                return FlashResult(1, message, false, FlashOutcome.FAILED)
-            } finally { source.delete() }
         }
         val message = ksuApp.getString(R.string.install_root_required)
         onStderr(message)

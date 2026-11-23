@@ -110,14 +110,6 @@ fun SuperUserPagerMaterial(
                     localSearchText = ""
                     actions.onClearSearch()
                 },
-                navigationIcon = {
-                    IconButton(onClick = actions.onOpenSulog) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Outlined.Article,
-                            contentDescription = stringResource(R.string.settings_sulog)
-                        )
-                    }
-                },
                 actions = {
                     var showSortMenu by remember { mutableStateOf(false) }
 

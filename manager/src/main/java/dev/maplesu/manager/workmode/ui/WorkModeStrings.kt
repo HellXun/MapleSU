@@ -39,7 +39,6 @@ object WorkModeStrings {
     @StringRes
     fun modeNameRes(mode: WorkMode): Int = when (mode) {
         WorkMode.LITE -> R.string.work_mode_lite
-        WorkMode.KSU -> R.string.work_mode_ksu
     }
 
     /** 该判定态是否提供"去安装页修复"的次 CTA（04 §2.5 表格）。 */
@@ -105,7 +104,6 @@ object WorkModeStrings {
     @StringRes
     fun modeTaglineRes(mode: WorkMode): Int = when (mode) {
         WorkMode.LITE -> R.string.work_mode_lite_tagline
-        WorkMode.KSU -> R.string.work_mode_ksu_tagline
     }
 
     /** 模式介绍的三段文案（实现 / 模块 / 适合）。 */
@@ -116,11 +114,6 @@ object WorkModeStrings {
             R.string.work_mode_intro_lite_fit,
         )
 
-        WorkMode.KSU -> listOf(
-            R.string.work_mode_intro_ksu_impl,
-            R.string.work_mode_intro_ksu_modules,
-            R.string.work_mode_intro_ksu_fit,
-        )
     }
 
     /** 切换步骤文案；未知步骤回退到通用文案。 */
@@ -135,4 +128,11 @@ object WorkModeStrings {
         ModeSwitchStep.VERIFY -> R.string.work_mode_step_verify
         null -> R.string.work_mode_step_generic
     }
+}
+
+/** 模式介绍的一段：`标签：正文`，供皮肤把标签加粗。 */
+internal fun splitIntroLine(line: String): Pair<String, String> {
+    val index = line.indexOfFirst { it == '：' || it == ':' }
+    if (index <= 0 || index + 1 >= line.length) return "" to line
+    return line.substring(0, index + 1) to line.substring(index + 1)
 }

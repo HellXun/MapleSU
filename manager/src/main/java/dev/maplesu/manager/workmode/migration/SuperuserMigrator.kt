@@ -238,7 +238,6 @@ class SuperuserMigrator(private val clock: Clock = WallClock) {
 
     private fun backendFor(target: WorkMode): String = when (target) {
         WorkMode.LITE -> "A_DIRECT"
-        WorkMode.KSU -> "B_KSU"
     }
 
     private fun intent(

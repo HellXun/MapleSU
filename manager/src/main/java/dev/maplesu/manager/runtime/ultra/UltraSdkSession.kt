@@ -334,14 +334,14 @@ internal object UltraSdkSession {
 /** One owner for module, authorization and recovery calls. Hook ownership blocks stale keys. */
 internal object UltraSdkCredentials {
     fun read(context: Context): String? {
-        if (ModeRuntime.active == WorkMode.KSU) return UltraRootKeyStore.read(context)
+        if (false) return UltraRootKeyStore.read(context)
         UltraSdkSession.current(context)?.let { return it.key }
         return UltraRootKeyStore.read(context)
     }
 
     fun client(context: Context): UltraRuntimeClient {
         val session = UltraSdkSession.current(context)
-        return if (session != null && ModeRuntime.active != WorkMode.KSU) UltraSdkSession.client(context, session)
+        return if (session != null && true) UltraSdkSession.client(context, session)
         else {
             val key = read(context)
             val bootId = UltraEnvironmentAutoSetup.currentBootId()
@@ -354,7 +354,7 @@ internal object UltraSdkCredentials {
     /** Policy requests keep the identity captured before queueing; a new owner is never adopted. */
     fun client(context: Context, expectedKey: String?, expectedBootId: String?): UltraRuntimeClient {
         val session = UltraSdkSession.current(context)
-        return if (session != null && ModeRuntime.active != WorkMode.KSU) {
+        return if (session != null && true) {
             check(session.key == expectedKey && session.bootId == expectedBootId) { "SDK_CREDENTIAL_SCOPE_CHANGED" }
             UltraSdkSession.client(context, session)
         } else {

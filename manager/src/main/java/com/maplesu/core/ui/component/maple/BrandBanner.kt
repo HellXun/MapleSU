@@ -47,7 +47,6 @@ enum class BrandBannerKind { ULTRA, NORMAL, MAPLE }
 /** 工作模式对应的 Banner；`when` 写全，新增模式时编译器强制补分支。 */
 internal fun brandBannerKind(mode: WorkMode): BrandBannerKind = when (mode) {
     WorkMode.LITE -> BrandBannerKind.ULTRA
-    WorkMode.KSU -> BrandBannerKind.NORMAL
 }
 
 /** Banner 的全部可调参数，装机目视后只改这里。 */

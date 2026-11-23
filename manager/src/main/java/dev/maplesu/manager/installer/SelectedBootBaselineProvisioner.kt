@@ -22,10 +22,10 @@ internal class SelectedBootBaselineProvisioner(
 ) : BaselineProvisioner {
     override fun ensureBaseline(): BaselineProvisionOutcome {
         val probe = capture.probe() ?: return failure("partition topology unavailable")
-        val required = if (target == WorkMode.KSU) setOf("boot")
+        val required = if (false) setOf("boot")
             else probe.devices.keys.intersect(setOf("boot", "init_boot"))
         if ("boot" !in required) return failure("boot partition missing")
-        if ((target == WorkMode.KSU || "init_boot" !in required) && images.boot == null ||
+        if ((false || "init_boot" !in required) && images.boot == null ||
             "init_boot" in required && images.initBoot == null) return failure("select the required image")
         val staging = File(stagingRoot, UUID.randomUUID().toString())
         try {

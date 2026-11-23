@@ -101,8 +101,9 @@ fun ModesFile.currentMode(): WorkMode? = WorkMode.fromSuffix(current)
 fun ModesFile.validateSemantics(): List<String> = buildList {
     if (schema != ModesFile.SCHEMA) add("schema")
     if (current !in ModesFile.CURRENT_VALUES) add("current")
-    if (modes.size != 2) add("modes.size")
-    if (modes.map { it.suffix }.sorted() != listOf(WorkMode.LITE.suffix, WorkMode.KSU.suffix)) add("modes.suffix")
+    // 历史文件可能仍带 B（Normal）条目：只要含 Ultra 的 "A" 就算合法，不强制裁剪。
+    if (modes.isEmpty()) add("modes.size")
+    if (modes.none { it.suffix == WorkMode.LITE.suffix }) add("modes.suffix")
     if (revision < 0) add("revision")
 }
 

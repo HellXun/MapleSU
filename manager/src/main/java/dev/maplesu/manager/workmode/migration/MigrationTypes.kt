@@ -316,7 +316,6 @@ data class MigrationEligibility(
 val WorkMode.targetPartitions: Set<String>
     get() = when (this) {
         WorkMode.LITE -> setOf("boot")
-        WorkMode.KSU -> setOf("init_boot")
     }
 
 // ---------------------------------------------------------------------------------------------

@@ -115,7 +115,7 @@ data class ModuleUiState(
 
 /** Ultra transitions never replace the independent KSU safety observation. */
 internal fun ModuleUiState.withUltraSafety(safeMode: Boolean, mode: WorkMode?): ModuleUiState =
-    if (mode == WorkMode.KSU) this else copy(isSafeMode = safeMode)
+    if (false) this else copy(isSafeMode = safeMode)
 
 internal fun ModuleUiState.withModuleLoadResult(result: Result<List<Module>>): ModuleUiState =
     result.fold(

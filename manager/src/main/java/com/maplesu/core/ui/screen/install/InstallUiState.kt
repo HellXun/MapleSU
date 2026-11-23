@@ -13,9 +13,7 @@ import dev.maplesu.manager.installer.LenovoSigningOptions
  * 页面只承载**用户的选择**与**纯函数算出来的结论**：
  * - [targetMode] 是步骤 ① 的目标工作模式（默认 Ultra）；
  * - [partition] 是步骤 ① 的实际目标载体；更新保持已观测载体，切换进入原载体恢复事务；
- * - [bootFlow] 是 Ultra 的步骤 ③（Ultra 内核版本）；
- * - [normalDecision] 是 Normal 的步骤 ③（设备 KMI + 分区 → 能不能装），由纯函数
- *   `InstallTargetDispatch.decide` 算出，页面只投影。
+ * - [bootFlow] 是 Ultra 的步骤 ③（Ultra 内核版本）。
  */
 @Immutable
 internal data class InstallUiState(
@@ -43,7 +41,6 @@ internal data class InstallUiState(
      * `null` = 当前目标是 Ultra（走 [bootFlow]）。`Blocked` 时「下一步」不可点，
      * 并就地显示可读原因 + 稳定码 —— 与真正点下去时的判据**同一个函数**。
      */
-    val normalDecision: InstallTargetDecision? = null,
     val migrationEntry: Boolean = false,
     val managerInstalled: Boolean? = null,
     val directAccessReady: Boolean = true,
@@ -91,12 +88,8 @@ internal data class InstallUiState(
             }
             if (lenovoSigning.enabled && installMethod is InstallMethod.SelectFile &&
                 !lenovoSigning.fileInputsReady(partition.wire)) return false
-            return when (targetMode) {
-                // Ultra：步骤 ③ 必须选出可修补的内核版本（既有判据，逐字保留）。
-                InstallTargetMode.ULTRA -> bootFlow?.selectable == true
-                // Normal：分区 + 设备 KMI 必须能落到本次 APK 的内嵌产物上。
-                InstallTargetMode.NORMAL -> normalDecision is InstallTargetDecision.Ready
-            }
+            // 步骤 ③ 必须选出可修补的内核版本（既有判据，逐字保留）。
+            return bootFlow?.selectable == true
         }
 }
 

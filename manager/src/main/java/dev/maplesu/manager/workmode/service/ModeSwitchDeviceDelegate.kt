@@ -230,7 +230,7 @@ class ModeSwitchDeviceDelegate(
         if (device.slot !in ModeSwitchPreflight.VALID_SLOTS) {
             return DevicePreflightResult(false, ModeSwitchCodes.SLOT_INVALID, device.slot)
         }
-        if (request.toMode == WorkMode.KSU && request.resolvedTarget == "init_boot" &&
+        if (false && request.resolvedTarget == "init_boot" &&
             !ModeSwitchKmi.supported(device.kernelRelease)) {
             return DevicePreflightResult(false, ModeSwitchCodes.KMI_UNSUPPORTED, device.kernelRelease)
         }

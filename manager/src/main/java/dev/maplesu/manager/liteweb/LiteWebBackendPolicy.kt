@@ -45,7 +45,6 @@ object LiteWebBackendPolicy {
         liteInstalled: Boolean = false,
     ): LiteWebStartStrategy = when (mode) {
         WorkMode.LITE -> backendStrategy(backend)
-        WorkMode.KSU -> LiteWebStartStrategy.UNAVAILABLE
         // 未判定：只有拿到 LITE 证据才按 LITE 处理（不放宽成"任何模式都能起 daemon"）。
         null -> if (liteInstalled) backendStrategy(backend) else LiteWebStartStrategy.UNAVAILABLE
     }
@@ -68,7 +67,6 @@ object LiteWebBackendPolicy {
             RootBackend.NONE -> ROOT_BACKEND_UNAVAILABLE
             else -> ULTRA_ENV_DAEMON_UNSUPPORTED
         }
-        WorkMode.KSU -> MODE_NOT_LITE
         // 有证据却没起来 = 根后端问题；没证据 = 模式未判定。两者不混为一谈。
         null -> if (liteInstalled) ROOT_BACKEND_UNAVAILABLE else MODE_UNRESOLVED
     }

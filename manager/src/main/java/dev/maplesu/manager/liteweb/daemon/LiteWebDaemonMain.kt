@@ -205,7 +205,6 @@ class LiteWebDaemonCore(
     private val uninstallManager: (() -> String)? = null,
     private val restoreResponse: ((String) -> DaemonResponse)? = null,
     private val managerInstalled: (() -> Boolean?)? = null,
-    private val normalHidden: DaemonNormalHidden? = null,
     private val independentCodeReady: () -> Boolean = { true },
     private val restoreStatus: (() -> DaemonResponse)? = null,
     private val confirmRestore: ((String) -> DaemonResponse)? = null,
@@ -252,14 +251,6 @@ class LiteWebDaemonCore(
             method == "GET" && relative == "/api/manager/capabilities" ->
                 if (runCatching(independentCodeReady).getOrDefault(false)) DaemonResponse(200, MANAGER_CAPABILITIES_JSON)
                 else json(409, "RECOVERY_CLASSPATH_NOT_INDEPENDENT")
-            method == "GET" && relative == "/api/normal/ready" ->
-                if (normalHidden?.ready() == true) DaemonResponse(200, """{"ok":true,"mode":"KSU"}""")
-                else json(409, "NORMAL_INDEPENDENT_RECOVERY_UNVERIFIED")
-            method == "POST" && relative == "/api/normal/activate" -> {
-                if (body.trim() != "{}") json(400, "NORMAL_ACTIVATE_BODY_INVALID")
-                else normalHidden?.let { DaemonResponse(200, it.activate()) }
-                    ?: json(501, "NORMAL_HIDDEN_UNAVAILABLE")
-            }
             relative == "/api/restore" && method == "POST" -> {
                 val action = extractAction(body)
                 if (action == null) json(400, "RESTORE_ACTION_MISSING")
@@ -499,33 +490,23 @@ object LiteWebDaemonRestore {
             selfStop = { true },
             clearIdentityOnSuccess = false,
         ) else null
-        val normal = if (mode == "KSU") DaemonNormalHidden(
-            bundle, { mode }, DaemonNormalKernel(), DaemonLiteHiddenPort(RecoveryPaths.HIDDEN_STATE),
-            uninstall = { """{"ok":false}""" },
-        ) else null
         val service = RecoveryRestoreService(
             bundle, RuntimeRecoveryCommandRunner,
             cleanup = {
-                if (normal != null) normal.restoreKernel()
-                else {
-                    val restored = requireNotNull(unhide).deactivate()
-                    val failed = restored.firstOrNull {
-                        !it.ok && it.name != dev.maplesu.manager.liteweb.LiteWebUnhideSteps.CLEANUP_STALE_BACKUPS
-                    }
-                    RecoveryCleanupResult(
-                        ok = failed == null && restored.any { it.name == "stop_daemon" && it.ok },
-                        code = failed?.error.orEmpty(),
-                        steps = restored.map { "${it.name}:${if (it.ok) "ok" else "failed"}" },
-                    )
+                val restored = requireNotNull(unhide).deactivate()
+                val failed = restored.firstOrNull {
+                    !it.ok && it.name != dev.maplesu.manager.liteweb.LiteWebUnhideSteps.CLEANUP_STALE_BACKUPS
                 }
+                RecoveryCleanupResult(
+                    ok = failed == null && restored.any { it.name == "stop_daemon" && it.ok },
+                    code = failed?.error.orEmpty(),
+                    steps = restored.map { "${it.name}:${if (it.ok) "ok" else "failed"}" },
+                )
             },
             retainedUid = { DaemonManagerUninstall.retainedUid() },
             finalizeRestoration = {
-                if (unhide == null) requireNotNull(normal).removeBootEntry()
-                else {
-                    val archived = unhide.archiveRestoredBackups()
-                    RecoveryCleanupResult(archived.ok, archived.error, listOf("${archived.name}:${if (archived.ok) "ok" else "failed"}"))
-                }
+                val archived = requireNotNull(unhide).archiveRestoredBackups()
+                RecoveryCleanupResult(archived.ok, archived.error, listOf("${archived.name}:${if (archived.ok) "ok" else "failed"}"))
             },
             prepareHandover = if (mode == "LITE") handover::prepare else null,
         )
@@ -643,23 +624,15 @@ object LiteWebDaemonMain {
         val hiddenState = DaemonLiteHiddenPort("$adbRoot/maplesu/lite_hidden")
         val sdkAccess = DaemonUltraSdkAccess(shell = DaemonRuntimeShell)
         val recoveryReadiness = DaemonManagerRecoveryReadiness(sdkAccess = sdkAccess::open)
-        val normalKernel = DaemonNormalKernel()
         val recoveryBundle = RecoveryBundle(LocalRecoveryFs(), locationPolicy = { true })
-        lateinit var normalHidden: DaemonNormalHidden
         val managerRemoval = DaemonManagerUninstall(
             bundle = recoveryBundle,
             runner = RuntimeRecoveryCommandRunner,
             logger = { System.err.println(it) },
-            hidden = {
-                if (config.workMode == "KSU") hiddenState.currentHidden()?.let { it && normalKernel.state() == true }
-                else hiddenState.currentHidden()
-            },
+            hidden = { hiddenState.currentHidden() },
             recoveryReady = {
-                DaemonRecoveryCode.ready() && LiteWebDaemonConfig.load() == currentConfig.get() && when (config.workMode) {
-                    "LITE" -> processIndependent() && recoveryReadiness.ready()
-                    "KSU" -> normalHidden.ready()
-                    else -> false
-                }
+                DaemonRecoveryCode.ready() && LiteWebDaemonConfig.load() == currentConfig.get() &&
+                    processIndependent() && recoveryReadiness.ready()
             },
         )
         val managerInstalled: () -> Boolean? = {
@@ -667,10 +640,6 @@ object LiteWebDaemonMain {
             if (packages.code != 0) null
             else packages.output.lineSequence().any { it.trim() == "package:dev.maplesu.manager" }
         }
-        normalHidden = DaemonNormalHidden(
-            recoveryBundle, { config.workMode }, normalKernel, hiddenState, managerRemoval::uninstall,
-            managerInstalled = managerInstalled,
-        )
         val backend = DaemonLiteWebBackend(
             configuredPortValue = config.port,
             portValue = { currentConfig.get().port },
@@ -680,9 +649,8 @@ object LiteWebDaemonMain {
                 }
             },
             hiddenPortValue = hiddenState,
-            runtimeSource = if (config.workMode == "KSU") DaemonNormalRuntimeFacts(normalKernel) else DaemonUltraRuntimeFacts(sdkAccess),
-            superuserPortValue = daemonModeSuperuserPort(config.workMode,
-                ultraPort = { DaemonSuperuserPort(sdkAccess, DaemonRuntimeShell) }),
+            runtimeSource = DaemonUltraRuntimeFacts(sdkAccess),
+            superuserPortValue = DaemonSuperuserPort(sdkAccess, DaemonRuntimeShell),
             managerInstalled = managerInstalled,
             // 完整解除寄生：宿主库还原 → loader 删除 → 撤销宿主 su 授权 → 停 daemon（杀自己）。
             // 停 daemon 只**排程**延迟退出（先回响应再退），见 DaemonSelfStop。
@@ -711,7 +679,6 @@ object LiteWebDaemonMain {
                 else DaemonResponse(409, """{"ok":false,"code":"RECOVERY_CONFIG_CHANGED"}""")
             },
             managerInstalled = managerInstalled,
-            normalHidden = if (config.workMode == "KSU") normalHidden else null,
             independentCodeReady = {
                 DaemonRecoveryCode.ready() && config.workMode in setOf("LITE", "KSU") &&
                     LiteWebDaemonConfig.load() == currentConfig.get() && processIndependent()

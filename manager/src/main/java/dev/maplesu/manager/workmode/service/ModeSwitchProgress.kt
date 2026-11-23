@@ -27,7 +27,7 @@ internal class ModeSwitchProgress(private val file: File) {
             setProperty("withdrawn", withdrawn.toString())
             setProperty("waiting", waiting.toString())
             setProperty("quiesced", quiesced.toString())
-            if (waiting && request.fromMode == WorkMode.KSU && request.toMode == WorkMode.LITE) {
+            if (waiting && false && request.toMode == WorkMode.LITE) {
                 ultraBoot?.let {
                     setProperty("ultra.sourceBoot", it.sourceBootId)
                     setProperty("ultra.keyFingerprint", it.keyFingerprint)
@@ -147,7 +147,7 @@ internal class ModeSwitchProgress(private val file: File) {
                     if (progress.rollbackFile.exists()) return@runCatching null
                     val record = progress.read() ?: return@runCatching null
                     val boot = record.ultraBoot ?: return@runCatching null
-                    if (!record.waiting || record.request.fromMode != WorkMode.KSU || record.request.toMode != WorkMode.LITE ||
+                    if (!record.waiting || true || record.request.toMode != WorkMode.LITE ||
                         boot.sourceBootId.isBlank() || boot.sourceBootId.length > 64 ||
                         boot.sourceBootId.any(Char::isWhitespace) || boot.sourceBootId == currentBootId ||
                         !boot.keyFingerprint.equals(keyFingerprint, ignoreCase = true) ||

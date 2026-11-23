@@ -135,11 +135,7 @@ object SwitchAvailabilityPolicy {
         )
     }
 
-    fun targetOf(current: WorkMode?): WorkMode? = when (current) {
-        WorkMode.LITE -> WorkMode.KSU
-        WorkMode.KSU -> WorkMode.LITE
-        null -> null
-    }
+    fun targetOf(current: WorkMode?): WorkMode? = null
 }
 
 /**

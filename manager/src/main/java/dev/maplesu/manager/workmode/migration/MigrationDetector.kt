@@ -213,14 +213,8 @@ object MigrationDetector {
             targetAllowed[target] = !knownFamilyBlocked
         }
 
-        val preferredTarget = when {
-            info.family.isKsuFamily && targetAllowed[WorkMode.KSU] == true -> WorkMode.KSU
-            targetAllowed[WorkMode.LITE] == true -> WorkMode.LITE
-            targetAllowed[WorkMode.KSU] == true -> WorkMode.KSU
-            else -> null
-        }
+        val preferredTarget = if (targetAllowed[WorkMode.LITE] == true) WorkMode.LITE else null
         val recommendedReason = when (preferredTarget) {
-            WorkMode.KSU -> TARGET_REASON_KSU
             WorkMode.LITE -> TARGET_REASON_LITE
             null -> null
         }

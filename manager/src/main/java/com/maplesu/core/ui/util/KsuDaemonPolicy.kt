@@ -28,7 +28,6 @@ object KsuDaemonPolicy {
     const val WORKDIR_KSUD = "/data/adb/ksu/bin/ksud"
 
     fun daemonName(mode: WorkMode?): String = when (mode) {
-        WorkMode.KSU -> KSU_DAEMON
         WorkMode.LITE, null -> LITE_DAEMON
     }
 
@@ -66,7 +65,6 @@ object KsuDaemonPolicy {
         legacyLitePath: String,
         exists: (String) -> Boolean,
     ): String? = when (mode) {
-        WorkMode.KSU -> daemonPath(nativeLibraryDir, WorkMode.KSU).takeIf(exists)
         WorkMode.LITE, null -> legacyLitePath
     }
 }

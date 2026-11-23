@@ -113,7 +113,6 @@ object StealthCodeStore {
 
     private fun modeWire(mode: dev.maplesu.manager.workmode.WorkMode?): String = when (mode) {
         dev.maplesu.manager.workmode.WorkMode.LITE -> "lite"
-        dev.maplesu.manager.workmode.WorkMode.KSU -> "ksu"
         null -> "none"
     }
 

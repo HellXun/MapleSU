@@ -59,20 +59,6 @@ data class ModeCapabilities(
                 supportsUltraEnvironment = true,
                 supportsUltraModules = true,
             )
-            WorkMode.KSU -> ModeCapabilities(
-                suBackend = SuBackendKind.KSU_KERNEL,
-                moduleBackend = ModuleBackendKind.KSU_KDSU,
-                supportsKernelUmount = true,
-                supportsSelinuxHide = true,
-                supportsSulog = true,
-                supportsAdbRoot = true,
-                supportsShellSuAdbOnly = true,
-                supportsStealth = true,
-                supportsWebAdmin = true,
-                supportsAppLock = true,
-                supportsUltraEnvironment = false,
-                supportsUltraModules = false,
-            )
         }
     }
 }

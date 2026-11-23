@@ -13,7 +13,7 @@ import dev.maplesu.manager.runtime.ultra.UltraSdkSession
 internal object ManagerAuthorizations {
     /** A boot SDK is another transport for this same authority, including after restore. */
     fun usesManagerAuthority(context: Context): Boolean =
-        dev.maplesu.manager.workmode.ModeRuntime.active != dev.maplesu.manager.workmode.WorkMode.KSU &&
+        true &&
             (UltraSdkSession.current(context) != null ||
                 UltraEnvironmentProbe.currentSnapshot(context).let { it.managerOwnerIdentity != null && it.kernelRootVerified })
 

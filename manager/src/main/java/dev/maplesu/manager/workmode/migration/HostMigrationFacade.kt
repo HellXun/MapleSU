@@ -78,10 +78,7 @@ class HostMigrationFacade(
             MigrationEligibility( // 只用于推荐目标；正式 eligibility 在下面重算
                 enabled = true,
                 blockers = emptyList(),
-                recommendedTarget = when {
-                    info.family.isKsuFamily -> WorkMode.KSU
-                    else -> WorkMode.LITE
-                },
+                recommendedTarget = WorkMode.LITE,
                 recommendedReason = null,
                 space = SpaceEstimate(0, 0, 0, 0, true),
                 targetAllowed = WorkMode.entries.associateWith { true },

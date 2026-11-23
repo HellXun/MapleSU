@@ -47,15 +47,6 @@ object MoveSet {
         MoveEntry("/data/adb/sevenk", MoveKind.TREE, MoveMount.SAME_AS_STORE, WorkMode.LITE, MoveEntry.REAL_DIR),
     )
 
-    /** 主文档:305-309。 */
-    val KSU_MOVE_SET: List<MoveEntry> = listOf(
-        MoveEntry("/data/adb/ksu", MoveKind.TREE, MoveMount.SAME_AS_STORE, WorkMode.KSU, MoveEntry.REAL_DIR),
-        MoveEntry("/data/adb/ksud", MoveKind.FILE, MoveMount.SAME_AS_STORE, WorkMode.KSU, MoveEntry.FILE),
-        MoveEntry("/metadata/vold/ksu", MoveKind.TREE, MoveMount.CROSS_MOUNT_COPY, WorkMode.KSU, MoveEntry.REAL_DIR),
-        MoveEntry("/metadata/watchdog/ksu", MoveKind.TREE, MoveMount.CROSS_MOUNT_COPY, WorkMode.KSU, MoveEntry.REAL_DIR),
-        MoveEntry("/metadata/ksu", MoveKind.TREE, MoveMount.CROSS_MOUNT_COPY, WorkMode.KSU, MoveEntry.REAL_DIR),
-    )
-
     /**
      * installer 锁 + 待处理标记目录（与 `ServiceModeSwitchWiring.INSTALLER_ROOT` 同值）。
      *
@@ -100,7 +91,6 @@ object MoveSet {
 
     fun moveSetFor(mode: WorkMode): List<MoveEntry> = when (mode) {
         WorkMode.LITE -> LITE_MOVE_SET
-        WorkMode.KSU -> KSU_MOVE_SET
     }
 
     /** live → store：`modes/<M>/data` + livePath（去掉前导 '/'），保证可逆且自描述。 */

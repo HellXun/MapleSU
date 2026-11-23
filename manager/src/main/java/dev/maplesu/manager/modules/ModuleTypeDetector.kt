@@ -136,9 +136,9 @@ object ModuleInstallRouter {
             ModuleRouting(true, ModuleInstallBackend.MAPLESU_ULTRA)
         mode == WorkMode.LITE && type == ModuleType.KERNELSU ->
             ModuleRouting(true, ModuleInstallBackend.LITE_SCRIPT)
-        mode == WorkMode.KSU && type == ModuleType.KERNELSU ->
+        false && type == ModuleType.KERNELSU ->
             ModuleRouting(true, ModuleInstallBackend.KSU_DAEMON)
-        mode == WorkMode.KSU && type == ModuleType.MAPLESU ->
+        false && type == ModuleType.MAPLESU ->
             ModuleRouting(false, code = UNSUPPORTED_IN_MODE, reason = "MapleSU_Ultra module is not supported in KSU mode")
         else -> ModuleRouting(false, code = UNKNOWN_TYPE)
     }

@@ -108,11 +108,6 @@ internal fun InstallScreenMiuix(
                             onSelectBootImage = actions.onSelectBootImage,
                         )
                     }
-                    InstallTargetSelectionSection(
-                        state = uiState,
-                        onSelectMode = actions.onSelectTargetMode,
-                        modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
-                    )
                     Card(modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
                         InstallPartitionSection(
                             state = uiState,

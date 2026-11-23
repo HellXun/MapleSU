@@ -21,7 +21,6 @@ object LiteModuleModePolicy {
     /** 拒绝原因（日志/诊断用；允许时返回 null）。 */
     fun rejectionReason(mode: WorkMode?): String? = when (mode) {
         WorkMode.LITE -> null
-        WorkMode.KSU -> "MODE_KSU: lite module worker is Ultra-only"
         null -> "MODE_UNRESOLVED: lite module worker blocked"
     }
 }

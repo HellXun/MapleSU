@@ -132,10 +132,7 @@ object InstallPartitionPolicy {
     val NORMAL_DEFAULT: InstallPartition = InstallPartition.INIT_BOOT
 
     /** 该模式下的全部可选值（Ultra = 单元素列表，选择器据此决定"能不能点"）。 */
-    fun optionsFor(mode: InstallTargetMode): List<InstallPartition> = when (mode) {
-        InstallTargetMode.ULTRA -> listOf(ULTRA_FIXED)
-        InstallTargetMode.NORMAL -> NORMAL_SELECTABLE
-    }
+    fun optionsFor(mode: InstallTargetMode): List<InstallPartition> = listOf(ULTRA_FIXED)
 
     /** 该模式下这个分区是否可选（Ultra 下 `boot` 为 true、`init_boot` 为 false）。 */
     fun isSelectable(mode: InstallTargetMode, partition: InstallPartition): Boolean =
@@ -179,9 +176,6 @@ object InstallPartitionPolicy {
                 } else InstallPartitionResolution.Ready(selected)
             }
 
-            InstallTargetMode.NORMAL -> InstallPartitionResolution.Ready(
-                requestedPartition ?: automaticNormal(availablePartitions, kmi),
-            )
         }
     }
 

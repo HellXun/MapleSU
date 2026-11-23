@@ -69,13 +69,11 @@ object ModeGate {
 
     private fun modeWire(): String = when (val mode = ModeRuntime.active) {
         WorkMode.LITE -> "lite"
-        WorkMode.KSU -> "ksu"
         null -> "none"
     }
 
     private fun defaultReason(): ModeGateFormat.Reason = when (ModeRuntime.active) {
         WorkMode.LITE -> ModeGateFormat.Reason.LITE
-        WorkMode.KSU -> ModeGateFormat.Reason.KSU
         null -> ModeGateFormat.Reason.UNDETERMINED
     }
 

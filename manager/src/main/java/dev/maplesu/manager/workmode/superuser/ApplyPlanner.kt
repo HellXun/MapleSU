@@ -27,7 +27,6 @@ data class PlannedApply(
         fun granularityOf(target: BackendId): Granularity = when (target) {
             BackendId.A_DIRECT -> Granularity.UID
             BackendId.A_ULTRA -> Granularity.PACKAGE
-            BackendId.B_KSU -> Granularity.UID_PACKAGE_PROFILE
         }
     }
 }
@@ -49,7 +48,7 @@ object ApplyPlanner {
                 continue
             }
             val rotated = intent.degraded.contains(GrantMerge.ROTATED_MARKER)
-            if (intent.identityStale || (rotated && target != BackendId.B_KSU)) {
+            if (intent.identityStale || rotated) {
                 // A_DIRECT/A_ULTRA：身份待确认不自动放行；B_KSU 可兑现（内核按当前包/uid 裁决）。
                 skipped++
                 continue

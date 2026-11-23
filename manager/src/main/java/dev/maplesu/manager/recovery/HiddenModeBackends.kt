@@ -209,7 +209,6 @@ object HiddenModeBackends {
         ksuModuleInstaller: BootHookInstaller? = null,
     ): HiddenModeBackend? = when (mode) {
         WorkMode.LITE -> UltraEnvBackend(ultraRoot, ultraModuleInstaller)
-        WorkMode.KSU -> KsuBackend(ksuRoot, ksuModuleInstaller)
         null -> null
     }
 }

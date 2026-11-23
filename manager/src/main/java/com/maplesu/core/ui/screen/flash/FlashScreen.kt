@@ -118,11 +118,6 @@ fun FlashScreen(flashIt: FlashIt, onBackEnabledChange: (Boolean) -> Unit) {
                 }
             }
         }
-        progress.result?.imagesRequired?.let { request ->
-            dev.maplesu.manager.workmode.ui.WorkModeImageDialog(request, busy = false, readError = null,
-                onConfirm = { boot, initBoot -> installation.continueModeSwitch(context.applicationContext, boot, initBoot) },
-                onDismiss = { navigator.pop() })
-        }
         restoreAction = { installation.restore(context.applicationContext) }
         LaunchedEffect(progress) {
             // 安装执行体逐行上报日志，界面持续跟随本次任务。
@@ -280,9 +275,7 @@ fun FlashScreen(flashIt: FlashIt, onBackEnabledChange: (Boolean) -> Unit) {
         flashingStatus = flashingStatus,
         showJailbreakWarning = false,
         rebootLabelRes = if (softReboot) R.string.reboot_soft else R.string.reboot,
-        showCloseAction = dev.maplesu.manager.workmode.ModeRuntime.active ==
-            dev.maplesu.manager.workmode.WorkMode.KSU &&
-            flashingStatus == FlashingStatus.SUCCESS && !showRebootAction,
+        showCloseAction = false,
         actionInProgress = rebooting,
         stage = flashStage,
         outcome = flashOutcome,

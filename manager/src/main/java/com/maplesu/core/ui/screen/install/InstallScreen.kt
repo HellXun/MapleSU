@@ -160,7 +160,7 @@ fun InstallScreen(
     val ultraAction = UltraInstallAction.AUTOMATIC
     var observedCarrier by remember { mutableStateOf<String?>(null) }
     var bridgeFailure by remember { mutableStateOf<String?>("ULTRA_KERNEL_INIT_BOOT_ARTIFACT_REQUIRED") }
-    var storedPartition by rememberSaveable { mutableStateOf(InstallPartitionPolicy.NORMAL_DEFAULT) }
+    var storedPartition by rememberSaveable { mutableStateOf(InstallPartition.BOOT) }
     var partitionTouched by rememberSaveable { mutableStateOf(false) }
     var imagePartition by remember { mutableStateOf<InstallPartition?>(null) }
     // 事务进行中：选择器仍然可见但不可操作（`InstallTargetModePolicy` 是既有策略，纯函数）。
@@ -173,13 +173,10 @@ fun InstallScreen(
     var deviceKernelRelease by remember { mutableStateOf<String?>(null) }
     var kernelReleaseLoading by remember { mutableStateOf(true) }
     val partition = if (installMethod is InstallMethod.SelectFile && imagePartition != null) imagePartition!!
-        else if (targetMode == InstallTargetMode.ULTRA) {
+        else {
             val current = InstallPartition.fromWire(observedCarrier)
             if (partitionTouched) storedPartition else current ?: InstallPartition.BOOT
         }
-        else if (partitionTouched) storedPartition
-        else InstallPartitionPolicy.automaticNormal(installerTarget?.availablePartitions,
-            dev.maplesu.manager.workmode.switch.ModeSwitchKmi.parse(deviceKernelRelease))
     LaunchedEffect(Unit) {
         deviceKernelRelease = withContext(Dispatchers.IO) { readDeviceKernelRelease() }
         kernelReleaseLoading = false
@@ -303,12 +300,6 @@ fun InstallScreen(
     LaunchedEffect(bootSourceKey, bootProbeKey, kernelReleaseLoading, targetMode, detectionRevision, pageResumed, hasRoot) {
         pairedBootObservation = null
         if (!pageResumed) return@LaunchedEffect
-        // Normal 的目标是"设备 KMI × 分区"，与 Ultra 内核版本无关：不做这次探测
-        // （既不白拷几百 MB 镜像，也不会在 Normal 下闪出 Ultra 的"修不了"）。
-        if (targetMode == InstallTargetMode.NORMAL) {
-            bootFlow = null
-            return@LaunchedEffect
-        }
         // 等设备内核读完再探测：否则"当前 boot"来源会先闪一个"读不到内核版本"再变成真的。
         if (kernelReleaseLoading) return@LaunchedEffect
         val method = installMethod
@@ -502,34 +493,15 @@ fun InstallScreen(
         }
     }
 
-    // File KMI resolution belongs to the producer; opening a file does not wait for uname.
-    val normalDecision = if (targetMode == InstallTargetMode.NORMAL &&
-        (installMethod is InstallMethod.SelectFile || !kernelReleaseLoading)) {
-        InstallTargetDispatch.decide(
-            installTargetRequestFor(
-                method = installMethod,
-                target = InstallTargetMode.NORMAL,
-                kernelRelease = deviceKernelRelease,
-                sdkInt = Build.VERSION.SDK_INT,
-                partition = partition.wire,
-            ),
-        )
-    } else {
-        null
-    }
-
     val state = InstallUiState(
         installMethod = installMethod,
         installMethodOptions = installMethodOptions,
         bootFlow = bootFlow,
         targetMode = targetMode,
         partition = partition,
-        partitionOptions = if (targetMode == InstallTargetMode.ULTRA) {
-            if (installMethod is InstallMethod.SelectFile && imagePartition != null) listOf(imagePartition!!)
-            else InstallPartition.ALLOWED.filter { installerTarget?.availablePartitions?.contains(it.wire) ?: (it == partition) }
-        } else InstallPartitionPolicy.optionsFor(targetMode),
+        partitionOptions = if (installMethod is InstallMethod.SelectFile && imagePartition != null) listOf(imagePartition!!)
+        else InstallPartition.ALLOWED.filter { installerTarget?.availablePartitions?.contains(it.wire) ?: (it == partition) },
         targetSelectable = !selectionsLocked,
-        normalDecision = normalDecision,
         migrationEntry = migrationEntry,
         managerInstalled = managerInstalled,
         directAccessReady = hasRoot && pageResumed && installerTarget != null && existingRootConflictAccepted,
@@ -590,38 +562,9 @@ fun InstallScreen(
                 }
             )
         },
-        onSelectTargetMode = { mode ->
-            if (!selectionsLocked && pageResumed) {
-                if (targetMode != mode) {
-                    moduleChoiceModel.reset()
-                    installAfterModuleChoice = false
-                    targetMode = mode
-                    partitionTouched = false
-                    observedCarrier = null
-                    installerTarget = null
-                    sourceRequest++
-                }
-                if (UltraDirectInstallPolicy.requiresModuleChoice(mode, ModeRuntime.active) &&
-                    hasRoot && installMethod !is InstallMethod.SelectFile) {
-                    moduleChoiceModel.request()
-                }
-            }
-        },
         onSelectPartition = { requested ->
-            if (vivoDevice && targetMode == InstallTargetMode.NORMAL && requested == InstallPartition.BOOT &&
-                requested != partition && !selectionsLocked) {
-                vivoBootWarning = true
-                return@InstallScreenActions
-            }
-            // Ultra 按实际选项和当前操作选择；Normal 保留既有分区策略。
-            val next = if (targetMode == InstallTargetMode.ULTRA) {
+            val next =
                 if (!selectionsLocked && requested in state.partitionOptions && !state.partitionFixed) requested else storedPartition
-            } else InstallPartitionSelection.select(
-                mode = targetMode,
-                stored = storedPartition,
-                requested = requested,
-                locked = selectionsLocked,
-            )
             if (next != storedPartition) {
                 installerTarget = null
                 sourceRequest++
@@ -685,12 +628,6 @@ fun InstallScreen(
     VivoBootChoiceDialog(show = vivoBootWarning,
         onConfirm = {
             vivoBootWarning = false
-            if (!selectionsLocked && targetMode == InstallTargetMode.NORMAL) {
-                storedPartition = InstallPartitionSelection.select(targetMode, storedPartition, InstallPartition.BOOT)
-                partitionTouched = true
-                installerTarget = null
-                sourceRequest++
-            }
         }, onDismiss = { vivoBootWarning = false })
 }
 

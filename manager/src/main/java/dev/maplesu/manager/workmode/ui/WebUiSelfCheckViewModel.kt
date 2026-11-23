@@ -37,10 +37,6 @@ class WebUiSelfCheckViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(WebUiSelfCheckUi())
     val uiState: StateFlow<WebUiSelfCheckUi> = _uiState.asStateFlow()
 
-    private val isKsu: Boolean
-        get() = dev.maplesu.manager.workmode.ModeRuntime.active ==
-            dev.maplesu.manager.workmode.WorkMode.KSU
-
     init {
         refreshBasics()
     }
@@ -49,14 +45,9 @@ class WebUiSelfCheckViewModel : ViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             val mode = when (dev.maplesu.manager.workmode.ModeRuntime.active) {
                 dev.maplesu.manager.workmode.WorkMode.LITE -> "Ultra 环境"
-                dev.maplesu.manager.workmode.WorkMode.KSU -> "Normal"
                 null -> "未判定"
             }
-            val backend = if (isKsu) {
-                "KERNELSU 守护"
-            } else {
-                runCatching { LiteHiddenRuntimeProxy.rootBackendLabel() }.getOrDefault("UNKNOWN")
-            }
+            val backend = runCatching { LiteHiddenRuntimeProxy.rootBackendLabel() }.getOrDefault("UNKNOWN")
             val link = runCatching { LiteWebAdminController(ksuApp).url() }.getOrNull().orEmpty()
             _uiState.update {
                 it.copy(
@@ -75,26 +66,18 @@ class WebUiSelfCheckViewModel : ViewModel() {
         viewModelScope.launch {
             val result = withContext(Dispatchers.IO) {
                 runCatching {
-                    if (isKsu) {
-                        val ok = com.maplesu.core.ui.util.WebAdminCli.setEnabled(true)
-                        if (ok) "ok" else "fail: " + com.maplesu.core.ui.util.WebAdminCli.status().take(80)
+                    val controller = LiteWebAdminController(ksuApp)
+                    val info = controller.preparePreviewUrl()
+                    val status = controller.start()
+                    if (status.running) {
+                        "ok port=${status.port ?: info?.port}"
                     } else {
-                        val controller = LiteWebAdminController(ksuApp)
-                        val info = controller.preparePreviewUrl()
-                        val status = controller.start()
-                        if (status.running) {
-                            "ok port=${status.port ?: info?.port}"
-                        } else {
-                            "fail: " + (status.error.ifBlank { "START_FAILED" })
-                        }
+                        "fail: " + (status.error.ifBlank { "START_FAILED" })
                     }
                 }.getOrDefault("fail: BACKEND_UNAVAILABLE")
             }
             val link = withContext(Dispatchers.IO) {
-                runCatching {
-                    if (isKsu) com.maplesu.core.ui.util.WebAdminCli.url()
-                    else LiteWebAdminController(ksuApp).url().orEmpty()
-                }.getOrDefault("")
+                runCatching { LiteWebAdminController(ksuApp).url().orEmpty() }.getOrDefault("")
             }
             _uiState.update {
                 it.copy(busy = false, startResult = result, webUiLink = if (result.startsWith("ok")) link else "")
@@ -124,15 +107,9 @@ class WebUiSelfCheckViewModel : ViewModel() {
                 buildList {
                     add("mode=${modeWire()}")
                     add("rootBackend=${_uiState.value.rootBackendLabel}")
-                    if (isKsu) {
-                        add("daemon=${com.maplesu.core.ui.util.WebAdminCli.status().ifBlank { "UNAVAILABLE" }}")
-                        add("bootPersistence=" + runCatching { dev.maplesu.manager.liteweb.UnavailableHiddenModeBackend.mode() }
-                            .getOrDefault(dev.maplesu.manager.liteweb.LiteWebModeInfo()).let { "UNKNOWN" })
-                    } else {
-                        val status = runCatching { LiteWebAdminController(ksuApp).status() }.getOrNull()
-                        add("daemonRunning=${status?.running ?: "UNKNOWN"}")
-                        add("port=${status?.port ?: "UNKNOWN"}")
-                    }
+                    val status = runCatching { LiteWebAdminController(ksuApp).status() }.getOrNull()
+                    add("daemonRunning=${status?.running ?: "UNKNOWN"}")
+                    add("port=${status?.port ?: "UNKNOWN"}")
                     add("hidden=${runCatching { com.maplesu.core.ui.security.Stealth.isEnabled() }.getOrDefault(false)}")
                     add("backup=MODE_BACKEND_UNAVAILABLE")
                 }
@@ -184,7 +161,6 @@ class WebUiSelfCheckViewModel : ViewModel() {
 
     private fun modeWire(): String = when (dev.maplesu.manager.workmode.ModeRuntime.active) {
         dev.maplesu.manager.workmode.WorkMode.LITE -> "LITE"
-        dev.maplesu.manager.workmode.WorkMode.KSU -> "KSU"
         null -> "UNRESOLVED"
     }
 }

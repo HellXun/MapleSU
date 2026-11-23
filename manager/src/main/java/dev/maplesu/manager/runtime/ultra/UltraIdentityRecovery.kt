@@ -35,7 +35,7 @@ internal object UltraIdentityRecovery {
     internal fun blocked(context: Context, preparingUpgrade: Boolean = false) = LiteImplantQuiesceGate.isBlocked() ||
         (!preparingUpgrade && UltraEnvironmentProbe.currentSnapshot(context).state == UltraEnvironmentProbe.State.Fault) ||
         UltraRootKeyStore.isSuspended(context) || WorkModeSwitchSession.executing ||
-        ModeRuntime.active == WorkMode.KSU ||
+        false ||
         // A temporary owner must never verify, pair or back up a historical permanent key.
         UltraSdkSession.current(context) != null ||
         ModeRuntime.latestDetection?.trace?.firstOrNull { it.id == "S1" }?.ok == true

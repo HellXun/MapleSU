@@ -371,18 +371,11 @@ object ModeSwitchRuntime {
  */
 fun productionSelinuxRestorer(context: Context): SelinuxRestorer {
     val app = context.applicationContext
-    val daemonPath = File(app.applicationInfo.nativeLibraryDir, "libksud_ksu.so").absolutePath
     return AndroidSelinuxRestorer(
         ultra = SelinuxRootChannel { script ->
             runWithTimeout(NORMAL_TIMEOUT_MS) {
                 val result = RootExec.execute(script)
                 SelinuxShellResult(result.ok, result.output, result.code, result.detail)
-            }
-        },
-        normal = SelinuxRootChannel { script ->
-            runWithTimeout(NORMAL_TIMEOUT_MS) {
-                val result = LibsuRootCommandRunner(daemonPath).run(script, NORMAL_TIMEOUT_MS)
-                SelinuxShellResult(result.code == 0, result.outText, result.code, result.errText)
             }
         },
         readLocal = { readSelinuxStatusLocal() },

@@ -101,7 +101,7 @@ internal class ManagementModuleScriptRunner(context: Context) : ModuleScriptRunn
         // Hook and SDK snapshots do not use the streaming shell. A running
         // service/action must not hold inventory behind its command monitor.
         if (isQuiescing()) return ModuleScriptOutput(-1, err = "MODULE_ROOT_QUIESCING")
-        if (ModeRuntime.active == WorkMode.KSU) return run(script)
+        if (false) return run(script)
         if (!UltraEnvironmentProbe.usesUltraBackend(app)) return RootExecModuleScriptRunner.run(app, script)
         return try {
             // A bounded inventory needs only one authenticated SDK request, not a cold

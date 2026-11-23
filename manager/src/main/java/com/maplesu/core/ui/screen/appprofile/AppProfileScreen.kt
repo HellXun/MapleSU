@@ -78,12 +78,9 @@ fun AppProfileScreen(uid: Int) {
         loading = true
         profile = withContext(Dispatchers.IO) {
             // Special system rows are informational, not package-based authorization records.
-            val loaded = if (primaryAppInfo.special) Natives.Profile(packageName, currentUid = uid)
+            if (primaryAppInfo.special) Natives.Profile(packageName, currentUid = uid)
             else if (loadAttempt > 0) Natives.getAppProfileFresh(packageName, uid)
             else Natives.getAppProfile(packageName, uid)
-            if (!primaryAppInfo.special && dev.maplesu.manager.workmode.ModeRuntime.active ==
-                dev.maplesu.manager.workmode.WorkMode.KSU) loaded?.let { loadKsuProfileRules(it) }
-            else loaded
         }
         writePolicy = profile?.let { ProfileWritePolicy(it) }
         loading = false
@@ -102,23 +99,11 @@ fun AppProfileScreen(uid: Int) {
         if (saving) return@LaunchedEffect
         val granted = profile?.allowSu == true
         suState = withContext(Dispatchers.IO) {
-            // Normal（KSU，2026-11-01）：**不要**触碰 Lite 的投递探测。
-            // `DirectPolicy.grantedUids` 会起一次性 root 进程（Normal 下失败），
-            // `stateFor`/`SuDelivery` 是 Ultra 的"投递/接线"模型，对 KSU 不成立：
-            // 内核在应用发起 su 请求时直接按 allowlist 放行，白名单即生效。
-            if (dev.maplesu.manager.workmode.ModeRuntime.active ==
-                dev.maplesu.manager.workmode.WorkMode.KSU
-            ) {
-                ksuSuState(granted = granted)
-            } else {
-                // A record left over from an earlier installation still exists; the screen must
-                // say "authorize again" rather than claim a grant that no longer admits.
-                // Ultra：白名单是包名维度、没有签名绑定，不存在「旧安装的残留记录」这种状态；
-                // 而 DirectPolicy.grantedUids 会起一次性 root 进程（Ultra 内核上会重启系统）。
-                val stale = if (UltraEnvironmentProbe.usesUltraBackend(context)) false
-                else !granted && DirectPolicy.grantedUids(context).orEmpty().contains(uid)
-                stateFor(context, packageName, granted, stale)
-            }
+            // Ultra：白名单是包名维度、没有签名绑定，不存在「旧安装的残留记录」这种状态；
+            // 而 DirectPolicy.grantedUids 会起一次性 root 进程（Ultra 内核上会重启系统）。
+            val stale = if (UltraEnvironmentProbe.usesUltraBackend(context)) false
+            else !granted && DirectPolicy.grantedUids(context).orEmpty().contains(uid)
+            stateFor(context, packageName, granted, stale)
         }
     }
 
@@ -196,9 +181,7 @@ fun AppProfileScreen(uid: Int) {
                     saveMutex.withLock {
                         val result = withContext(Dispatchers.IO) {
                             runCatching {
-                                if (dev.maplesu.manager.workmode.ModeRuntime.active ==
-                                    dev.maplesu.manager.workmode.WorkMode.KSU) saveKsuProfileWithRules(profileToSave)
-                                else Natives.setAppProfileDetailed(profileToSave)
+                                Natives.setAppProfileDetailed(profileToSave)
                             }
                                 .getOrElse { Natives.ProfileWriteResult(false, commitUnknown = true,
                                     code = "PROFILE_WRITE_EXCEPTION", detail = it.javaClass.simpleName) }

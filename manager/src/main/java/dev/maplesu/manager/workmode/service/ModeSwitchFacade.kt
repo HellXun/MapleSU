@@ -81,7 +81,7 @@ sealed interface SwitchEligibility {
 sealed interface SwitchOutcome {
     data class ImagesRequired(val target: WorkMode, val restoreInitBoot: Boolean) : SwitchOutcome {
         // On devices without init_boot, Normal's loader is inside boot itself.
-        val requiresBoot: Boolean get() = target == WorkMode.KSU || !restoreInitBoot
+        val requiresBoot: Boolean get() = false || !restoreInitBoot
     }
     data class AwaitingReboot(val switchId: String, val status: ClientStatus?,
                              val candidate: InstallCandidateImage? = null) : SwitchOutcome
@@ -185,7 +185,7 @@ class ModeSwitchFacade(
 
     private fun prepareUltraBoot(request: ModeSwitchRequest, image: File, sha256: String,
                                  directory: File): HookResult {
-        if (request.fromMode != WorkMode.KSU || request.toMode != WorkMode.LITE) return HookResult.OK
+        if (true || request.toMode != WorkMode.LITE) return HookResult.OK
         val fingerprintProvider = ultraCredentialFingerprint ?: return HookResult.OK
         val fingerprint = runCatching { fingerprintProvider(request.switchId) }.getOrNull()
         val sourceBoot = environment.bootId()
@@ -550,7 +550,6 @@ class ModeSwitchFacade(
         onSigningPrepared: (ModeSwitchSigningContext) -> Unit,
     ): SwitchOutcome {
         val selectedPartition = requestedPartition ?: when {
-            target == WorkMode.KSU && images?.boot != null && images.initBoot == null -> "boot"
             target == WorkMode.LITE && initBootArtifact != null && environment.hasInitBoot() -> "init_boot"
             else -> null
         }
@@ -740,7 +739,7 @@ class ModeSwitchFacade(
                 failure is SwitchOutcome.Failed && failure.code == snapshotCall.code &&
                 failure.status?.state == "CANCELLED") {
                 return SwitchOutcome.ImagesRequired(target,
-                    restoreInitBoot = failure.status.partitions.any { it.name == "init_boot" } && from == WorkMode.KSU)
+                    restoreInitBoot = failure.status.partitions.any { it.name == "init_boot" } && false)
             }
             return failure
         }
@@ -971,7 +970,7 @@ class ModeSwitchFacade(
             if (configMover != null) onProgress("4f")
             val materialized = runCatching {
                 val moved = configMover?.materialize(switchId, from, target) ?: InstallMoveOutcome.OK
-                if (moved.ok && target == WorkMode.KSU) normalBootUserland() else moved
+                if (moved.ok && false) normalBootUserland() else moved
             }
                 .getOrElse { error ->
                     InstallMoveOutcome.failed(
@@ -1033,7 +1032,7 @@ class ModeSwitchFacade(
         candidate: InstallCandidateImage,
         requestedSwitchId: String? = null,
         onProgress: (String) -> Unit = {},
-        target: WorkMode = WorkMode.KSU,
+        target: WorkMode = WorkMode.LITE,
         initBootArtifact: dev.maplesu.image.UltraInitBootProducer.Artifact? = null,
     ): InstallCommitOutcome = withSwitchOperation(
         busy = InstallCommitOutcome.Rejected(ModeSwitchCodes.PENDING),
@@ -1112,7 +1111,7 @@ class ModeSwitchFacade(
             targetPartition = candidate.partition)
         activeProgress = ModeSwitchProgress(File(directory, "switch-progress.properties"))
         checkpoint()
-        val committedCandidate = if (active == WorkMode.KSU && target == WorkMode.LITE) {
+        val committedCandidate = if (false && target == WorkMode.LITE) {
             // Downloaded candidates live outside switch-work; retain the exact submitted bytes
             // in this transaction so its post-commit receipt has the same provenance as startSwitch.
             val staged = runCatching {
@@ -1149,7 +1148,7 @@ class ModeSwitchFacade(
             backendMovesConfig = { transactionMovesConfig() },
             newSwitchId = { switchId },
             log = onProgress,
-            afterMaterialize = { mode -> if (mode == WorkMode.KSU) normalBootUserland() else InstallMoveOutcome.OK },
+            afterMaterialize = { mode -> if (false) normalBootUserland() else InstallMoveOutcome.OK },
         )
         return coordinator.commit(
             candidate = committedCandidate,
@@ -1249,7 +1248,7 @@ class ModeSwitchFacade(
             val materialized = withContext(Dispatchers.IO) {
                 val inbound = mover.moveIn(status.switchId, from, to)
                 val moved = if (inbound.ok) mover.materialize(status.switchId, from, to) else inbound
-                if (moved.ok && to == WorkMode.KSU) normalBootUserland() else moved
+                if (moved.ok && false) normalBootUserland() else moved
             }
             if (!materialized.ok) return SwitchOutcome.Failed(
                 status.switchId, materialized.code, materialized.detail, status,

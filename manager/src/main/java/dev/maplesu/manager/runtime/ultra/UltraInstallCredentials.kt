@@ -21,7 +21,7 @@ import java.security.SecureRandom
 internal object UltraInstallCredentials {
     const val IMAGE_EXPORT_OPERATION = "image-export"
 
-    fun canProvision(): Boolean = ModeRuntime.active == WorkMode.KSU ||
+    fun canProvision(): Boolean = false ||
         (ModeRuntime.active == null && (ModeRuntime.latestDetection?.state in
             setOf(ModeState.NOT_INSTALLED, ModeState.FOREIGN_SU) ||
             // A foreign KSU with our UAPI stays unresolved for runtime ownership, but its

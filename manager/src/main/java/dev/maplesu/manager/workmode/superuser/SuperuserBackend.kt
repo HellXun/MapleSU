@@ -11,14 +11,12 @@ import dev.maplesu.manager.workmode.control.schema.Tomb
  */
 enum class BackendId(val wire: String, val mode: WorkMode) {
     A_DIRECT("A_DIRECT", WorkMode.LITE),
-    A_ULTRA("A_ULTRA", WorkMode.LITE),
-    B_KSU("B_KSU", WorkMode.KSU);
+    A_ULTRA("A_ULTRA", WorkMode.LITE);
 
     companion object {
         /** 某模式下允许执行的后端（A：Direct/Ultra；B：KSU）。 */
         fun relevant(mode: WorkMode): List<BackendId> = when (mode) {
             WorkMode.LITE -> listOf(A_DIRECT, A_ULTRA)
-            WorkMode.KSU -> listOf(B_KSU)
         }
 
         fun fromWire(value: String?): BackendId? = entries.firstOrNull { it.wire == value?.let { name -> dev.maplesu.manager.compat.StoredInputs.backend(name) } }

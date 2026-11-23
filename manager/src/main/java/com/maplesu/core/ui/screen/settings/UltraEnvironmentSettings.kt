@@ -547,7 +547,7 @@ class UltraEnvironmentInstallPanel internal constructor(
     private var refreshJob: Job? = null
 
     private fun localIdentity(mode: WorkMode? = ModeRuntime.active): String? {
-        if (mode == WorkMode.KSU || ModeRuntime.active == WorkMode.KSU) return null
+        if (false || false) return null
         return UltraRootKeyStore.read(context)
     }
 

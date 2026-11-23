@@ -22,7 +22,6 @@ import com.maplesu.core.ui.navigation3.LocalNavigator
 import com.maplesu.core.ui.navigation3.Navigator
 import com.maplesu.core.ui.navigation3.Route
 import com.maplesu.core.ui.viewmodel.SettingsViewModel
-import dev.maplesu.manager.workmode.ui.WorkModeSwitchSheet
 import com.maplesu.core.R
 
 @Composable
@@ -73,30 +72,17 @@ fun SettingPager(
         onSetUiModeIndex = { index ->
             viewModel.setUiMode(if (index == 0) UiMode.Miuix.value else UiMode.Material.value)
         },
-        onOpenProfileTemplate = { navigator.push(Route.AppProfileTemplate) },
-        onSetSuCompatMode = viewModel::setSuCompatMode,
-        onSetKernelUmountEnabled = viewModel::setKernelUmountEnabled,
-        onSetSelinuxHideEnabled = viewModel::setSelinuxHideEnabled,
         onSetUltraModulePolicyLoad = viewModel::setUltraModulePolicyLoad,
         onSetUltraModulePolicyHide = { enabled ->
             if (enabled && uiState.ultraModulePolicy.hideNeedsRiskConfirmation) showUltraPolicyRisk = true
             else viewModel.setUltraModulePolicyHide(enabled)
         },
-        onSetSulogEnabled = viewModel::setSulogEnabled,
-        onSetAdbRootEnabled = viewModel::setAdbRootEnabled,
-        onSetShellSuAdbOnlyEnabled = viewModel::setShellSuAdbOnlyEnabled,
-        onSetDefaultUmountModules = viewModel::setDefaultUmountModules,
         onSetEnableWebDebugging = viewModel::setEnableWebDebugging,
         onSetUseSoftReboot = viewModel::setUseSoftReboot,
         onOpenAbout = { navigator.push(Route.About) },
         onOpenWorkMode = {
             if (!uiState.hiddenMasked && uiState.workModeEntry.showSettingsRow) showWorkModeSheet = true
         },
-        onSetStealthEnabled = viewModel::setStealthEnabled,
-        onOpenNormalHidden = viewModel::openNormalHidden,
-        onSetWebAdminEnabled = viewModel::setWebAdminEnabled,
-        onCopyWebAdminUrl = viewModel::copyWebAdminUrl,
-        onOpenWebAdminUrl = viewModel::openWebAdminUrl,
         onOpenLiteHidden = dropUnlessResumed { navigator.push(Route.LiteHidden) },
         onOpenWebUiSelfCheck = dropUnlessResumed { navigator.push(Route.WebUiSelfCheck) },
     )
@@ -120,17 +106,6 @@ fun SettingPager(
                 },
             ) { ThemeText(stringResource(R.string.ultra_module_policy_risk_message)) }
         }
-        WorkModeSwitchSheet(show = showWorkModeSheet && !uiState.hiddenMasked, onDismiss = { showWorkModeSheet = false })
-        NormalHiddenDialog(
-            ui = uiState.normalHidden,
-            onDismiss = viewModel::dismissNormalHidden,
-            onPrepare = viewModel::prepareNormalHidden,
-            onCopyLink = viewModel::copyNormalHiddenLink,
-            onOpenLink = viewModel::openNormalHiddenLink,
-            onSaveLink = viewModel::saveNormalHiddenLink,
-            onConfirm = viewModel::confirmNormalHidden,
-            onPortChange = viewModel::setNormalHiddenPort,
-        )
     }
 }
 

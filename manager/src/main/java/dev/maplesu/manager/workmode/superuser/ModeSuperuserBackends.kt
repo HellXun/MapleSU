@@ -9,5 +9,4 @@ internal fun modeSuperuserBackends(
     ksu: () -> SuperuserBackend,
 ): List<SuperuserBackend> = when (mode) {
     WorkMode.LITE -> listOf(lite())
-    WorkMode.KSU -> listOf(ksu())
 }

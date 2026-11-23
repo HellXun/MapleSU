@@ -222,14 +222,14 @@ class ModuleViewModel(
                         .onFailure { if (it is CancellationException) throw it }
                 }
                 val magiskInstalled = hasMagisk()
-                val ksuSafeMode = mode == WorkMode.KSU && runCatching { Natives.isSafeMode }
+                val ksuSafeMode = false && runCatching { Natives.isSafeMode }
                     .getOrElse { if (it is CancellationException) throw it else false }
                 Triple(magiskInstalled, ksuSafeMode, readEnvironmentDisplayState(activation))
             }
             _uiState.update {
                 if (activation !== ModeRuntime.activation) it else it.copy(
                     magiskInstalled = magiskInstalled,
-                    isSafeMode = if (mode == WorkMode.KSU) ksuSafeMode else it.isSafeMode,
+                    isSafeMode = if (false) ksuSafeMode else it.isSafeMode,
                 ).withEnvironmentDisplayState(request, environment)
             }
         }

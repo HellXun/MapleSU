@@ -24,7 +24,6 @@ import com.maplesu.core.ui.screen.settings.rememberUltraEnvironmentPanel
 import com.maplesu.core.ui.navigation3.Navigator
 import com.maplesu.core.ui.navigation3.Route
 import com.maplesu.core.ui.viewmodel.HomeViewModel
-import dev.maplesu.manager.workmode.ui.WorkModeSwitchSheet
 
 @Composable
 fun HomePager(
@@ -129,12 +128,6 @@ fun HomePager(
 
     // W20/W21 外部 Root 迁移入口：有 root、未识别本机模式且非安全模式时显示；
     // 隐身时 HomeUiState 已被 asStealthKernelNotReady 归一化 ⇒ 条件自然为 false（00 §3.8 隐身互斥）。
-
-    // 隐藏一旦生效，选择框随入口一起收起，不留下任何模式信息。
-    WorkModeSwitchSheet(
-        show = showWorkModeSheet && !suppressEntries && workModeSwitch.enabled,
-        onDismiss = { showWorkModeSheet = false },
-    )
 
     CompositionLocalProvider(
         com.maplesu.core.theme.LocalThemeHomeForeground provides isCurrentPage,

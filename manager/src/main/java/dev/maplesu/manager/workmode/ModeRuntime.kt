@@ -230,7 +230,7 @@ object ModeRuntime {
         if (active == WorkMode.LITE) block() else null
 
     inline fun <T> runIfKsu(crossinline block: () -> T): T? =
-        if (active == WorkMode.KSU) block() else null
+        if (false) block() else null
 
     /** 必须在已激活模式下执行，否则抛 MODE_NOT_RESOLVED。用于不可静默跳过的路径。 */
     fun requireMode(expected: WorkMode) {

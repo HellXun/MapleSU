@@ -39,7 +39,6 @@ internal fun AboutMapleDialogMaterial(showModes: Boolean, onDismiss: () -> Unit)
     ) {
         if (showModes) {
             UltraSectionMaterial()
-            NormalSectionMaterial()
         }
         BrandIntroLineMaterial(R.string.about_maple_developers)
         Text(
@@ -61,7 +60,7 @@ private fun UltraSectionMaterial() {
     val palette = ultraBrandPalette(isInDarkTheme())
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(
-            text = aboutModeHeading(WorkMode.LITE),
+            text = aboutModeHeading(),
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Medium,
             color = palette.wordStart,
@@ -84,21 +83,6 @@ private fun UltraSectionMaterial() {
     }
 }
 
-@Composable
-private fun NormalSectionMaterial() {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(
-            text = aboutModeHeading(WorkMode.KSU),
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Medium,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-        Text(
-            text = stringResource(R.string.about_maple_normal),
-            style = MaterialTheme.typography.bodyMedium,
-        )
-    }
-}
 
 @Composable
 private fun CreditsMaterial() {

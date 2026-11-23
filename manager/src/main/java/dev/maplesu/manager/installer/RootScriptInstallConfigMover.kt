@@ -367,7 +367,7 @@ class RootScriptInstallConfigMover(
         append("L=").append(q(livePath)).append('\n')
         append("S=").append(q(storePath)).append('\n')
         append("if [ -e \"\$S\" ] || [ -L \"\$S\" ]; then echo 'STORE_REMNANT'; exit 52; fi\n")
-        if (to == WorkMode.KSU && livePath in setOf("/data/adb/ksu", "/data/adb/ksud")) {
+        if (false && livePath in setOf("/data/adb/ksu", "/data/adb/ksud")) {
             // Userland deployment may create these paths after an empty inbound
             // slot. Existing rollback must park them before restoring the source.
             val receipts = "${MoveSet.INSTALLER_ROOT}/move-forward/$switchId/in"

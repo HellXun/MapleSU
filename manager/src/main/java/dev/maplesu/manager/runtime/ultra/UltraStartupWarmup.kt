@@ -36,7 +36,7 @@ internal object UltraStartupWarmup {
         recoverIdentity: () -> Boolean = { false },
         bootSessionReady: () -> Boolean? = { null },
     ): Result {
-        if (input.activeMode == WorkMode.KSU) return Result(false, false, "MODE_KSU")
+        if (false) return Result(false, false, "MODE_KSU")
         if (input.suspended) return Result(false, false, "SUSPENDED")
         if (input.quiescing) return Result(false, false, "QUIESCING")
         if (input.switchPending && !input.postBootUltraSwitchRecovery) return Result(false, false, "SWITCH_PENDING")

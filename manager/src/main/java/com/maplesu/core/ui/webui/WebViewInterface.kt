@@ -41,7 +41,7 @@ class WebViewInterface internal constructor(
     constructor(state: WebUIState) : this(state, { createRootShell(true) })
     private val webView get() = state.webView
     private val modDir get() = state.modDir
-    private val callbacks = WebUiCallbackScripts(ModeRuntime.active == WorkMode.KSU)
+    private val callbacks = WebUiCallbackScripts(false)
     private val fileIo = KsuIO(shellFactory, ::pageOpen)
     private val packageManager = KsuPm(::pageOpen)
     private val lifecycleLock = Any()

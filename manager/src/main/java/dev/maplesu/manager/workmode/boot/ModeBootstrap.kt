@@ -82,18 +82,13 @@ object ModeBootstrap {
         runCatching { ModeRuntime.bootstrap(appContext) }
             .onFailure { Log.w(TAG, "mode.bootstrap failed (ignored)", it) }
 
-        // 恢复路径（清数据后 restore / 重启收敛已验证）可能在本进程里**已经**是 KSU，
-        // 那种情况下阶段一/二的 Activated 不会再触发一次。这里补一次幂等接线：
-        // 非 KSU 模式直接 Skipped（显式，不静默假设）。
+        // 恢复路径（清数据后 restore / 重启收敛已验证）可能在本进程里**已经**是 Ultra，
+        // 那种情况下阶段一/二的 Activated 不会再触发一次。这里补一次幂等接线。
         runCatching {
-            val restored = ModeRuntime.active
-            if (restored == WorkMode.KSU) {
-                dev.maplesu.manager.workmode.backend.KsuBackendRegistry
-                    .installProduction(appContext, restored)
-            } else if (restored == WorkMode.LITE) {
+            if (ModeRuntime.active == WorkMode.LITE) {
                 dev.maplesu.manager.modules.LiteModuleBootService.request(appContext)
             }
-        }.onFailure { Log.w(TAG, "restored KSU wiring failed (explicit)", it) }
+        }.onFailure { Log.w(TAG, "restored Ultra wiring failed (explicit)", it) }
 
         val coordinator = ModeBootstrapCoordinator(
             pipelineProvider = { runCatching { newPipeline(appContext) }.getOrNull() },
@@ -103,15 +98,6 @@ object ModeBootstrap {
                 if (outcome is BootstrapOutcome.Activated) {
                     runCatching { com.maplesu.core.ui.util.AppearancePreferences.onModeResolved(appContext) }
                         .onFailure { Log.w(TAG, "appearance migration deferred", it) }
-                    // Normal（KSU）管理侧的**唯一生产接线点**：模式真正激活之后才装后端
-                    // （LITE/未判定绝不触碰 KSU 后端）。同步只做便宜的后端装配，
-                    // `ksud install` 部署由注册表排到后台线程。
-                    runCatching {
-                        dev.maplesu.manager.workmode.backend.KsuBackendRegistry
-                            .installProduction(appContext, outcome.mode)
-                    }.onFailure {
-                        Log.w(TAG, "KSU backend wiring failed (explicit, not faked)", it)
-                    }
                     if (outcome.mode == WorkMode.LITE) {
                         // Activation invalidates any in-flight unresolved pairing scope.
                         // Queue a fresh pass through the existing serialized recovery owner.
@@ -363,16 +349,6 @@ object ModeBootstrap {
             is BootstrapOutcome.Activated -> {
                 extras["mode"] = outcome.mode.suffix.lowercase()
                 ModeGate.allow(ModeComponentIds.APP_MODE_BOOTSTRAP, extras = extras)
-                // Mode B（KernelSU）根通道的唯一生产装配点：**只在**激活为 KSU 时注册
-                // `ksud debug su` 通道；LITE/未判定保持未注册（fail-closed）。
-                // 放在 activate 之后：`RootManagement` 只有在 `ModeRuntime.active == KSU`
-                // 时才会走该通道，因此注册先于任何产品调用生效。
-                if (outcome.mode == WorkMode.KSU) {
-                    runCatching { dev.maplesu.manager.ksu.KsuRootChannel.installIfKsu(outcome.mode) }
-                        .onFailure {
-                            Log.w(TAG, "KSU root channel registration failed (stays unregistered)", it)
-                        }
-                }
             }
             is BootstrapOutcome.Unresolved -> {
                 extras["state"] = outcome.state.name.lowercase()

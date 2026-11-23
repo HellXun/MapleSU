@@ -558,8 +558,6 @@ class InstallCommitCoordinator(
 
     private suspend fun call(code: String, block: suspend () -> ClientResult): ClientResult = try {
         block()
-    } catch (abort: KsuInstallAbort) {
-        ClientResult(false, abort.code, abort.detail)
     } catch (error: Throwable) {
         if (error is Error) throw error
         ClientResult(false, code, "${error.javaClass.simpleName}: ${error.message}")

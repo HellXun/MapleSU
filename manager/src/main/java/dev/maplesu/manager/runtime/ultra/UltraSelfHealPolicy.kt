@@ -101,7 +101,6 @@ object UltraSelfHealPolicy {
             return Preflight(ModeSource.NONE, SelfHealDecision.Skip(SelfHealSkip.ALREADY_ATTEMPTED))
         }
         val modeSource = when (facts.mode) {
-            WorkMode.KSU -> return Preflight(ModeSource.NONE, SelfHealDecision.Skip(SelfHealSkip.KSU_MODE))
             WorkMode.LITE -> ModeSource.LITE_RUNTIME
             null -> if (facts.liteEvidence.strong) {
                 ModeSource.LITE_DISK_EVIDENCE

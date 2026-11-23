@@ -41,7 +41,6 @@ internal fun AboutMapleDialogMiuix(show: Boolean, showModes: Boolean, onDismiss:
     ) {
         if (showModes) {
             UltraSectionMiuix()
-            NormalSectionMiuix()
         }
         BrandIntroLineMiuix(R.string.about_maple_developers)
         Text(
@@ -64,7 +63,7 @@ private fun UltraSectionMiuix() {
     val palette = ultraBrandPalette(isInDarkTheme())
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(
-            text = aboutModeHeading(WorkMode.LITE),
+            text = aboutModeHeading(),
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
             color = palette.wordStart,
@@ -83,22 +82,6 @@ private fun UltraSectionMiuix() {
     }
 }
 
-@Composable
-private fun NormalSectionMiuix() {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(
-            text = aboutModeHeading(WorkMode.KSU),
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Medium,
-            color = colorScheme.onSurface,
-        )
-        Text(
-            text = stringResource(R.string.about_maple_normal),
-            fontSize = 14.sp,
-            color = colorScheme.onSurfaceVariantSummary,
-        )
-    }
-}
 
 @Composable
 private fun CreditsMiuix() {

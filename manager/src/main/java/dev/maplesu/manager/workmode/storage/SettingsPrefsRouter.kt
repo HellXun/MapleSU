@@ -26,14 +26,13 @@ object SettingsPrefsPolicy {
 
     fun nameFor(active: WorkMode?): String? = when (active) {
         WorkMode.LITE -> A_NAME
-        WorkMode.KSU -> B_NAME
         null -> null
     }
 
     /** 未判定时的回退名；结果只会是 A / B / 中性 prefs。 */
     fun unresolvedName(lastKnown: WorkMode?, liteEvidencePresent: Boolean): String = when {
         lastKnown == WorkMode.LITE -> A_NAME
-        lastKnown == WorkMode.KSU -> B_NAME
+        false -> B_NAME
         // 明确的 A 证据（已配对过 Lite）：保持 A 行为逐字节等价。
         liteEvidencePresent -> A_NAME
         // 既无提示又无 A 证据：用中性 prefs，禁止默认 A。

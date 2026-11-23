@@ -50,7 +50,6 @@ object ProductionHiddenEnv {
             }.getOrNull()
         })
         val ultraSdkRoot = UltraEnvRootRunner(ultraClient)
-        val routerRoot = RouterRootRunner(app)
         // Ultra-only：隐藏模式的 root 通道只走 SDK（越狱 hook 通道已移除）。
         val ultraRoot = HiddenRootRunner { script -> ultraSdkRoot.run(script) }
 
@@ -58,7 +57,6 @@ object ProductionHiddenEnv {
         val modeRoot = HiddenRootRunner { script ->
             when (ModeRuntime.active) {
                 WorkMode.LITE -> ultraRoot.run(script)
-                WorkMode.KSU -> routerRoot.run(script)
                 null -> RecoveryCommandResult(-1, "MODE_UNRESOLVED")
             }
         }
@@ -93,21 +91,9 @@ object ProductionHiddenEnv {
                 }
             },
         )
-        val ksuDeps = HiddenModeDeps(
-            mode = WorkMode.KSU,
-            root = routerRoot,
-            suAuth = KsuPolicySuAuth,
-            state = KsuStealthHiddenState(
-                stealth = { enabled -> com.maplesu.core.ui.security.Stealth.setEnabled(enabled) },
-                stealthState = { com.maplesu.core.ui.security.Stealth.state() },
-                file = RootFileHiddenState(routerRoot),
-            ),
-            rootAvailable = { runCatching { RootExec.capability(app).available }.getOrDefault(false) },
-            identity = identity,
-        )
         ProductionHiddenModeBackend(
             modeProvider = { ModeRuntime.active },
-            deps = mapOf(WorkMode.LITE to ultraDeps, WorkMode.KSU to ksuDeps),
+            deps = mapOf(WorkMode.LITE to ultraDeps),
             hostFacts = AndroidHostFacts(app),
             bundle = bundle,
             probe = HttpHiddenDaemonProbe(),
@@ -149,19 +135,6 @@ class UltraEnvRootRunner internal constructor(private val execute: (String) -> R
         if (receipt.code != 0) return receipt
         val result = command.decode(receipt.output)
         return RecoveryCommandResult(result.code, result.output)
-    }
-}
-
-/** 既有模式感知路由（LITE 内核凭据 → Ultra 环境）—— B 模式的 root 通道。 */
-class RouterRootRunner(private val context: Context? = null) : HiddenRootRunner {
-    override fun run(script: String): RecoveryCommandResult {
-        val result = runCatching { RootExec.execute(context, script) }.getOrNull()
-            ?: return RecoveryCommandResult(-1, "ROOT_ROUTER_UNAVAILABLE")
-        if (result.ok) return RecoveryCommandResult(0, result.output)
-        return RecoveryCommandResult(
-            if (result.code == 0) -1 else result.code,
-            result.output.ifEmpty { result.detail },
-        )
     }
 }
 
@@ -336,18 +309,6 @@ class UltraEnvSuAuth internal constructor(
         checkNotNull(read(packageName)) { "allowlist_readback_unreadable" }
 }
 
-/**
- * KSU 的 su 授权不是一份可写 allowlist：内核在应用请求时按策略裁决，管理器 UI 负责交互。
- * 因此这里如实返回 [SuAuthOutcome.PolicyManaged]（不谎称「已写白名单」），也没有可回读的列表。
- */
-object KsuPolicySuAuth : HiddenSuAuth {
-    override fun grant(packageName: String): SuAuthOutcome = SuAuthOutcome.PolicyManaged
-
-    override fun revoke(packageName: String): SuAuthOutcome = SuAuthOutcome.PolicyManaged
-
-    override fun isGranted(packageName: String): Boolean = false
-}
-
 /** A：`/data/adb/maplesu/lite_hidden`（复用既有脚本生成器，写后由调用方回读）。 */
 class RootFileHiddenState(
     private val root: HiddenRootRunner,
@@ -392,29 +353,6 @@ class RootFileHiddenState(
             }
         }
         error("unreachable")
-    }
-}
-
-/** B：KSU 内核 stealth（ioctl）+ `lite_hidden` 兼容位；两者都要成功才算写入。 */
-class KsuStealthHiddenState(
-    private val stealth: (Boolean) -> Boolean,
-    private val stealthState: () -> com.maplesu.core.ui.security.Stealth.State,
-    private val file: HiddenStatePort,
-) : HiddenStatePort {
-    override fun write(on: Boolean): Boolean {
-        val stealthOk = runCatching { stealth(on) }.getOrDefault(false)
-        val fileOk = file.write(on)
-        return stealthOk && fileOk
-    }
-
-    override fun read(): Boolean? {
-        val fileState = file.read() ?: return null
-        if (!fileState) return false
-        return when (runCatching { stealthState() }.getOrNull()) {
-            com.maplesu.core.ui.security.Stealth.State.ON -> true
-            com.maplesu.core.ui.security.Stealth.State.OFF -> false
-            else -> null
-        }
     }
 }
 

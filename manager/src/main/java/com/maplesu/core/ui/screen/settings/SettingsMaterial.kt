@@ -73,7 +73,6 @@ import com.maplesu.core.ui.component.material.expressiveTopAppBarColors
 import com.maplesu.core.ui.component.uninstalldialog.UninstallDialog
 import dev.maplesu.manager.workmode.ui.SettingsSection
 import dev.maplesu.manager.workmode.ui.SettingsStatusCopy
-import dev.maplesu.manager.workmode.ui.settingsStatusOf
 import dev.maplesu.manager.workmode.ui.workModeNameRes
 
 /** 分组之间的间距沿用设置主页原有写法。 */
@@ -219,14 +218,6 @@ fun SettingPagerMaterial(
                     }
                 }
 
-                // Ultra-only：Normal（KSU）专属内核设置行已移除，仅保留 SU 兼容。
-                if (modePolicy.shows(SettingsSection.SU_COMPAT) && uiState.managerValid) {
-                    SegmentedColumn(
-                        modifier = GroupPadding,
-                        content = buildList { add { SuCompatRowMaterial(uiState, actions) } },
-                    )
-                }
-
                 // 通用：检查模块更新 + 软重启 + WebView 调试（两模式都消费）。
                 SegmentedColumn(
                     modifier = GroupPadding,
@@ -265,117 +256,11 @@ fun SettingPagerMaterial(
                     },
                 )
 
-                // Normal（KSU）专属：App Profile 模板入口 + 内核形态只读行。
-                SegmentedColumn(
-                    modifier = GroupPadding,
-                    content = buildList {
-                        if (modePolicy.shows(SettingsSection.KSU_APP_PROFILE)) {
-                            add {
-                                ArrowRowMaterial(
-                                    title = stringResource(R.string.settings_profile_template),
-                                    summary = stringResource(R.string.settings_profile_template_summary),
-                                    icon = Icons.Filled.Person,
-                                    onClick = actions.onOpenProfileTemplate,
-                                )
-                            }
-                        }
-                        if (modePolicy.shows(SettingsSection.KSU_KERNEL_MODE)) {
-                            add {
-                                SegmentedListItem(
-                                    headlineContent = { Text(stringResource(R.string.settings_kernel_mode)) },
-                                    supportingContent = {
-                                        Text(
-                                            stringResource(
-                                                if (uiState.isLkmMode) {
-                                                    R.string.settings_kernel_mode_lkm
-                                                } else {
-                                                    R.string.settings_kernel_mode_builtin
-                                                },
-                                            ),
-                                        )
-                                    },
-                                    leadingContent = { Icon(Icons.Filled.Memory, null) },
-                                )
-                            }
-                        }
-                    },
-                )
-
-                // W18 三卡（Normal 专属；能力门控 + 诚实降级，见 workmode/ui/SettingsBFeatures.kt）。
-                // 模式由 SettingsModePolicy 裁决；Ultra 下 bFeatures 恒 NONE，且 VM 不读 KSU 状态。
-                val bf = uiState.bFeatures
-                SegmentedColumn(
-                    modifier = GroupPadding,
-                    content = buildList {
-                        if (modePolicy.shows(SettingsSection.KSU_STEALTH) && bf.stealth.show) {
-                            add { StealthRowMaterial(uiState, actions) }
-                        }
-                        if (modePolicy.shows(SettingsSection.KSU_APP_LOCK) && bf.appLock.show) {
-                            add {
-                                SegmentedListItem(
-                                    headlineContent = { Text(stringResource(R.string.work_mode_applock_title)) },
-                                    supportingContent = { Text(stringResource(R.string.work_mode_applock_unavailable)) },
-                                    leadingContent = { Icon(Icons.Filled.Lock, null) },
-                                )
-                            }
-                        }
-                        if (modePolicy.shows(SettingsSection.KSU_WEB_ADMIN) && bf.webAdmin.show) {
-                            add {
-                                if (bf.webAdmin.operable) {
-                                    SegmentedSwitchItem(
-                                        icon = Icons.Filled.Language,
-                                        title = stringResource(R.string.work_mode_webadmin_title),
-                                        summary = stringResource(R.string.work_mode_webadmin_summary),
-                                        checked = bf.webAdmin.enabled,
-                                        onCheckedChange = actions.onSetWebAdminEnabled,
-                                    )
-                                } else {
-                                    SegmentedListItem(
-                                        headlineContent = { Text(stringResource(R.string.work_mode_webadmin_title)) },
-                                        supportingContent = { Text(stringResource(R.string.work_mode_webadmin_unavailable)) },
-                                        leadingContent = { Icon(Icons.Filled.Language, null) },
-                                    )
-                                }
-                            }
-                            if (bf.webAdmin.operable) {
-                                add {
-                                    ArrowRowMaterial(
-                                        title = stringResource(R.string.work_mode_webadmin_copy),
-                                        summary = null,
-                                        icon = Icons.Filled.Language,
-                                        onClick = actions.onCopyWebAdminUrl,
-                                    )
-                                }
-                                add {
-                                    ArrowRowMaterial(
-                                        title = stringResource(R.string.work_mode_webadmin_open),
-                                        summary = null,
-                                        icon = Icons.Filled.Language,
-                                        onClick = actions.onOpenWebAdminUrl,
-                                    )
-                                }
-                            }
-                        }
-                    },
-                )
-
-                // 卸载 + 日志 + 关于：与 KSU 一样放在最后。
-                val showNormalUninstall = modePolicy.shows(SettingsSection.KSU_UNINSTALL) &&
-                    uiState.managerValid && !uiState.hiddenMasked
+                // 卸载 + 日志 + 关于放在最后。
                 SegmentedColumn(
                     modifier = GroupPadding,
                     content = buildList {
                         ultraPanel?.let { panel -> add { UltraUninstallRowMaterial(panel) } }
-                        if (showNormalUninstall) {
-                            add {
-                                ArrowRowMaterial(
-                                    title = stringResource(R.string.uninstall),
-                                    summary = null,
-                                    icon = Icons.Filled.Delete,
-                                    onClick = { showUninstall = true },
-                                )
-                            }
-                        }
                         if (modePolicy.shows(SettingsSection.LOG_AND_ABOUT)) {
                             add {
                                 ArrowRowMaterial(
@@ -397,9 +282,6 @@ fun SettingPagerMaterial(
                     },
                 )
 
-                if (showNormalUninstall) {
-                    UninstallDialog(show = showUninstall, onDismissRequest = { showUninstall = false })
-                }
                 if (showBottomSheet) {
                     SendLogBottomSheet(
                         onDismiss = { showBottomSheet = false },
@@ -423,62 +305,7 @@ private fun ArrowRowMaterial(title: String, summary: String?, icon: ImageVector,
     )
 }
 
-@Composable
-private fun SuCompatRowMaterial(uiState: SettingsUiState, actions: SettingsScreenActions) {
-    val items = listOf(
-        stringResource(R.string.settings_mode_enable_by_default),
-        stringResource(R.string.settings_mode_disable_always),
-    )
-    val summary = when {
-        uiState.suCompatStatus == "unsupported" -> stringResource(R.string.feature_status_unsupported_summary)
-        uiState.suCompatStatus == "unknown" -> stringResource(R.string.feature_status_unreadable_summary)
-        uiState.suCompatStatus == "managed" -> stringResource(R.string.feature_status_managed_summary)
-        // This switch looks like a revocation control, so while it is off its own summary has
-        // to state that delivered copies stay in place until they are revoked per application.
-        !uiState.isSuEnabled -> stringResource(R.string.maplesu_su_off_keeps_delivered)
-        else -> stringResource(R.string.settings_sucompat_summary)
-    }
-    SegmentedDropdownItem(
-        icon = Icons.Filled.AdminPanelSettings,
-        title = stringResource(R.string.settings_sucompat),
-        summary = summary,
-        items = items,
-        enabled = uiState.suCompatStatus == "supported",
-        selectedIndex = if (uiState.isSuEnabled) 0 else 1,
-        onItemSelected = { actions.onSetSuCompatMode(if (it == 0) 0 else 2) },
-    )
-}
 
-@Composable
-private fun StealthRowMaterial(uiState: SettingsUiState, actions: SettingsScreenActions) {
-    val card = uiState.bFeatures.stealth
-    // 状态行只陈述事实：只有明确 ON 才说「已开启」；UNKNOWN 必须说「状态未知（读取失败）」。
-    val status = stringResource(SettingsStatusCopy.statusRes(settingsStatusOf(card)))
-    if (card.operable && !card.enabled) {
-        ArrowRowMaterial(
-            title = stringResource(R.string.work_mode_stealth_title),
-            summary = stringResource(R.string.normal_hidden_entry_summary),
-            icon = Icons.Filled.VisibilityOff,
-            onClick = actions.onOpenNormalHidden,
-        )
-    } else if (card.operable) {
-        SegmentedSwitchItem(
-            icon = Icons.Filled.VisibilityOff,
-            title = stringResource(R.string.work_mode_stealth_title),
-            summary = status + " · " + stringResource(R.string.work_mode_stealth_summary),
-            checked = card.enabled,
-            onCheckedChange = actions.onSetStealthEnabled,
-        )
-    } else {
-        SegmentedListItem(
-            headlineContent = { Text(stringResource(R.string.work_mode_stealth_title)) },
-            supportingContent = {
-                Text(status + " · " + stringResource(R.string.work_mode_stealth_unavailable))
-            },
-            leadingContent = { Icon(Icons.Filled.VisibilityOff, null) },
-        )
-    }
-}
 
 /**
  * 「界面与外观」子页内容。这一段以前在 Material 侧**完全缺失**(审计:Material 19 项 vs

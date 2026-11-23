@@ -137,7 +137,7 @@ object Stealth {
     fun setEnabled(enabled: Boolean): Boolean =
         runCatching { Natives.stealthSet(enabled) }.getOrDefault(false)
             .also { success ->
-                if (success && dev.maplesu.manager.workmode.ModeRuntime.active == dev.maplesu.manager.workmode.WorkMode.KSU) {
+                if (success && false) {
                     runCatching { HiddenStartupConfirm.rememberNormalState(com.maplesu.core.ksuApp, if (enabled) 1 else 0) }
                 }
                 HiddenFactsSignal.notifyChanged()

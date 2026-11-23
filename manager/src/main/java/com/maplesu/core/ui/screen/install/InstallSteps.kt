@@ -27,37 +27,10 @@ import dev.maplesu.manager.installer.InstallTargetDecision
 import dev.maplesu.manager.installer.InstallTargetMode
 import dev.maplesu.manager.installer.installTargetBlockerMessage
 import dev.maplesu.manager.ultrakernel.UltraKernelGenerateCodes
-import dev.maplesu.manager.workmode.ui.WorkModeTargetRow
-import dev.maplesu.manager.workmode.ui.WorkModeTargetSheet
 import dev.maplesu.manager.workmode.ui.workModeNameRes
 import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.preference.OverlayDropdownPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-
-/** Only changes this installation target; it never switches the running work mode. */
-@Composable
-internal fun InstallTargetSelectionSection(
-    state: InstallUiState,
-    onSelectMode: (InstallTargetMode) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    var showTargetSheet by rememberSaveable { mutableStateOf(false) }
-    WorkModeTargetRow(
-        value = stringResource(workModeNameRes(state.targetMode.workMode)),
-        enabled = state.targetSelectable,
-        onClick = { showTargetSheet = true },
-        modifier = modifier,
-    )
-    WorkModeTargetSheet(
-        show = showTargetSheet && state.targetSelectable,
-        selected = state.targetMode.workMode,
-        current = null,
-        onSelect = { mode ->
-            if (state.targetSelectable) onSelectMode(InstallTargetMode.fromWorkMode(mode))
-        },
-        onDismiss = { showTargetSheet = false },
-    )
-}
 
 @Composable
 internal fun InstallUltraStatusSection(state: InstallUiState,
@@ -123,14 +96,7 @@ internal fun InstallPartitionSection(
 /** Automatically discovered information is read-only, rather than a fake selection. */
 @Composable
 internal fun InstallTargetStepSection(state: InstallUiState, modifier: Modifier = Modifier) {
-    when (state.targetMode) {
-        InstallTargetMode.ULTRA -> InstallKernelVersionSection(profile = state.bootFlow, modifier = modifier)
-        InstallTargetMode.NORMAL -> InstallNormalTargetSection(
-            decision = state.normalDecision,
-            partition = state.partition,
-            modifier = modifier,
-        )
-    }
+    InstallKernelVersionSection(profile = state.bootFlow, modifier = modifier)
 }
 
 @Composable
@@ -155,28 +121,6 @@ internal fun InstallSourceStatusSection(state: InstallUiState) {
             fromFile -> R.string.install_source_check_retry
             else -> R.string.install_source_partition_retry
         }),
-    )
-}
-
-@Composable
-private fun InstallNormalTargetSection(
-    decision: InstallTargetDecision?,
-    partition: InstallPartition,
-    modifier: Modifier = Modifier,
-) {
-    val resources = LocalContext.current.resources
-    InstallTargetInfo(
-        title = stringResource(R.string.install_target_information),
-        summary = when (decision) {
-            null -> stringResource(R.string.install_target_kernel_loading)
-            is InstallTargetDecision.Ready -> stringResource(
-                R.string.install_target_normal_ready,
-                decision.partition ?: partition.wire,
-                decision.kmi.orEmpty(),
-            )
-            is InstallTargetDecision.Blocked -> installTargetBlockerMessage(resources, decision)
-        },
-        modifier = modifier,
     )
 }
 

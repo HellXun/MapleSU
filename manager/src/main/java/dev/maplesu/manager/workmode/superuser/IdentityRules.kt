@@ -96,9 +96,6 @@ object IdentityRules {
                 target, intent.uid, intent.packageName, allow,
                 if (packagesForUid.size > 1) MULTI_PACKAGE_UID_MARKER else null,
             )
-            BackendId.B_KSU ->
-                if (allow && packagesForUid.isNotEmpty() && intent.packageName !in packagesForUid) null
-                else ExpandedGrant(target, intent.uid, intent.packageName, allow)
         }
     }
 
@@ -149,13 +146,6 @@ object IdentityRules {
                         val name = packages.single()
                         val intent = intents.firstOrNull { it.packageName == name } ?: continue
                         result.add(ExpandedGrant(target, uid, name, intent.decision == GrantIntent.ALLOW))
-                    }
-                }
-                BackendId.B_KSU -> {
-                    for (intent in intents) {
-                        val allow = intent.decision == GrantIntent.ALLOW
-                        if (allow && packages.isNotEmpty() && intent.packageName !in packages) continue
-                        result.add(ExpandedGrant(target, uid, intent.packageName, allow))
                     }
                 }
             }

@@ -65,9 +65,6 @@ enum class EnvironmentVerdict(val code: String) {
     /** 快速核对到 Ultra 环境 → MapleSU_Ultra（LITE）。 */
     ULTRA("ENV_ULTRA"),
 
-    /** KSU 内核认主确认 → MapleSU_Normal（KSU），不依赖普通 su。 */
-    KSU_NORMAL("ENV_KSU_NORMAL"),
-
     /** 拿不到结论（超时/探针异常/KSU 探针不可用）。**绝不**写成未安装，也绝不覆盖上次状态。 */
     UNKNOWN("ENV_UNKNOWN_TIMEOUT"),
 }
@@ -77,9 +74,8 @@ object EnvironmentCheckDetail {
     const val INHERITED_SAME_BOOT = "INHERITED_SAME_BOOT"
     const val SU_ABSENT_NO_ULTRA = "SU_ABSENT_NO_ULTRA"
     const val ULTRA_FINGERPRINT = "ULTRA_FINGERPRINT"
-    const val KSU_PROBE_CONFIRMED = "KSU_PROBE_CONFIRMED"
-    const val KSU_PROBE_NEGATIVE = "KSU_PROBE_NEGATIVE"
-    const val KSU_PROBE_UNAVAILABLE = "KSU_PROBE_UNAVAILABLE"
+    const val ULTRA_PROBE_NEGATIVE = "ULTRA_PROBE_NEGATIVE"
+    const val ULTRA_PROBE_UNAVAILABLE = "ULTRA_PROBE_UNAVAILABLE"
     /** 真探针起不来/超时 → UNKNOWN；保留上次状态，不落盘。 */
     const val SU_PROBE_UNKNOWN = "SU_PROBE_UNKNOWN"
     const val DEADLINE_EXCEEDED = "PROBE_DEADLINE_EXCEEDED"
@@ -139,21 +135,6 @@ class EnvironmentResolver(
         val inheritanceTrigger = EnvironmentInheritancePolicy.triggerFor(previous, currentBootId)
         var trigger = inheritanceTrigger ?: EnvironmentCheckTrigger.SU_RECHECK
         val calls = mutableListOf<String>()
-        calls += PROBE_KSU
-        if (runCatching { probes.ksuNormal() }.getOrNull() == true) {
-            return persist(
-                verdict = EnvironmentVerdict.KSU_NORMAL,
-                mode = WorkMode.KSU,
-                su = false,
-                ultra = null,
-                trigger = trigger,
-                detail = EnvironmentCheckDetail.KSU_PROBE_CONFIRMED,
-                mayPersist = mayPersist,
-                bootId = currentBootId,
-                startedAt = startedAt,
-                calls = calls,
-            )
-        }
         // Identify the current channel before ordinary SU or credential recovery can
         // occupy the SDK. Mode evidence alone does not grant an untested SU capability.
         calls += PROBE_CURRENT_ULTRA
@@ -177,24 +158,16 @@ class EnvironmentResolver(
         val readiness: SuReadiness
         var ultra: String? = null
         var ultraChecked = false
-        var ksu: Boolean? = null
-        var ksuChecked = false
         try {
             // Ordinary SU failure does not invalidate independent kernel/key evidence.
             readiness = runCatching { probes.suReadiness() }.getOrDefault(SuReadiness.UNKNOWN)
-            if (inheritanceTrigger == null && previous?.mode == WorkMode.KSU) {
-                calls += PROBE_KSU
-                ksu = runCatching { probes.ksuNormal() }.getOrNull()
-                ksuChecked = true
-            }
             if (inheritanceTrigger == null && previous?.mode == WorkMode.LITE) {
                 calls += PROBE_ULTRA
                 ultra = probes.ultraFingerprint()
                 ultraChecked = true
             }
             if (inheritanceTrigger == null && readiness != SuReadiness.NOT_USABLE &&
-                (previous?.mode == WorkMode.KSU && ksu == true ||
-                    previous?.mode == WorkMode.LITE && ultra != null)) {
+                (previous?.mode == WorkMode.LITE && ultra != null)) {
                 return EnvironmentCheckOutcome(
                     verdict = EnvironmentVerdict.INHERITED,
                     mode = previous.mode,
@@ -239,28 +212,9 @@ class EnvironmentResolver(
             )
         }
 
-        // c) 无 Ultra → 再确认是不是 MapleSU_Normal（KSU）；UNKNOWN 也要问，别把读不到当没有。
-        if (!ksuChecked) {
-            calls += PROBE_KSU
-            ksu = runCatching { probes.ksuNormal() }.getOrNull()
-        }
-        if (ksu == true) {
-            return persist(
-                verdict = EnvironmentVerdict.KSU_NORMAL,
-                mode = WorkMode.KSU,
-                su = su,
-                ultra = null,
-                trigger = trigger,
-                detail = EnvironmentCheckDetail.KSU_PROBE_CONFIRMED,
-                mayPersist = mayPersist,
-                bootId = currentBootId,
-                startedAt = startedAt,
-                calls = calls,
-            )
-        }
-        // d) Ultra 与 Normal 自身身份均已排除：普通 su 的成功/超时都不是模式证据。
-        //    任一身份探针读不到仍走 UNKNOWN，只有明确的阴性才覆盖旧 Ultra 缓存。
-        if (ksu == false) {
+        // c) 没有 Ultra 身份：本构建只发布 Ultra，普通 su 的成功/超时都不是模式证据。
+        //    探针读不到仍走 UNKNOWN，只有明确的阴性才覆盖旧 Ultra 缓存。
+        if (ultraChecked) {
             return persist(
                 verdict = EnvironmentVerdict.NOT_INSTALLED,
                 mode = null,
@@ -268,7 +222,7 @@ class EnvironmentResolver(
                 ultra = null,
                 trigger = trigger,
                 detail = (if (readiness == SuReadiness.NOT_USABLE) EnvironmentCheckDetail.SU_ABSENT_NO_ULTRA + ":" else "") +
-                    EnvironmentCheckDetail.KSU_PROBE_NEGATIVE,
+                    EnvironmentCheckDetail.ULTRA_PROBE_NEGATIVE,
                 mayPersist = mayPersist,
                 bootId = currentBootId,
                 startedAt = startedAt,
@@ -284,11 +238,7 @@ class EnvironmentResolver(
             calls = calls,
             detail = (if (readiness == SuReadiness.UNKNOWN) {
                 EnvironmentCheckDetail.SU_PROBE_UNKNOWN + ":"
-            } else "") + if (ksu == false) {
-                EnvironmentCheckDetail.KSU_PROBE_NEGATIVE
-            } else {
-                EnvironmentCheckDetail.KSU_PROBE_UNAVAILABLE
-            },
+            } else "") + EnvironmentCheckDetail.ULTRA_PROBE_UNAVAILABLE,
         )
     }
 

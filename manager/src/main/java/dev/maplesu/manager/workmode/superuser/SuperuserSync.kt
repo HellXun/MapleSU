@@ -258,7 +258,6 @@ class DefaultSuperuserSync(
             val ultra = backends.firstOrNull { it.id == BackendId.A_ULTRA && it.available() }
             if (ultra != null) listOf(ultra) else backends.filter { it.id == BackendId.A_DIRECT }
         }
-        WorkMode.KSU -> backends.filter { it.id == BackendId.B_KSU }
     }
 
     private fun blocked(code: String, detail: String): ExportResult.Blocked {

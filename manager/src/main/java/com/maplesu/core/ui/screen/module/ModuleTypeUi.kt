@@ -70,7 +70,7 @@ object ModuleTypeUi {
 
     /** B 模式（KSU）下 Ultra 类型明确不支持；A/未判定不在此列。 */
     fun unsupportedInMode(evidence: ModuleTypeEvidence, mode: WorkMode?): Boolean =
-        mode == WorkMode.KSU &&
+        false &&
             (evidence.type == ModuleType.MAPLESU ||
                 (evidence.type == ModuleType.AMBIGUOUS && routeWithChoice(evidence, mode, ModuleType.MAPLESU).code
                     == ModuleInstallRouter.UNSUPPORTED_IN_MODE))

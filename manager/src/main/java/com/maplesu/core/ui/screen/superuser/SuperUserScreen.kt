@@ -77,7 +77,6 @@ fun SuperUserPager(
     }
     val actions = SuperUserActions(
         onRefresh = { viewModel.loadAppList(force = true) },
-        onOpenSulog = { navigator.push(Route.Sulog) },
         onSearchTextChange = onSearchTextChange,
         onSearchStatusChange = viewModel::updateSearchStatus,
         onClearSearch = { onSearchTextChange("") },

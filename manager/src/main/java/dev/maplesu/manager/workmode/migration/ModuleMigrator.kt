@@ -74,13 +74,6 @@ class ModuleMigrator(
             sourceDisabled = candidate.disabled,
         )
         return when (target) {
-            WorkMode.KSU -> when (candidate.origin) {
-                ModuleOrigin.KSU -> base.copy(decision = ModuleDecision.RESTORE_DIRECT)
-                ModuleOrigin.MAGISK -> base.copy(
-                    decision = ModuleDecision.IMPORT_DISABLED,
-                    reason = MigrationCodes.MODULE_ORIGIN_MAGISK_UNVERIFIED,
-                )
-            }
 
             WorkMode.LITE -> importIntoLite(candidate, base)
         }

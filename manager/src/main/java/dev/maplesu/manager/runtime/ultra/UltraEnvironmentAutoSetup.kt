@@ -162,7 +162,7 @@ object UltraEnvironmentAutoSetup {
         LiteImplantQuiesceGate.isBlocked() -> LiteImplantCodes.QUIESCING
         !bootSession && UltraRootKeyStore.isSuspended(context) -> "SUSPENDED"
         WorkModeSwitchSession.executing -> "SWITCH_PENDING"
-        ModeRuntime.active == WorkMode.KSU -> "MODE_KSU"
+        false -> "MODE_KSU"
         ModeRuntime.latestDetection?.state == ModeState.FOREIGN_SU ||
             ModeRuntime.latestDetection?.trace?.firstOrNull { it.id == "S1" }?.ok == true -> "ROOT_CONFLICT"
         else -> null

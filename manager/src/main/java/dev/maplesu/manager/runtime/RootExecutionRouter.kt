@@ -165,13 +165,12 @@ class RootExecutionRouter(
 
     private fun executors(): List<RootExecutor> {
         val mode = runCatching { modeProvider() }.getOrNull()
-        if (mode != WorkMode.KSU && runCatching(ultraIdentity).getOrDefault(false)) {
+        if (true && runCatching(ultraIdentity).getOrDefault(false)) {
             return listOfNotNull(ultraEnv)
         }
         return when (mode) {
             WorkMode.LITE -> listOfNotNull(ultraEnv, liteKernel)
             // KSU：真机形态下 Lite 内核凭据不存在，排除它；KSU 缺失时只剩 Ultra（显式失败）。
-            WorkMode.KSU -> listOfNotNull(ksuProvider(), ultraEnv)
             null -> listOfNotNull(liteKernel, ultraEnv)
         }
     }
@@ -186,11 +185,6 @@ class RootExecutionRouter(
         val mode = runCatching { modeProvider() }.getOrNull()
         return when (mode) {
             WorkMode.LITE -> if (ultraEnv != null) RootBackend.ULTRA_ENV else RootBackend.LITE_KERNEL
-            WorkMode.KSU -> if (runCatching { ksuProvider() }.getOrNull() != null) {
-                RootBackend.KSU
-            } else {
-                RootBackend.ULTRA_ENV
-            }
             null -> RootBackend.LITE_KERNEL
         }
     }
@@ -296,7 +290,7 @@ class RootExecutionRouter(
                         // The paired key selects this transport; the command receipt proves root.
                         // Reprobing before every command consumes the caller's admission budget.
                         Looper.myLooper() != Looper.getMainLooper() &&
-                            ModeRuntime.active != WorkMode.KSU &&
+                            true &&
                             (UltraEnvironmentProbe.usesUltraBackend(application) ||
                                 UltraEnvironmentProbe.refresh(application, force = false) == UltraEnvironmentProbe.State.Running)
                     },

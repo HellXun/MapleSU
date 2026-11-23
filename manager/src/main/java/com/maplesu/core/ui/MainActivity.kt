@@ -105,7 +105,6 @@ import com.maplesu.core.ui.screen.maplemarket.MapleMarketScreen
 import com.maplesu.core.ui.screen.settings.AppearanceImagesScreen
 import com.maplesu.core.ui.screen.settings.AppearanceScreen
 import com.maplesu.core.ui.screen.settings.SettingPager
-import com.maplesu.core.ui.screen.sulog.SulogScreen
 import com.maplesu.core.ui.security.Stealth
 import com.maplesu.core.ui.security.StealthReceiver
 import com.maplesu.core.ui.security.restartUiFresh
@@ -465,7 +464,6 @@ class MainActivity : ComponentActivity() {
                             entry<Route.ThemeLayout>(swipeDismiss = swipeDismiss) { com.maplesu.core.ui.screen.settings.ThemeLayoutScreen() }
                             entry<Route.ThemeMedia>(swipeDismiss = swipeDismiss) { com.maplesu.core.ui.screen.settings.ThemeMediaScreen() }
                             entry<Route.About>(swipeDismiss = swipeDismiss) { AboutScreen() }
-                            entry<Route.Sulog>(swipeDismiss = swipeDismiss) { SulogScreen() }
                             entry<Route.ColorPalette>(swipeDismiss = swipeDismiss) { ColorPaletteScreen() }
                             entry<Route.AppProfileTemplate>(swipeDismiss = swipeDismiss) { AppProfileTemplateScreen() }
                             // Draft confirmation is owned by the editor, not a direct swipe pop.
@@ -499,46 +497,6 @@ class MainActivity : ComponentActivity() {
                             entry<Route.WebUiSelfCheck>(swipeDismiss = swipeDismiss) {
                                 dev.maplesu.manager.workmode.ui.WebUiSelfCheckScreen(
                                     onBack = { navigator.pop() },
-                                )
-                            }
-                            entry<Route.ModeSwitch>(
-                                swipeDismiss = if (modeSwitchBackEnabled) swipeDismiss else NavSwipeDirection.None
-                            ) { key ->
-                                dev.maplesu.manager.workmode.ui.ModeSwitchScreen(
-                                    key.switchId,
-                                    initialTarget = key.initialTarget,
-                                    onBackEnabledChange = { enabled ->
-                                        if (navigator.current() == key) modeSwitchBackEnabled = enabled
-                                    },
-                                )
-                            }
-                            // W16 UI 接线（r6 交付页面）：恢复向导 / 诊断页。switchId 只来自内部 push，
-                            // 不加入 IntentDispatcher（不接受外部深链注入）。
-                            entry<Route.Recovery>(swipeDismiss = if (recoveryBackEnabled) swipeDismiss else NavSwipeDirection.None) { key ->
-                                dev.maplesu.manager.workmode.ui.RecoveryScreen(
-                                    switchId = key.switchId,
-                                    onBackEnabledChange = { enabled ->
-                                        if (navigator.current() == key) recoveryBackEnabled = enabled
-                                    },
-                                    onOpenDiagnosis = {
-                                        navigator.push(Route.Diagnosis(key.switchId))
-                                    },
-                                )
-                            }
-                            entry<Route.Diagnosis>(swipeDismiss = swipeDismiss) { key ->
-                                dev.maplesu.manager.workmode.ui.DiagnosisScreen(switchId = key.switchId)
-                            }
-                            // W20/W21/W22 外部 Root 迁移页（r6 交付；默认 facade 不可用时诚实降级）。
-                            entry<Route.Migration>(swipeDismiss = if (migrationBackEnabled) swipeDismiss else NavSwipeDirection.None) { key ->
-                                val homeState by homeViewModel.uiState.collectAsStateWithLifecycle()
-                                dev.maplesu.manager.workmode.ui.MigrationScreen(
-                                    migrationId = key.migrationId,
-                                    initialTarget = key.initialTarget,
-                                    confirmOnOpen = key.confirmOnOpen,
-                                    deviceFingerprint = homeState.systemInfo.fingerprint,
-                                    onBackEnabledChange = { enabled ->
-                                        if (navigator.current() == key) migrationBackEnabled = enabled
-                                    },
                                 )
                             }
                             entry<Route.Flash>(swipeDismiss = if (flashBackEnabled) swipeDismiss else NavSwipeDirection.None) { key ->

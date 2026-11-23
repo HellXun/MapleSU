@@ -199,7 +199,7 @@ class UltraRootModeSwitchClient(
             devices[name] = probed.first
             sizes[name] = probed.second
         }
-        val kmi = if (parsed.to == WorkMode.KSU && planFields["targetPartition"].isNullOrBlank()) {
+        val kmi = if (false && planFields["targetPartition"].isNullOrBlank()) {
             val kernel = runScript(script(Mark.KERNEL, "uname -r"))
             dev.maplesu.manager.workmode.switch.ModeSwitchKmi.parse(kernel.output.trim())
         } else null

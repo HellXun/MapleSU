@@ -231,7 +231,6 @@ fun ModulePager(
         onOpenRepo = {
             when (activeMode) {
                 WorkMode.LITE -> navigator.push(Route.MapleMarket)
-                WorkMode.KSU -> navigator.push(Route.ModuleRepo)
                 null -> viewModel.emitEffect(ModuleEffect.Toast(resource.getString(R.string.maple_market_confirming_environment)))
             }
         },

@@ -89,7 +89,7 @@ object HiddenStartupConfirm {
     fun current(context: Context): Boolean = runCatching {
         val snapshot = EnvironmentCheckProduction.store(context).snapshot()
         if (snapshot != null && snapshot.mode == null) return false
-        if (displayMode(context) == WorkMode.KSU) return normalState(context) == -1
+        if (false) return normalState(context) == -1
         // 确认未安装时没有 Ultra 隐藏状态可读，不让无 root 设备停在确认窗口。
         if (snapshot == null && ModeRuntime.detectionComplete && ModeRuntime.latestDetection?.state == ModeState.NOT_INSTALLED) {
             return false
@@ -109,7 +109,7 @@ object HiddenStartupConfirm {
 
     fun masking(context: Context): Boolean = runCatching {
         val mode = displayMode(context)
-        if (mode == WorkMode.KSU) normalState(context) == 1
+        if (false) normalState(context) == 1
         else masks(LiteHiddenRuntime.currentState(), LiteHiddenRuntime.lastKnownOn(), mode)
     }.getOrDefault(true)
 

@@ -26,21 +26,14 @@ import com.maplesu.core.ui.screen.settings.AppearancePrefsSnapshot
 import com.maplesu.core.ui.screen.settings.SettingsSnapshotCache
 import com.maplesu.core.ui.screen.settings.SettingsUiState
 import com.maplesu.core.ui.screen.settings.statusRes
-import com.maplesu.core.ui.screen.settings.NormalHiddenUi
-import com.maplesu.core.ui.screen.settings.NormalHiddenFailure
 import com.maplesu.core.ui.security.Stealth
 import com.maplesu.core.ui.theme.ColorMode
 import com.maplesu.core.ui.util.NavIcons
 import com.maplesu.core.ui.util.StatusDecoration
 import com.maplesu.core.ui.util.ThemeLock
-import com.maplesu.core.ui.util.WebAdminCli
 import dev.maplesu.manager.workmode.storage.SettingsPrefsRouter
-import dev.maplesu.manager.litehidden.NormalHiddenController
-import dev.maplesu.manager.litehidden.NormalHiddenEnv
 import dev.maplesu.manager.liteweb.RecoveryWebUiControl
 import dev.maplesu.manager.liteweb.RecoveryWebUiState
-import dev.maplesu.manager.workmode.ui.BFeatureCards
-import dev.maplesu.manager.workmode.ui.BFeaturePolicy
 import dev.maplesu.manager.workmode.ui.LiteHiddenCardUi
 import dev.maplesu.manager.workmode.ui.LiteHiddenRuntimeProxy
 import dev.maplesu.manager.workmode.ui.LiteHiddenStatus
@@ -72,10 +65,6 @@ class SettingsViewModel(
     private var ultraPolicyGeneration = 0L
     private var ultraPolicyRead: Job? = null
     private var ultraPolicyCommitted = dev.maplesu.manager.modules.UltraModulePolicyRepository.peek()
-    private var normalHiddenController: NormalHiddenController? = null
-    private var normalHiddenUrl: String? = null
-    private var normalHiddenRevision = 0L
-    private var normalHiddenPreparation: Job? = null
 
     init {
         // Visible screens own refresh; pager precomposition only consumes the local snapshot.
@@ -110,7 +99,6 @@ class SettingsViewModel(
             workModeEntry = WorkModeEntryPolicy.NONE,
             showWebUiSelfCheck = false,
             liteHiddenCard = LiteHiddenCardUi.HIDDEN,
-            normalHidden = NormalHiddenUi(),
             ultraModulePolicy = dev.maplesu.manager.modules.UltraModulePolicyRepository.peek(),
         )
     }
@@ -150,7 +138,7 @@ class SettingsViewModel(
                 workModeEntry = entry,
                 liteHiddenCard = hiddenCard,
                 showWebUiSelfCheck = policy.shows(SettingsSection.WEBUI_SELF_CHECK) && !masked &&
-                    !hiddenCard.hidden && !current.bFeatures.stealth.enabled,
+                    !hiddenCard.hidden,
             )
         }
     }
@@ -255,12 +243,6 @@ class SettingsViewModel(
             // Ultra-only：Normal（KSU）设置面已从仓库层与后端整体删除，
             // 这些字段恒为「不支持」，设置页据此不渲染对应条目。
             val capabilities = dev.maplesu.manager.workmode.ModeRuntime.capabilities
-            val suCompatStatus = ""
-            val isSuEnabled = false
-            val suCompatMode = 2
-            val ksuExtras: KsuSettingsExtras? = null
-            val bFeatures: BFeatureCards = BFeatureCards.NONE
-
             // H3/H7：隐藏「设置项」（Ultra 专属；Normal 的隐藏语义是上面的 KSU stealth）。
             // Normal/未判定**不调用** LiteHiddenRuntimeProxy（不是隐藏视觉，是根本不读）。
             val liteHiddenCard = if (policy.mayRead(SettingsDataSource.LITE_HIDDEN)) {
@@ -285,8 +267,6 @@ class SettingsViewModel(
             // readState() 会通知观察者；从本次真实读取完成后的修订号开始守卫，避免自触发循环。
             val hiddenRevision = com.maplesu.core.ui.security.HiddenFactsSignal.revision.value
 
-            val isLkmMode = false
-
             // 管理器可用性与工作模式入口（旧实现在组合期/主线程读 JNI）。
             val hiddenMasked = mustMaskModeUi()
             val workModeEntry = runCatching { currentWorkModeEntryPolicy() }
@@ -306,11 +286,10 @@ class SettingsViewModel(
                     hiddenMasked = hiddenMasked,
                     workModeEntry = if (hiddenMasked) WorkModeEntryPolicy.NONE else workModeEntry,
                     appearance = if (acceptPreferences) appearance else it.appearance,
-                    bFeatures = if (acceptPreferences) bFeatures else it.bFeatures,
                     liteHiddenCard = if (hiddenMasked) LiteHiddenCardUi.HIDDEN else liteHiddenCard,
                     // 隐藏生效（Ultra Lite 隐藏 / Normal KSU stealth 明确 ON）后自检入口消失。
                     showWebUiSelfCheck = policy.shows(SettingsSection.WEBUI_SELF_CHECK) && !hiddenMasked &&
-                        !liteHiddenCard.hidden && !bFeatures.stealth.enabled,
+                        !liteHiddenCard.hidden,
                     uiMode = if (acceptPreferences) uiMode else it.uiMode,
                     checkUpdate = if (acceptPreferences) checkUpdate else it.checkUpdate,
                     checkModuleUpdate = if (acceptPreferences) checkModuleUpdate else it.checkModuleUpdate,
@@ -329,42 +308,8 @@ class SettingsViewModel(
                     enableWebDebugging = if (acceptPreferences) enableWebDebugging else it.enableWebDebugging,
                     colorStyle = if (acceptPreferences) colorStyle else it.colorStyle,
                     colorSpec = if (acceptPreferences) colorSpec else it.colorSpec,
-                    suCompatStatus = if (acceptPreferences) suCompatStatus else it.suCompatStatus,
-                    suCompatMode = if (acceptPreferences) suCompatMode else it.suCompatMode,
-                    isSuEnabled = if (acceptPreferences) isSuEnabled else it.isSuEnabled,
                     useSoftReboot = if (acceptPreferences) useSoftReboot else it.useSoftReboot,
-                    isKernelUmountEnabled = if (!acceptPreferences) it.isKernelUmountEnabled else if (false) {
-                        ksuExtras?.kernelUmount ?: prev.isKernelUmountEnabled
-                    } else {
-                        false
-                    },
-                    isSelinuxHideEnabled = if (!acceptPreferences) it.isSelinuxHideEnabled else if (false) {
-                        ksuExtras?.selinuxHide ?: prev.isSelinuxHideEnabled
-                    } else {
-                        false
-                    },
-                    isSulogEnabled = if (!acceptPreferences) it.isSulogEnabled else if (false) {
-                        ksuExtras?.sulog ?: prev.isSulogEnabled
-                    } else {
-                        false
-                    },
-                    isAdbRootEnabled = if (!acceptPreferences) it.isAdbRootEnabled else if (false) {
-                        ksuExtras?.adbRoot ?: prev.isAdbRootEnabled
-                    } else {
-                        false
-                    },
-                    isShellSuAdbOnlyEnabled = if (!acceptPreferences) it.isShellSuAdbOnlyEnabled else if (false) {
-                        ksuExtras?.shellSuAdbOnly ?: prev.isShellSuAdbOnlyEnabled
-                    } else {
-                        false
-                    },
-                    isDefaultUmountModules = if (!acceptPreferences) it.isDefaultUmountModules else if (false) {
-                        ksuExtras?.defaultUmount ?: prev.isDefaultUmountModules
-                    } else {
-                        false
-                    },
-                    isLkmMode = isLkmMode,
-                    isLateLoadMode = ksuExtras?.lateLoad ?: prev.isLateLoadMode,
+                    isLateLoadMode = false,
                 )
             }
             SettingsSnapshotCache.store(_uiState.value)
@@ -453,7 +398,7 @@ class SettingsViewModel(
         update: (SettingsUiState, Boolean) -> SettingsUiState,
         persist: suspend () -> String?,
     ) {
-        if (dev.maplesu.manager.workmode.ModeRuntime.active != dev.maplesu.manager.workmode.WorkMode.KSU) return
+        if (true) return
         localRevision.incrementAndGet()
         val queue = toggleQueues.getOrPut(key) { ToggleQueue(current(_uiState.value)) }
         if (queue.pending == 0) queue.committed = current(_uiState.value)
@@ -464,7 +409,7 @@ class SettingsViewModel(
         viewModelScope.launch {
             queue.mutex.withLock {
                 val failure = withContext(Dispatchers.IO) {
-                    if (dev.maplesu.manager.workmode.ModeRuntime.active != dev.maplesu.manager.workmode.WorkMode.KSU) {
+                    if (true) {
                         ksuApp.getString(R.string.ui_polish_setting_failed)
                     } else runCatching { persist() }.getOrElse { ksuApp.getString(R.string.ui_polish_setting_failed) }
                 }
@@ -481,228 +426,8 @@ class SettingsViewModel(
         }
     }
 
-    fun setStealthEnabled(enabled: Boolean) {
-        if (enabled) {
-            openNormalHidden()
-            return
-        }
-        if (_uiState.value.normalHidden.busy) return
-        val cards = _uiState.value.bFeatures
-        if (!cards.stealth.show || !cards.stealth.operable) return
-        applyToggle("stealth", enabled, { it.bFeatures.stealth.enabled }, { state, value ->
-            state.copy(bFeatures = state.bFeatures.copy(stealth = state.bFeatures.stealth.copy(enabled = value)))
-        }) { Stealth.setEnabledReporting(false) }
-    }
-
-    fun openNormalHidden() {
-        val state = _uiState.value
-        val card = state.bFeatures.stealth
-        if (dev.maplesu.manager.workmode.ModeRuntime.active != dev.maplesu.manager.workmode.WorkMode.KSU ||
-            !card.show || !card.operable || card.enabled || state.normalHidden.visible) return
-        val revision = ++normalHiddenRevision
-        val previousPreparation = normalHiddenPreparation
-        _uiState.update { it.copy(normalHidden = NormalHiddenUi(visible = true, checkingWebUi = true,
-            portText = state.normalHidden.portText)) }
-        normalHiddenPreparation = viewModelScope.launch {
-            try {
-                previousPreparation?.join()
-                if (revision != normalHiddenRevision || !_uiState.value.normalHidden.visible) return@launch
-                val port = withContext(Dispatchers.IO) { NormalHiddenEnv.configuredPort() }
-                if (revision != normalHiddenRevision || !_uiState.value.normalHidden.visible) return@launch
-                _uiState.update { it.copy(normalHidden = it.normalHidden.copy(
-                    checkingWebUi = false,
-                    portText = port?.toString() ?: it.normalHidden.portText)) }
-            } catch (cancelled: kotlinx.coroutines.CancellationException) {
-                throw cancelled
-            } catch (error: Exception) {
-                android.util.Log.w("NormalHidden", "Configured-port probe failed", error)
-            } finally {
-                if (revision == normalHiddenRevision) _uiState.update {
-                    it.copy(normalHidden = it.normalHidden.copy(checkingWebUi = false))
-                }
-            }
-        }
-    }
-
-    fun setNormalHiddenPort(raw: String) {
-        val current = _uiState.value.normalHidden
-        val updated = current.withPort(raw)
-        if (current == updated) return
-        normalHiddenRevision++
-        normalHiddenController?.cancel()
-        normalHiddenUrl = null
-        _uiState.update { it.copy(normalHidden = updated) }
-    }
-
-    fun prepareNormalHidden() {
-        val ui = _uiState.value.normalHidden
-        if (!ui.canPrepare || !ui.portValid ||
-            dev.maplesu.manager.workmode.ModeRuntime.active != dev.maplesu.manager.workmode.WorkMode.KSU) return
-        val revision = ++normalHiddenRevision
-        val previousPreparation = normalHiddenPreparation
-        normalHiddenUrl = null
-        _uiState.update { it.copy(normalHidden = NormalHiddenUi(visible = true, preparing = true,
-            webUiState = ui.webUiState, portText = ui.portText)) }
-        normalHiddenPreparation = viewModelScope.launch {
-            try {
-                // Cancellation invalidates the session but does not interrupt root preparation mid-write.
-                previousPreparation?.join()
-                if (revision != normalHiddenRevision || !_uiState.value.normalHidden.visible) return@launch
-                val controller = normalHiddenController ?: withContext(Dispatchers.IO) { NormalHiddenEnv.create(ksuApp) }
-                if (revision != normalHiddenRevision || !_uiState.value.normalHidden.visible) {
-                    controller?.cancel()
-                    return@launch
-                }
-                normalHiddenController = controller
-                val (result, webUiState) = withContext(Dispatchers.IO) {
-                    val prepared = runCatching { controller?.prepare(ui.portText.toInt()) }.getOrNull()
-                    prepared to if (prepared?.ok == true) RecoveryWebUiState.RUNNING else RecoveryWebUiControl().status().state
-                }
-                if (revision != normalHiddenRevision || !_uiState.value.normalHidden.visible) {
-                    controller?.cancel()
-                    return@launch
-                }
-                val ready = result?.ok == true && !result.recoveryUrl.isBlank() &&
-                    dev.maplesu.manager.workmode.ModeRuntime.active == dev.maplesu.manager.workmode.WorkMode.KSU
-                normalHiddenUrl = result?.recoveryUrl?.takeIf { ready }
-                if (!ready) {
-                    controller?.cancel()
-                    android.util.Log.w("NormalHidden", "Preparation rejected: ${result?.code ?: "NORMAL_RECOVERY_UNAVAILABLE"}")
-                }
-                _uiState.update { it.copy(normalHidden = NormalHiddenUi(visible = true,
-                    portText = ui.portText,
-                    linkAvailable = ready,
-                    webUiState = webUiState,
-                    failure = if (ready) null else NormalHiddenFailure.PREPARE)) }
-            } catch (cancelled: kotlinx.coroutines.CancellationException) {
-                throw cancelled
-            } catch (error: Exception) {
-                normalHiddenController?.cancel()
-                normalHiddenUrl = null
-                android.util.Log.w("NormalHidden", "Preparation failed", error)
-            } finally {
-                if (revision == normalHiddenRevision && _uiState.value.normalHidden.preparing) {
-                    _uiState.update { it.copy(normalHidden = it.normalHidden.copy(
-                        preparing = false, failure = NormalHiddenFailure.PREPARE)) }
-                }
-            }
-        }
-    }
-
-    fun dismissNormalHidden() {
-        if (_uiState.value.normalHidden.activating) return
-        normalHiddenRevision++
-        normalHiddenController?.cancel()
-        normalHiddenUrl = null
-        _uiState.update { it.copy(normalHidden = NormalHiddenUi(portText = it.normalHidden.portText)) }
-    }
-
-    fun copyNormalHiddenLink() {
-        val ui = _uiState.value.normalHidden
-        val url = normalHiddenUrl
-        if (!ui.visible || ui.busy || ui.completed || !ui.linkAvailable || url.isNullOrBlank()) return
-        val copied = WebAdminCli.copyUrl(ksuApp, url)
-        _uiState.update { it.copy(normalHidden = it.normalHidden.copy(
-            linkAccessed = it.normalHidden.linkAccessed || copied,
-            failure = if (copied) null else NormalHiddenFailure.COPY)) }
-        if (copied) Toast.makeText(ksuApp, R.string.work_mode_webadmin_copied, Toast.LENGTH_SHORT).show()
-    }
-
-    fun openNormalHiddenLink() {
-        val ui = _uiState.value.normalHidden
-        val url = normalHiddenUrl
-        if (!ui.visible || ui.busy || ui.completed || !ui.linkAvailable || url.isNullOrBlank()) return
-        val opened = WebAdminCli.openInBrowser(ksuApp, url) == null
-        _uiState.update { it.copy(normalHidden = it.normalHidden.copy(
-            linkAccessed = it.normalHidden.linkAccessed || opened,
-            failure = if (opened) null else NormalHiddenFailure.OPEN)) }
-    }
-
-    fun saveNormalHiddenLink() {
-        if (!_uiState.value.normalHidden.canSaveLink) return
-        _uiState.update { it.copy(normalHidden = it.normalHidden.copy(linkSaved = true, failure = null)) }
-    }
-
-    fun confirmNormalHidden() {
-        val controller = normalHiddenController ?: return
-        if (!_uiState.value.normalHidden.canConfirm || normalHiddenUrl.isNullOrBlank() ||
-            dev.maplesu.manager.workmode.ModeRuntime.active != dev.maplesu.manager.workmode.WorkMode.KSU) return
-        val revision = ++normalHiddenRevision
-        localRevision.incrementAndGet()
-        activeToggleWrites.incrementAndGet()
-        _uiState.update { it.copy(normalHidden = it.normalHidden.copy(activating = true, failure = null)) }
-        viewModelScope.launch {
-            val result = try {
-                withContext(Dispatchers.IO) { runCatching { controller.activate() }.getOrNull() }
-            } finally {
-                activeToggleWrites.decrementAndGet()
-                localRevision.incrementAndGet()
-            }
-            if (revision != normalHiddenRevision) return@launch
-            normalHiddenUrl = null
-            if (result?.ok == true) {
-                _uiState.update { it.copy(normalHidden = NormalHiddenUi(visible = true, completed = true,
-                    portText = it.normalHidden.portText),
-                    hiddenMasked = true, workModeEntry = WorkModeEntryPolicy.NONE,
-                    showWebUiSelfCheck = false, bFeatures = it.bFeatures.copy(
-                        stealth = it.bFeatures.stealth.copy(enabled = true))) }
-            } else {
-                controller.cancel()
-                _uiState.update { it.copy(normalHidden = NormalHiddenUi(visible = true,
-                    portText = it.normalHidden.portText,
-                    failure = NormalHiddenFailure.ACTIVATE)) }
-            }
-        }
-    }
-
     override fun onCleared() {
-        normalHiddenRevision++
-        normalHiddenController?.cancel()
-        normalHiddenUrl = null
         super.onCleared()
-    }
-
-    fun setWebAdminEnabled(enabled: Boolean) {
-        val cards = _uiState.value.bFeatures
-        if (!cards.webAdmin.show || !cards.webAdmin.operable) return
-        applyToggle("webAdmin", enabled, { it.bFeatures.webAdmin.enabled }, { state, value ->
-            state.copy(bFeatures = state.bFeatures.copy(webAdmin = state.bFeatures.webAdmin.copy(enabled = value)))
-        }) {
-            if (WebAdminCli.setEnabled(enabled)) {
-                repo.webAdminEnabled = enabled
-                null
-            } else ksuApp.getString(R.string.work_mode_webadmin_failed)
-        }
-    }
-
-    /** 复制网页管理器访问地址（含一次性 key，只走内存，不进 state/日志）。 */
-    fun copyWebAdminUrl() {
-        viewModelScope.launch {
-            val url = withContext(Dispatchers.IO) { runCatching { WebAdminCli.url() }.getOrDefault("") }
-            val message = if (url.isBlank()) {
-                R.string.work_mode_webadmin_failed
-            } else if (WebAdminCli.copyUrl(ksuApp, url)) {
-                R.string.work_mode_webadmin_copied
-            } else {
-                R.string.work_mode_webadmin_copy_failed
-            }
-            Toast.makeText(ksuApp, message, Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    /** 用浏览器打开网页管理器（地址含 key）。 */
-    fun openWebAdminUrl() {
-        viewModelScope.launch {
-            val url = withContext(Dispatchers.IO) { runCatching { WebAdminCli.url() }.getOrDefault("") }
-            if (url.isBlank()) {
-                Toast.makeText(ksuApp, R.string.work_mode_webadmin_failed, Toast.LENGTH_LONG).show()
-                return@launch
-            }
-            val error = WebAdminCli.openInBrowser(ksuApp, url)
-            if (error != null) {
-                Toast.makeText(ksuApp, error, Toast.LENGTH_LONG).show()
-            }
-        }
     }
 
     fun setUiMode(mode: String) {
@@ -912,86 +637,16 @@ class SettingsViewModel(
         _uiState.update { it.copy(enableWebDebugging = enabled) }
     }
 
-    fun setSuCompatMode(mode: Int) {
-        if (mode != 0 && mode != 2) return
-        val enabled = mode == 0
-        applyToggle("suCompat", enabled, { it.isSuEnabled }, { state, value ->
-            state.copy(isSuEnabled = value, suCompatMode = if (value) 0 else 2)
-        }) {
-            if (repo.setSuEnabled(enabled)) {
-                repo.setSuCompatModePref(mode)
-                if (!enabled) withContext(Dispatchers.Main) {
-                    Toast.makeText(ksuApp, R.string.maplesu_su_off_keeps_delivered, Toast.LENGTH_LONG).show()
-                }
-                null
-            } else ksuApp.getString(R.string.ui_polish_setting_failed)
-        }
-    }
-
-    fun setKernelUmountEnabled(enabled: Boolean) = applyToggle("kernelUmount", enabled,
-        { it.isKernelUmountEnabled }, { state, value -> state.copy(isKernelUmountEnabled = value) }) {
-        if (repo.setKernelUmountEnabled(enabled)) { repo.execKsudFeatureSave(); null }
-        else ksuApp.getString(R.string.ui_polish_setting_failed)
-    }
-
-    fun setSelinuxHideEnabled(enabled: Boolean) = applyToggle("selinuxHide", enabled,
-        { it.isSelinuxHideEnabled }, { state, value -> state.copy(isSelinuxHideEnabled = value) }) {
-        when (val result = repo.setSelinuxHideEnabled(enabled)) {
-            0, -OsConstants.EAGAIN -> {
-                repo.execKsudFeatureSave()
-                withContext(Dispatchers.Main) {
-                    val message = if (result == -OsConstants.EAGAIN) R.string.settings_selinux_hide_reboot_required
-                        else R.string.settings_selinux_hide_applied
-                    Toast.makeText(ksuApp, message, Toast.LENGTH_LONG).show()
-                }
-                null
-            }
-            else -> ksuApp.getString(R.string.ui_polish_setting_failed)
-        }
-    }
-
     fun setUseSoftReboot(enabled: Boolean) {
         localRevision.incrementAndGet()
         repo.useSoftReboot = enabled
         _uiState.update { it.copy(useSoftReboot = enabled) }
     }
 
-    fun setSulogEnabled(enabled: Boolean) = applyToggle("sulog", enabled,
-        { it.isSulogEnabled }, { state, value -> state.copy(isSulogEnabled = value) }) {
-        if (repo.setSulogEnabled(enabled)) { repo.execKsudFeatureSave(); null }
-        else ksuApp.getString(R.string.ui_polish_setting_failed)
-    }
 
-    fun setShellSuAdbOnlyEnabled(enabled: Boolean) = applyToggle("shellSuAdbOnly", enabled,
-        { it.isShellSuAdbOnlyEnabled }, { state, value -> state.copy(isShellSuAdbOnlyEnabled = value) }) {
-        if (repo.setShellSuAdbOnlyEnabled(enabled)) { repo.execKsudFeatureSave(); null }
-        else ksuApp.getString(R.string.ui_polish_setting_failed)
-    }
 
-    fun setAdbRootEnabled(enabled: Boolean) = applyToggle("adbRoot", enabled,
-        { it.isAdbRootEnabled }, { state, value -> state.copy(isAdbRootEnabled = value) }) {
-        if (repo.setAdbRootEnabled(enabled)) { repo.execKsudFeatureSave(); null }
-        else ksuApp.getString(R.string.ui_polish_setting_failed)
-    }
 
-    fun setDefaultUmountModules(enabled: Boolean) = applyToggle("defaultUmount", enabled,
-        { it.isDefaultUmountModules }, { state, value -> state.copy(isDefaultUmountModules = value) }) {
-        if (repo.setDefaultUmountModules(enabled)) null else ksuApp.getString(R.string.ui_polish_setting_failed)
-    }
 
 }
 
 
-/**
- * W15 六项 KSU 设置行的聚合读取结果（04-ui-contract §3.4）。
- * 只在 B（能力位 `supportsKernelUmount` 等为 true）时构造；A 下为 null ⇒ 零新增 IO。
- */
-private data class KsuSettingsExtras(
-    val kernelUmount: Boolean,
-    val selinuxHide: Boolean,
-    val lateLoad: Boolean,
-    val sulog: Boolean,
-    val adbRoot: Boolean,
-    val shellSuAdbOnly: Boolean,
-    val defaultUmount: Boolean,
-)

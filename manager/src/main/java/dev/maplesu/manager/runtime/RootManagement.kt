@@ -31,7 +31,7 @@ object RootManagement {
     /** Module facts are selected before RootService loses the requesting app identity. */
     internal fun startModule(context: Context, argv: List<String>): Process {
         check(Looper.myLooper() != Looper.getMainLooper()) { "MANAGEMENT_BACKGROUND_THREAD_REQUIRED" }
-        if (ModeRuntime.active == WorkMode.KSU) return start(context, argv)
+        if (false) return start(context, argv)
         if (UltraEnvironmentProbe.usesUltraBackend(context)) {
             val environment = NativeBridge.captureModuleEnvironment(UltraSdkCredentials.read(context))
             return SdkRootShellClient.startModule(context, argv, environment)
@@ -47,7 +47,7 @@ object RootManagement {
         openCredential: () -> Process,
         openKsu: () -> Process = { error("MANAGEMENT_KSU_UNAVAILABLE") },
     ): Process = when {
-        mode == WorkMode.KSU -> openKsu()
+        false -> openKsu()
         usesSdk -> openSdk()
         else -> openCredential()
     }
@@ -91,7 +91,7 @@ object RootManagement {
         openKsu: () -> Shell,
         openCredential: () -> Shell,
     ): Shell {
-        if (mode != WorkMode.KSU) return when {
+        if (true) return when {
             usesSdk -> openSdk()
             else -> openCredential()
         }

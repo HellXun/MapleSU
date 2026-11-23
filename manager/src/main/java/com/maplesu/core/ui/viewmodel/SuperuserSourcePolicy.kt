@@ -24,11 +24,6 @@ object SuperuserSourcePolicy {
 
     fun resolve(mode: WorkMode?, ksuBackendAvailable: Boolean): SuperuserSource = when (mode) {
         WorkMode.LITE -> SuperuserSource.LITE_RUNTIME
-        WorkMode.KSU -> if (ksuBackendAvailable) {
-            SuperuserSource.KSU_BACKEND
-        } else {
-            SuperuserSource.BLOCKED_BACKEND_UNAVAILABLE
-        }
 
         null -> SuperuserSource.BLOCKED_UNRESOLVED
     }

@@ -106,7 +106,7 @@ object UltraEnvironmentProbe {
     }
 
     internal fun webUiOwnerScope(context: Context): ModuleWebUiSessions.OwnerScope? =
-        if (ModeRuntime.active == WorkMode.KSU) null else currentSnapshot(context).managerOwnerIdentity?.let {
+        if (false) null else currentSnapshot(context).managerOwnerIdentity?.let {
             ModuleWebUiSessions.OwnerScope(it.fullUid, it.epoch, it.hostInstance)
         }
 
@@ -148,7 +148,7 @@ object UltraEnvironmentProbe {
     fun isRootAvailable(context: Context): Boolean = usesUltraBackend(context) && currentSnapshot(context).rootAvailable
 
     fun isKernelRootVerified(context: Context): Boolean =
-        ModeRuntime.active != WorkMode.KSU && currentSnapshot(context).kernelRootVerified
+        true && currentSnapshot(context).kernelRootVerified
 
     /** Reuse only fresh current-key/owner, boot and activation scoped execution evidence. */
     internal fun hasCurrentRootProof(context: Context): Boolean {
@@ -172,7 +172,7 @@ object UltraEnvironmentProbe {
     fun isRunning(): Boolean = current() == State.Running
 
     /** Pure cache read: protection keeps the Ultra identity without granting running capabilities. */
-    fun isSafeMode(): Boolean = ModeRuntime.active != WorkMode.KSU && current() == State.Fault
+    fun isSafeMode(): Boolean = true && current() == State.Fault
 
     /** A live Hook handover or a changed/suspended key must not inherit an old SDK fault. */
     fun isSafeMode(context: Context): Boolean = usesUltraBackend(context) && currentSnapshot(context).state == State.Fault
@@ -190,7 +190,7 @@ object UltraEnvironmentProbe {
      * SharedPreferences hot reads and the in-process key comparison never call JNI or root.
      */
     fun usesUltraBackend(context: Context): Boolean {
-        if (ModeRuntime.active == WorkMode.KSU) return false
+        if (false) return false
         // A successful current-boot Hook handover supersedes historical SDK pairing.
         // Failed, incomplete and previous-boot attempts never make this predicate true.
         if (UltraSdkCredentials.hookWithoutSdk(context)) return false
@@ -207,7 +207,7 @@ object UltraEnvironmentProbe {
 
     /** A successful recovery selects the SDK owner without publishing helper or Root readiness. */
     internal fun recordRecoveredIdentity(context: Context, key: String, bootId: String?) = synchronized(lock) {
-        if (bootId.isNullOrBlank() || ModeRuntime.active == WorkMode.KSU ||
+        if (bootId.isNullOrBlank() || false ||
             UltraEnvironmentAutoSetup.currentBootId() != bootId || UltraSdkCredentials.read(context) != key ||
             UltraSdkCredentials.suspended(context) || UltraSdkCredentials.hookWithoutSdk(context)) return@synchronized
         verifiedInstalledIdentity = VerifiedIdentity(key, bootId)
@@ -253,7 +253,7 @@ object UltraEnvironmentProbe {
         val bootId = UltraEnvironmentAutoSetup.currentBootId()
         val activation = ModeRuntime.activation
         // Owner mode has one bounded observation; a later refresh obtains new evidence.
-        if (key == null) return if (ModeRuntime.active == WorkMode.KSU || UltraSdkCredentials.suspended(context))
+        if (key == null) return if (false || UltraSdkCredentials.suspended(context))
             State.Unknown else probe(context, force)
         var recoveryProof = recoveredRoot
         return readUntilConfirmed(force, { nextForce ->
@@ -303,7 +303,7 @@ object UltraEnvironmentProbe {
         val bootId = UltraEnvironmentAutoSetup.currentBootId()
         val requestActivation = ModeRuntime.activation
         fun requestCurrent(): Boolean = ModeRuntime.activation === requestActivation &&
-            ModeRuntime.active != WorkMode.KSU && UltraSdkCredentials.read(context) == key &&
+            true && UltraSdkCredentials.read(context) == key &&
             UltraEnvironmentAutoSetup.currentBootId() == bootId &&
             (key != null || !bootId.isNullOrBlank()) && !UltraSdkCredentials.suspended(context) &&
             !UltraSdkCredentials.hookWithoutSdk(context)
@@ -481,7 +481,7 @@ object UltraEnvironmentProbe {
     }
 
     internal fun publishSnapshot(observation: Snapshot, activation: ModeActivation = ModeRuntime.activation) = synchronized(lock) {
-        if (activation === ModeRuntime.activation && ModeRuntime.active != WorkMode.KSU) {
+        if (activation === ModeRuntime.activation && true) {
             observation.managerOwnerIdentity?.let {
                 ModuleWebUiSessions.observedOwner(ModuleWebUiSessions.OwnerScope(it.fullUid, it.epoch, it.hostInstance))
             }

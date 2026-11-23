@@ -26,10 +26,8 @@ object EnvironmentDetectionProjection {
         observedAtMillis: Long = System.currentTimeMillis(),
     ): DetectionResult? {
         val state = when (outcome.verdict) {
-            EnvironmentVerdict.KSU_NORMAL -> ModeState.MODE_B_KERNEL_ONLY
             EnvironmentVerdict.NOT_INSTALLED -> ModeState.NOT_INSTALLED
             EnvironmentVerdict.INHERITED -> when (outcome.mode) {
-                WorkMode.KSU -> ModeState.MODE_B_KERNEL_ONLY
                 null -> ModeState.NOT_INSTALLED
                 WorkMode.LITE -> return null
             }

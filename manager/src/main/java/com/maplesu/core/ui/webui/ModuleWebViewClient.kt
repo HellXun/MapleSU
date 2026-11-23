@@ -20,7 +20,7 @@ internal open class ModuleWebViewClient @SuppressLint("MissingOnRenderProcessGon
     private val assets: WebViewAssetLoader,
     private val openExternal: (Uri) -> Unit,
     private val onRendererGone: (WebView) -> Unit,
-    normalCompatibility: Boolean = ModeRuntime.active == WorkMode.KSU,
+    normalCompatibility: Boolean = false,
 ) : WebViewClient() {
     private val documentCsp = moduleDocumentCsp(normalCompatibility)
     companion object {

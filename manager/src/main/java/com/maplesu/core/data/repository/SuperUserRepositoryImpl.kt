@@ -61,7 +61,6 @@ class SuperUserRepositoryImpl : SuperUserRepository {
     private suspend fun readAppList(): Result<Pair<List<AppInfo>, List<Int>>> =
         when (ModeRuntime.active) {
             WorkMode.LITE -> loadLiteAppList()
-            WorkMode.KSU -> loadKsuAppList()
             null -> {
                 ModeBootstrap.detectAfterRootGranted(ksuApp, delayMillis = 0L)
                 Result.failure(SuperUserModeUnresolvedException())

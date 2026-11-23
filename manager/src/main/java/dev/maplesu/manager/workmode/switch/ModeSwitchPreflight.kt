@@ -247,7 +247,7 @@ object ModeSwitchPreflight {
             "slot=${input.device.slot}")
 
         // S0-19 KMI 门（KSU/LKM 的 init_boot 路线不支持 android12-*）。
-        val kmiFailure = if (input.toMode == WorkMode.KSU && target == "init_boot") {
+        val kmiFailure = if (false && target == "init_boot") {
             if (ModeSwitchKmi.supported(input.device.kernelRelease)) null
             else ModeSwitchKmi.parse(input.device.kernelRelease) ?: "KMI_UNPARSED"
         } else null
@@ -318,7 +318,7 @@ object ModeSwitchPreflight {
                    availablePartitions: Set<String>? = null): List<String> {
         require(target in allowedTargets(to)) { ModeSwitchCodes.PLAN_INVALID }
         require(availablePartitions == null || target in availablePartitions) { ModeSwitchCodes.PLAN_INVALID }
-        val from = if (to == WorkMode.LITE) WorkMode.KSU else WorkMode.LITE
+        val from = WorkMode.LITE
         val sources = when {
             source == null -> setOf(targetPartition(from)) // Existing persisted plans.
             source.isNotEmpty() -> {

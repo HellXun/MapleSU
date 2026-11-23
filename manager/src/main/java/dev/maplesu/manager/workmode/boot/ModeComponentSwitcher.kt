@@ -22,7 +22,6 @@ object ModeComponentSwitcher {
     fun apply(context: Context, mode: WorkMode) {
         when (mode) {
             WorkMode.LITE -> Unit // 原实现不动；见类注释
-            WorkMode.KSU -> disableAll(context)
         }
     }
 

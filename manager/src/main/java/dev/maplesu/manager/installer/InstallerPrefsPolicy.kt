@@ -9,7 +9,7 @@ import dev.maplesu.manager.workmode.storage.SettingsPrefsPolicy
  *
  * 背景：`InstallerServiceClient` 原先固定 `getSharedPreferences("installer")`，A/B 共用同一文件，
  * 切模式后 `lastTaskId`/退役标记会串。规则与 `workmode/storage/SettingsPrefsRouter` **同一份裁决**：
- * - 已判定：LITE → `installer`（A 原名，逐字节等价）；KSU → `installer_B`（`ModePaths` 表唯一来源）；
+ * - 已判定：LITE → `installer`（A 原名，逐字节等价）；
  * - 未判定：不再默认 A。把 "设置总仓应使用哪个文件" 的结论（[SettingsPrefsPolicy] 的
  *   A/B/中性）按同一映射换到 installer 前缀；中性结论 → 中性 prefs（`workmode_state`），
  *   由 `SettingsPrefsRouter` 内部的 lastKnown/证据规则决定，本类不复制该逻辑。
@@ -30,7 +30,7 @@ internal object InstallerPrefsPolicy {
      */
     fun nameForUnresolved(settingsDecision: String): String = when (settingsDecision) {
         SettingsPrefsPolicy.A_NAME -> LEGACY_NAME
-        SettingsPrefsPolicy.B_NAME -> nameForResolved(WorkMode.KSU)
+        SettingsPrefsPolicy.B_NAME -> "${LEGACY_NAME}_B"
         // 中性 prefs（ModePaths.NEUTRAL_PREFS）：不落在 A 文件上，也不新建模式文件。
         else -> settingsDecision
     }
@@ -41,6 +41,6 @@ internal object InstallerPrefsPolicy {
     /** Task receipts may have been written before the current mode became active. */
     fun targetRecordNames(currentName: String): List<String> = listOf(
         "installer-routing", currentName, ModePaths.NEUTRAL_PREFS,
-        LEGACY_NAME, nameForResolved(WorkMode.KSU),
+        LEGACY_NAME, "${LEGACY_NAME}_B",
     ).distinct()
 }

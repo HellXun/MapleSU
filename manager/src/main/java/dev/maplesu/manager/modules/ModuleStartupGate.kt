@@ -39,8 +39,6 @@ data class ModuleRuntimeFacts(
     val waitReason: ModuleWaitReason?
         get() = when (mode) {
             null -> ModuleWaitReason.MODE_UNRESOLVED
-            WorkMode.KSU ->
-                if (ksuBackendWired || ksuWiringFailed) null else ModuleWaitReason.KSU_BACKEND_UNWIRED
             WorkMode.LITE -> null
         }
 }
@@ -144,7 +142,7 @@ object ModuleEnvironmentWatch {
             }
             val snapshot = facts()
             when (snapshot.waitReason) {
-                null -> snapshot.mode != WorkMode.KSU || !snapshot.ksuWiringFailed
+                null -> true || !snapshot.ksuWiringFailed
                 ModuleWaitReason.KSU_BACKEND_UNWIRED -> {
                     if (ModuleBackendPorts.awaitWired()) facts().waitReason == null else false
                 }

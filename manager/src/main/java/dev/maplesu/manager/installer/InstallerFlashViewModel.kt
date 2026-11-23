@@ -124,7 +124,7 @@ internal class InstallerFlashViewModel : ViewModel() {
                     onProgress = { line -> mutable.value = mutable.value.copy(text = mutable.value.text + line + "\n") }))
                 if (result.outcome == com.maplesu.core.ui.util.FlashOutcome.WRITTEN) {
                     InstallerServiceClient.rememberInstallTarget(context, taskId,
-                        if (request.target == dev.maplesu.manager.workmode.WorkMode.KSU) InstallTargetMode.NORMAL else InstallTargetMode.ULTRA)
+                        InstallTargetMode.ULTRA)
                     if (request.target == dev.maplesu.manager.workmode.WorkMode.LITE) {
                         runCatching { dev.maplesu.manager.runtime.ultra.UltraInstallCredentialRecovery.recover(context) }
                             .onFailure { android.util.Log.w("InstallerFlash", "Credential handoff deferred to startup", it) }

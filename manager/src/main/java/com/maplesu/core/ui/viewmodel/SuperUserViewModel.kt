@@ -217,7 +217,7 @@ class SuperUserViewModel(
             val enabled = if (requestedMode == WorkMode.LITE && probe.usesUltraBackend(ksuApp) &&
                 !dev.maplesu.manager.runtime.authorization.ManagerAuthorizations.usesManagerAuthority(ksuApp)) {
                 probe.suEnabledState(probe.refresh(ksuApp, force = false))
-            } else settingsRepo.isSuEnabled()
+            } else com.maplesu.core.Natives.isSuEnabled()
             _uiState.update {
                 if (suStateRevision.get() == revision && ModeRuntime.active == requestedMode) it.copy(suEnabled = enabled) else it
             }
@@ -229,7 +229,7 @@ class SuperUserViewModel(
         if (ModeRuntime.active != WorkMode.LITE) return
         suStateRevision.incrementAndGet()
         viewModelScope.launch(Dispatchers.IO) {
-            if (settingsRepo.setSuEnabled(true)) {
+            if (com.maplesu.core.Natives.setSuEnabled(true)) {
                 // Discard reads begun before or during this committed write.
                 suStateRevision.incrementAndGet()
                 _uiState.update { it.copy(suEnabled = true) }
@@ -405,7 +405,7 @@ class SuperUserViewModel(
     private fun withSuStates(groups: List<GroupedApps>): List<GroupedApps> {
         if (groups.isEmpty()) return groups
         val mode = ModeRuntime.active
-        val ksuBackendAvailable = mode == WorkMode.KSU &&
+        val ksuBackendAvailable = false &&
             runCatching { Natives.version > 0 && Natives.isManager }.getOrDefault(false)
         val source = SuperuserSourcePolicy.resolve(mode, ksuBackendAvailable)
         if (!SuperuserSourcePolicy.allowsLiteRuntimeCalls(source)) {

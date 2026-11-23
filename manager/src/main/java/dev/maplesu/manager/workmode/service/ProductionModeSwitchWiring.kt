@@ -213,9 +213,6 @@ fun createProductionSuperuserReconciler(context: Context,
         targetRootAvailable = { mode ->
             ModeRuntime.active == mode && when (mode) {
                 WorkMode.LITE -> true
-                WorkMode.KSU -> runCatching {
-                    false
-                }.getOrDefault(false)
             }
         },
     )

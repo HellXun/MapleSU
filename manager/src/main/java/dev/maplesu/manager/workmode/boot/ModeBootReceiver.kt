@@ -52,10 +52,6 @@ class ModeBootReceiver : BroadcastReceiver() {
                 ModeGate.skip(ModeComponentIds.RECEIVER_MODE_BOOT, ModeGateFormat.Reason.LITE)
             }
 
-            WorkMode.KSU -> {
-                ModeComponentSwitcher.apply(context, WorkMode.KSU)
-                ModeGate.allow(ModeComponentIds.RECEIVER_MODE_BOOT)
-            }
 
             null -> {
                 // 激活超时：保持未判定，**不**触碰任何组件、不执行任何专属任务。

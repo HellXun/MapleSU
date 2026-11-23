@@ -104,8 +104,6 @@ fun interface SelinuxRestorer {
 class AndroidSelinuxRestorer(
     /** Ultra/LITE 通道（生产 = `RootExec.execute`）。 */
     private val ultra: SelinuxRootChannel = SelinuxRootChannel.UNWIRED,
-    /** Normal/KSU 通道（生产 = libsu root shell）。 */
-    private val normal: SelinuxRootChannel = SelinuxRootChannel.UNWIRED,
     /** App 域只读探测（同一份五级探测；已 Enforcing 时用来跳过根动作）。 */
     private val readLocal: () -> String = { "" },
 ) : SelinuxRestorer {
@@ -116,8 +114,8 @@ class AndroidSelinuxRestorer(
         if (local == SelinuxRestoreResult.ENFORCING) {
             return SelinuxRestoreResult(SelinuxRestoreResult.ENFORCING)
         }
-        // ② Ultra 通道优先，失败再走 Normal（libsu）；成功者负责回读确认 + 活性探针。
-        for (channel in listOf(ultra, normal)) {
+        // ② 只走 Ultra 通道（Normal/libsu 已随 KSU 后端删除）；成功者负责回读确认 + 活性探针。
+        for (channel in listOf(ultra)) {
             val result = runCatching { channel.run(ENFORCE_SCRIPT) }.getOrElse { error ->
                 SelinuxShellResult(false, "", -1, error.javaClass.simpleName)
             }

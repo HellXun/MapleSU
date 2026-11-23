@@ -54,7 +54,7 @@ val ModeState.group: DetectionGroup
  */
 val ModeState.activeMode: WorkMode?
     get() = when (this) {
-        ModeState.MODE_B_ACTIVE, ModeState.MODE_B_KERNEL_ONLY -> WorkMode.KSU
+        ModeState.MODE_B_ACTIVE, ModeState.MODE_B_KERNEL_ONLY -> null
         ModeState.MODE_A_ACTIVE -> WorkMode.LITE
         ModeState.MODE_A_INSTALLED_UNBOUND -> null
         ModeState.FOREIGN_SU, ModeState.NOT_INSTALLED, ModeState.INDETERMINATE -> null

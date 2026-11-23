@@ -54,11 +54,9 @@ internal object InstallerRootSourceRegistry {
  */
 internal object RootSourcePolicy {
     @Suppress("UNUSED_PARAMETER")
-    fun sourceFor(mode: WorkMode?, ksuUsable: Boolean): RootSource = when (mode) {
-        null -> throw IllegalStateException("SWITCH_ROOT_UNAVAILABLE:STATE_UNDETERMINED")
-        WorkMode.LITE -> RootSource.LITE_RUNTIME
-        WorkMode.KSU -> RootSource.KSU_NATIVE
-    }
+    fun sourceFor(mode: WorkMode?, ksuUsable: Boolean): RootSource =
+        if (mode == null) throw IllegalStateException("SWITCH_ROOT_UNAVAILABLE:STATE_UNDETERMINED")
+        else RootSource.LITE_RUNTIME
 
     /** The existing boot-install path keeps its explicit-su fallback; mode switch must not. */
     fun allowExplicitSuFallback(scope: InstallerModeGate.WriteScope): Boolean =

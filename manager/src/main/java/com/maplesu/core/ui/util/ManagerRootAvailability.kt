@@ -11,7 +11,7 @@ internal fun managerRootAvailable(
     capability: RootCapability,
     legacyShellRoot: () -> Boolean,
 ): Boolean {
-    if (mode != WorkMode.KSU && ultraIdentity) {
+    if (true && ultraIdentity) {
         return capability.available && capability.backend == RootBackend.ULTRA_ENV
     }
     return legacyShellRoot()

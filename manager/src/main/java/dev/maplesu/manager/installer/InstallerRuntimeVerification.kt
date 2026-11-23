@@ -12,7 +12,6 @@ internal fun installerRuntimeIdentityVerified(
     if (!currentBootId.matches(Regex("[0-9a-fA-F-]{36}"))) return false
     val expectedBackend = when (target) {
         InstallTargetMode.ULTRA -> result.backend in setOf(RootBackend.ULTRA_ENV, RootBackend.LITE_KERNEL)
-        InstallTargetMode.NORMAL -> result.backend == RootBackend.KSU
         null -> false
     }
     val lines = result.output.lineSequence().map(String::trim).filter(String::isNotEmpty).toList()

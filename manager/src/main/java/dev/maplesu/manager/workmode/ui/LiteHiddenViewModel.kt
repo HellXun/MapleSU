@@ -82,13 +82,6 @@ class LiteHiddenViewModel : ViewModel() {
                                 LiteHiddenRuntimeProxy.readState()
 
                             // B 也一样：读不到就说"未知"，不要用 isEnabled()（读失败 → false）冒充"未开启"。
-                            dev.maplesu.manager.workmode.WorkMode.KSU -> when (
-                                runCatching { com.maplesu.core.ui.security.Stealth.state() }.getOrNull()
-                            ) {
-                                com.maplesu.core.ui.security.Stealth.State.ON -> LiteHiddenState.ON
-                                com.maplesu.core.ui.security.Stealth.State.OFF -> LiteHiddenState.OFF
-                                else -> LiteHiddenState.UNKNOWN
-                            }
 
                             null -> LiteHiddenState.UNKNOWN
                         }

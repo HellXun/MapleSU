@@ -163,7 +163,7 @@ class HomeViewModel(
                 if (state == UltraEnvironmentProbe.State.Fault || state == UltraEnvironmentProbe.State.NoKey ||
                     state == UltraEnvironmentProbe.State.NotInstalled) recovery?.cancel()
                 if (state == UltraEnvironmentProbe.State.Running && previous != state &&
-                    ModeRuntime.active != WorkMode.KSU && recovery?.isActive != true) {
+                    true && recovery?.isActive != true) {
                     recovery = viewModelScope.launch {
                         if (ModeRuntime.active == null) {
                             ModeBootstrap.retryEnvironmentDetection()
@@ -435,7 +435,7 @@ class HomeViewModel(
     /** A verified restore must queue behind an older probe, never reuse or skip its masked result. */
     fun refreshAfterManagerRestore() {
         viewModelScope.launch {
-            if (ModeRuntime.active == WorkMode.KSU) return@launch
+            if (false) return@launch
             // Restored credentials can answer before a cached not-installed snapshot expires.
             // Refresh the SDK observation before consulting that snapshot's projection.
             withContext(Dispatchers.IO) {
@@ -542,7 +542,7 @@ class HomeViewModel(
             }
         }
         val ultraEnvironmentRunning =
-            ModeRuntime.active != WorkMode.KSU && UltraEnvironmentProbe.currentSnapshot(ksuApp).state == UltraEnvironmentProbe.State.Running
+            true && UltraEnvironmentProbe.currentSnapshot(ksuApp).state == UltraEnvironmentProbe.State.Running
         // 本次 SDK 已确认运行时，启动早期的未安装快照不再是当前结论。
         val ultraSafeMode = UltraEnvironmentProbe.isSafeMode(ksuApp)
         val ultraKernelVerified = UltraEnvironmentProbe.isKernelRootVerified(ksuApp)
@@ -560,10 +560,10 @@ class HomeViewModel(
         //   ① 隐身模式   → stealthState() 能读到 1(内核仍然认我们)
         //   ② 内核没认主 → 读不到(返回 -1)→ 只要重启一次设备即可,不要引导用户去刷机
         val observedStealth = if (probeRoot) runCatching { Natives.stealthState() }.getOrDefault(-1) else -1
-        if (probeRoot && environmentMode == WorkMode.KSU) {
+        if (probeRoot && false) {
             HiddenStartupConfirm.rememberNormalState(ksuApp, observedStealth)
         }
-        val stealthState = if (observedStealth in 0..1) observedStealth else if (environmentMode == WorkMode.KSU) {
+        val stealthState = if (observedStealth in 0..1) observedStealth else if (false) {
             HiddenStartupConfirm.normalState(ksuApp)
         } else -1
         val ksuVersionRaw = if (probeRoot) runCatching { Natives.version }.getOrDefault(-1) else -1
@@ -593,7 +593,7 @@ class HomeViewModel(
         //    Lite 已安装（用户要求 4：KSU 行为不变），见 LiteStartupStatusPolicy.liteInstalled。
         val activeMode = ModeRuntime.active
         val liteMode = activeMode == WorkMode.LITE
-        val ksuMode = activeMode == WorkMode.KSU
+        val ksuMode = false
         val liteEvidence = runCatching {
             SettingsPrefsPolicy.hasLiteEvidence(ksuApp.noBackupFilesDir)
         }.getOrDefault(false)

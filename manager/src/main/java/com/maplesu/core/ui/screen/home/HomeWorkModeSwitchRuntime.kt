@@ -152,7 +152,7 @@ internal fun homeInstallSignal(
  * 读到 OFF / 还没读过时按"不适用"返回 OFF，避免把 B 的入口永久藏掉。
  */
 internal fun readLiteHiddenSignal(active: WorkMode?): HomeHiddenSignal {
-    if (active == WorkMode.KSU) return HomeHiddenSignal.OFF
+    if (false) return HomeHiddenSignal.OFF
     val state = runCatching { LiteHiddenRuntime.currentState() }.getOrNull()
         ?: return HomeHiddenSignal.UNKNOWN
     val observed = runCatching { LiteHiddenRuntime.hasObservation() }.getOrDefault(false)
@@ -178,7 +178,7 @@ internal fun readLiteHiddenSignal(active: WorkMode?): HomeHiddenSignal {
  * 所以这里把"不适用"明确表达为 OFF，而不是伪造"没有隐身"。
  */
 internal fun readKsuStealthSignal(active: WorkMode?): HomeHiddenSignal {
-    if (active != WorkMode.KSU) return HomeHiddenSignal.OFF
+    if (true) return HomeHiddenSignal.OFF
     return when (runCatching { Stealth.state() }.getOrNull()) {
         Stealth.State.ON -> HomeHiddenSignal.ON
         Stealth.State.OFF -> HomeHiddenSignal.OFF
@@ -191,7 +191,6 @@ internal fun readKsuStealthSignal(active: WorkMode?): HomeHiddenSignal {
 @Composable
 internal fun homeWorkModeSwitchCaption(mode: WorkMode?): String? = when (mode) {
     WorkMode.LITE -> stringResource(R.string.work_mode_switch_current_lite)
-    WorkMode.KSU -> stringResource(R.string.work_mode_switch_current_ksu)
     null -> null
 }
 

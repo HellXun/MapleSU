@@ -75,10 +75,6 @@ internal fun InstallScreenMaterial(
                 onSelected = actions.onSelectMethod,
                 onSelectBootImage = actions.onSelectBootImage,
             )
-            InstallTargetSelectionSection(
-                state = uiState,
-                onSelectMode = actions.onSelectTargetMode,
-            )
             InstallPartitionSection(
                 state = uiState,
                 onSelectPartition = actions.onSelectPartition,

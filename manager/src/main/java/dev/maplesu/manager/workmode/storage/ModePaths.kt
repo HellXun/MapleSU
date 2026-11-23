@@ -58,11 +58,6 @@ object ModePaths {
             path = KSU_MODULE_ROOT,
             sharedWithOtherMode = true,
         )
-        WorkMode.KSU -> ModuleRoot(
-            owner = ModuleOwner.KSU,
-            path = KSU_MODULE_ROOT,
-            sharedWithOtherMode = true,
-        )
     }
 
     /**
@@ -83,7 +78,6 @@ object ModePaths {
                     path == root || path.startsWith("$root/") ||
                     path == catalog || path.startsWith("$catalog/")
             }
-            WorkMode.KSU -> path == KSU_MODULE_ROOT || path.startsWith("$KSU_MODULE_ROOT/")
         }
     }
 
@@ -110,7 +104,6 @@ object ModePaths {
     ) {
         fun nameFor(mode: WorkMode): String? = when (mode) {
             WorkMode.LITE -> liteName
-            WorkMode.KSU -> ksuName
         }
     }
 

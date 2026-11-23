@@ -87,18 +87,6 @@ object UltraEnvSwitchPolicy {
                 // NO_KEY：真实硬前提（无 rootKey ⇒ Ultra 根通道不可用）。
                 UltraState.NO_KEY -> noKeyBlock()
             }
-            WorkMode.KSU -> when (ultraState) {
-                UltraState.RUNNING -> UltraSwitchDecision.Allowed(
-                    listOf(UltraSwitchAction.RESTORE_ULTRA_AFTER_VERIFY),
-                )
-                // 缺资产不弹阻断：走「安装/修补 Ultra 环境」流程（actions 纯说明性）。
-                UltraState.NOT_INSTALLED, UltraState.FAULT, UltraState.UNKNOWN, UltraState.NO_KEY -> UltraSwitchDecision.Allowed(
-                    listOf(
-                        UltraSwitchAction.PREPARE_ULTRA_RESTORE_BEFORE_SWITCH,
-                        UltraSwitchAction.RESTORE_ULTRA_AFTER_VERIFY,
-                    ),
-                )
-            }
         }
     }
 
@@ -212,14 +200,6 @@ class UltraEnvSwitchCoordinator(
     fun afterVerified(toMode: WorkMode): UltraSwitchResult {
         val state = freshState()
         return when (toMode) {
-            WorkMode.KSU -> if (state == UltraState.RUNNING) {
-                UltraSwitchResult.failed(
-                    UltraSwitchCodes.ULTRA_ENV_MUST_SUSPEND,
-                    "ultra=$state after switch: stock-boot restore not effective (Ultra kernel still running)",
-                )
-            } else {
-                UltraSwitchResult.OK
-            }
             WorkMode.LITE -> if (state == UltraState.RUNNING ||
                 ((state == UltraState.UNKNOWN || state == UltraState.NOT_INSTALLED) &&
                     runCatching { port.kernelRootVerified() }.getOrDefault(false))) {

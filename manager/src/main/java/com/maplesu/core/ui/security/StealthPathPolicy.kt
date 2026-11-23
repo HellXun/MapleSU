@@ -31,7 +31,6 @@ object StealthPathPolicy {
 
     /** 当前模式的主路径（读/写/UI 展示优先）。 */
     fun primaryPath(mode: WorkMode?): String = when (mode) {
-        WorkMode.KSU -> B_PATH
         WorkMode.LITE, null -> A_PATH
     }
 
@@ -39,7 +38,6 @@ object StealthPathPolicy {
     fun writePath(mode: WorkMode?): String = primaryPath(mode)
 
     fun writeDir(mode: WorkMode?): String = when (mode) {
-        WorkMode.KSU -> B_DIR
         WorkMode.LITE, null -> A_DIR
     }
 
@@ -49,10 +47,6 @@ object StealthPathPolicy {
      * - A/未判定：[sevenk, ksu-legacy(self-heal)]（与现有行为一致）。
      */
     fun readPaths(mode: WorkMode?): List<StealthReadPath> = when (mode) {
-        WorkMode.KSU -> listOf(
-            StealthReadPath(B_PATH),
-            StealthReadPath(A_PATH),
-        )
 
         WorkMode.LITE, null -> listOf(
             StealthReadPath(A_PATH),
@@ -69,7 +63,6 @@ object StealthPathPolicy {
      * A/未判定=`/data/adb/sevenk/stealth`（现状不变）。
      */
     fun flagPrimaryPath(mode: WorkMode?): String = when (mode) {
-        WorkMode.KSU -> B_FLAG_PATH
         WorkMode.LITE, null -> A_FLAG_PATH
     }
 
@@ -79,7 +72,6 @@ object StealthPathPolicy {
      * - A/未判定：[sevenk, ksu]（现状 + 只读兼容）。
      */
     fun flagReadPaths(mode: WorkMode?): List<StealthReadPath> = when (mode) {
-        WorkMode.KSU -> listOf(StealthReadPath(B_FLAG_PATH), StealthReadPath(A_FLAG_PATH))
         WorkMode.LITE, null -> listOf(StealthReadPath(A_FLAG_PATH), StealthReadPath(B_FLAG_PATH))
     }
 
