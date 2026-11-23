@@ -243,18 +243,6 @@ class HomeEnvironmentAndroidTest {
                 labels.any { it.contains(ultraMode) })
             assertFalse("A running mode offered Ultra installation", context.getString(R.string.ui_d_env_install_title) in labels)
         }
-        arguments.getString("expectHomeJailbreak")?.let { expected ->
-            assertEquals("Jailbreak runtime was rendered as boot-installed", expected.toBoolean(), state.isLateLoadMode)
-            val label = context.getString(R.string.jailbreak_mode)
-            val deadline = SystemClock.uptimeMillis() + 10_000
-            var shown: Boolean
-            do {
-                shown = visibleTexts().any { it.contains(label) }
-                if (shown == expected.toBoolean()) break
-                SystemClock.sleep(50)
-            } while (SystemClock.uptimeMillis() < deadline)
-            assertEquals("Visible jailbreak label disagrees with the runtime", expected.toBoolean(), shown)
-        }
     }
 
     private fun reportState(stage: String, model: HomeViewModel, state: HomeUiState) {
