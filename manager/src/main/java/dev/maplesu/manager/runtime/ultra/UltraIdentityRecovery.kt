@@ -38,7 +38,6 @@ internal object UltraIdentityRecovery {
         ModeRuntime.active == WorkMode.KSU ||
         // A temporary owner must never verify, pair or back up a historical permanent key.
         UltraSdkSession.current(context) != null ||
-        dev.maplesu.manager.runtime.HookRootExecutor.production(context).available() ||
         ModeRuntime.latestDetection?.trace?.firstOrNull { it.id == "S1" }?.ok == true
 
     private data class Candidate(val key: String, val buildId: String?, val deploymentId: String?, val pid: Int)

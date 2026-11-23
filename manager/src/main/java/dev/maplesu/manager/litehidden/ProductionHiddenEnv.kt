@@ -8,7 +8,6 @@ import dev.maplesu.manager.recovery.RecoveryCommandResult
 import dev.maplesu.manager.recovery.RecoveryFs
 import dev.maplesu.manager.recovery.RecoveryPaths
 import dev.maplesu.manager.runtime.RootExec
-import dev.maplesu.manager.runtime.HookRootExecutor
 import dev.maplesu.manager.runtime.ultra.UltraAuthorization
 import dev.maplesu.manager.runtime.ultra.UltraRuntimeClient
 import dev.maplesu.manager.runtime.ultra.UltraSdkCredentials
@@ -52,14 +51,8 @@ object ProductionHiddenEnv {
         })
         val ultraSdkRoot = UltraEnvRootRunner(ultraClient)
         val routerRoot = RouterRootRunner(app)
-        // Stop, activity launch and loader readiness share the same 60s budget as the SDK route.
-        val hiddenHook = HookRootExecutor.production(app, timeoutMillis = 60_000)
-        val ultraRoot = HiddenRootRunner { script ->
-            if (hiddenHook.available()) {
-                val result = hiddenHook.run(script)
-                RecoveryCommandResult(result.code, result.output.ifEmpty { result.detail })
-            } else ultraSdkRoot.run(script)
-        }
+        // Ultra-only：隐藏模式的 root 通道只走 SDK（越狱 hook 通道已移除）。
+        val ultraRoot = HiddenRootRunner { script -> ultraSdkRoot.run(script) }
 
         // 恢复包/清单/配置都在 /data/adb（App 无法直接写），全部经**当前模式**的 root 通道。
         val modeRoot = HiddenRootRunner { script ->
@@ -90,7 +83,7 @@ object ProductionHiddenEnv {
             suAuth = UltraEnvSuAuth(app),
             state = RootFileHiddenState(ultraRoot),
             // precheck performs the actual id -u once through this same root route.
-            rootAvailable = { hiddenHook.available() || ultraClient.bridgeLoaded },
+            rootAvailable = { ultraClient.bridgeLoaded },
             identity = identity,
             prepareBoot = {
                 if (UltraSdkSession.current(app) != null) UltraSdkSession.prepareRecovery(app)

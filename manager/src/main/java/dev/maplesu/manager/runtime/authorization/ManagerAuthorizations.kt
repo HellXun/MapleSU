@@ -2,7 +2,6 @@ package dev.maplesu.manager.runtime.authorization
 
 import android.content.Context
 import com.maplesu.core.Natives
-import dev.maplesu.manager.runtime.HookRootExecutor
 import dev.maplesu.manager.runtime.SuDelivery
 import dev.maplesu.manager.runtime.SuPathWiring
 import dev.maplesu.manager.runtime.SuPublication
@@ -15,7 +14,7 @@ internal object ManagerAuthorizations {
     /** A boot SDK is another transport for this same authority, including after restore. */
     fun usesManagerAuthority(context: Context): Boolean =
         dev.maplesu.manager.workmode.ModeRuntime.active != dev.maplesu.manager.workmode.WorkMode.KSU &&
-            (HookRootExecutor.production(context).available() || UltraSdkSession.current(context) != null ||
+            (UltraSdkSession.current(context) != null ||
                 UltraEnvironmentProbe.currentSnapshot(context).let { it.managerOwnerIdentity != null && it.kernelRootVerified })
 
     private fun usesSdkOnly(context: Context): Boolean =
@@ -143,8 +142,8 @@ internal object ManagerAuthorizations {
         // the UI, the resident restricted Binder and the Ultra endpoint all see the same
         // revision. A missing root transport answers SU_TRANSPORT_UNAVAILABLE and the row
         // stays unsaved; nothing is written locally to look successful.
-        val preparation = if (UltraSdkSession.current(context) != null ||
-            HookRootExecutor.production(context).available()) UltraAuthorization.prepareExplicitMutation(context) else null
+        val preparation = if (UltraSdkSession.current(context) != null)
+            UltraAuthorization.prepareExplicitMutation(context) else null
         if (preparation?.blockedCode != null) return Natives.ProfileWriteResult(false,
             code = preparation.blockedCode, detail = preparation.diagnosticSummary)
         val written = SuperuserControl.saveProfile(context, stored)
@@ -158,8 +157,6 @@ internal object ManagerAuthorizations {
         if (UltraEnvironmentProbe.currentSnapshot(context).let {
                 it.managerOwnerIdentity != null && it.kernelRootVerified
             }) return result
-        // SuperuserControl already queued Hook publication after the decision.
-        if (HookRootExecutor.production(context).available()) return result
         // Plan A: the authorization change carries the delivery with it, but the delivery
         // must never run on the caller's thread - it starts root processes and the caller
         // may well be the UI, which would ANR. The authorization result is returned

@@ -45,8 +45,6 @@ data class SettingsUiState(
     // SELinux Hide
     val selinuxHideStatus: String = "",
     val isSelinuxHideEnabled: Boolean = false,
-    val jailbreakSelinuxHide: dev.maplesu.manager.jailbreak.JailbreakSelinuxHideState =
-        dev.maplesu.manager.jailbreak.JailbreakSelinuxHideState(),
     val ultraModulePolicy: dev.maplesu.manager.modules.UltraModulePolicyState =
         dev.maplesu.manager.modules.UltraModulePolicyState(),
 
@@ -187,5 +185,4 @@ data class SettingsScreenActions(
     val onOpenWebUiSelfCheck: () -> Unit = {},
     val onSetUltraModulePolicyLoad: (Boolean) -> Unit = {},
     val onSetUltraModulePolicyHide: (Boolean) -> Unit = {},
-    val onSetJailbreakSelinuxHide: (Boolean) -> Unit = {},
 )

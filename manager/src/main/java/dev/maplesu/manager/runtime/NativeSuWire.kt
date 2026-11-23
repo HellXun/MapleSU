@@ -5,7 +5,13 @@ import java.io.DataOutputStream
 import java.io.InputStream
 import java.io.OutputStream
 
-/** Wire fields contain execution data only. The admission UID comes from Binder. */
+/**
+ * `su` 线协议的一帧请求（shared by the Ultra supervised process and the removed
+ * jailbreak endpoints; the wire format is unchanged so already-delivered clients
+ * keep working）。
+ *
+ * Wire fields contain execution data only. The admission UID comes from Binder.
+ */
 internal data class NativeSuRequest(
     val terminals: Int,
     val targetUid: Int,
@@ -68,4 +74,3 @@ internal data class NativeSuRequest(
         }
     }
 }
-

@@ -23,14 +23,13 @@ import java.io.File
  * 2. [RootBackend.ULTRA_ENV]：Ultra 已 Running 时 `UltraRuntimeClient.runRootCommand`（Ultra su_auth）；
  * 3. [RootBackend.NONE]：结构化失败（带最后失败原因），调用方据此禁用/提示。
  *
- * 已验证 Ultra 身份只用 Ultra；Ultra 临时 Hook 使用当次 Gate，其余按当前工作模式选择后端。
+ * 已验证 Ultra 身份只用 Ultra 环境；其余按当前工作模式选择后端。
  * 每次 execute 都真实执行，不缓存结果。
  * [capability] 只用于 UI/能力展示，短 TTL 缓存以避免组合期反复探测，但**执行永不读缓存**。
  */
 enum class RootBackend {
     LITE_KERNEL,
     ULTRA_ENV,
-    HOOK,
     /**
      * KernelSU 原生根通道（Normal）：`<nativeLibraryDir>/libksud_ksu.so debug su`，
      * 与 `KsuRootChannel` 同形。**只在 `ModeRuntime.active == KSU` 时被装配/选中**。
@@ -44,7 +43,6 @@ enum class RootBackend {
         get() = when (this) {
             LITE_KERNEL -> "Ultra 内核"
             ULTRA_ENV -> "Ultra 环境"
-            HOOK -> "Ultra 临时环境"
             KSU -> "KSU 内核"
             NONE -> "无"
         }
@@ -159,7 +157,6 @@ class RootExecutionRouter(
     private val capabilityTtlMillis: Long = 2_000L,
     private val ksuProvider: () -> RootExecutor? = { RootExec.ksuExecutor() },
     private val ultraIdentity: () -> Boolean = { false },
-    private val hook: RootExecutor? = null,
 ) {
     private val lock = Any()
     private val executionLock = ReentrantLock(true)
@@ -168,9 +165,8 @@ class RootExecutionRouter(
 
     private fun executors(): List<RootExecutor> {
         val mode = runCatching { modeProvider() }.getOrNull()
-        if (mode != WorkMode.KSU) {
-            if (runCatching(ultraIdentity).getOrDefault(false)) return listOfNotNull(ultraEnv)
-            if (runCatching { hook?.available() == true }.getOrDefault(false)) return listOfNotNull(hook)
+        if (mode != WorkMode.KSU && runCatching(ultraIdentity).getOrDefault(false)) {
+            return listOfNotNull(ultraEnv)
         }
         return when (mode) {
             WorkMode.LITE -> listOfNotNull(ultraEnv, liteKernel)
@@ -180,20 +176,14 @@ class RootExecutionRouter(
         }
     }
 
-    /**
-     * Lite 的可用根来自 Ultra Running 或当前 Ultra Hook Gate；不启动 libsu/旧内核凭据。
-     */
+    /** Lite 的可用根来自 Ultra 环境；不启动 libsu/旧内核凭据。 */
     fun rootAvailableForLite(): Boolean = runCatching {
-        ultraEnv?.available() == true ||
-            (!ultraIdentity() && hook?.available() == true)
+        ultraEnv?.available() == true
     }.getOrDefault(false)
 
     /** 当前模式下首选后端（UI 显示；不执行）。 */
     fun preferredBackend(): RootBackend {
         val mode = runCatching { modeProvider() }.getOrNull()
-        if (mode != WorkMode.KSU && !runCatching(ultraIdentity).getOrDefault(false) &&
-            runCatching { hook?.available() == true }.getOrDefault(false)
-        ) return RootBackend.HOOK
         return when (mode) {
             WorkMode.LITE -> if (ultraEnv != null) RootBackend.ULTRA_ENV else RootBackend.LITE_KERNEL
             WorkMode.KSU -> if (runCatching { ksuProvider() }.getOrNull() != null) {
@@ -207,9 +197,6 @@ class RootExecutionRouter(
 
     fun execute(script: String): RootExecResult = executeSelected(script, ::executors)
 
-    /** Explicit Ultra handover: never select the previously active Normal/Ultra backend. */
-    fun executeHook(script: String): RootExecResult = executeSelected(script) { listOfNotNull(hook) }
-
     private fun executeSelected(script: String, select: () -> List<RootExecutor>): RootExecResult {
         val deadline = PageReadDeadline.currentNanos()
         val budget = deadline?.let { it - System.nanoTime() } ?: TimeUnit.MILLISECONDS.toNanos(1_500L)
@@ -218,10 +205,6 @@ class RootExecutionRouter(
             return RootExecResult(RootBackend.NONE, -1, "", "ROOT_EXECUTION_INTERRUPTED")
         }
         val selected = select()
-        // Hook commands own independent fork/pipe/waitpid sessions. Serializing
-        // them behind installs or SDK startup starves policy and inventory reads.
-        // SDK and legacy transports keep their existing exclusive admission.
-        if (selected.singleOrNull()?.backend == RootBackend.HOOK) return executeOn(script, selected)
         val lockBudget = deadline?.let { it - System.nanoTime() } ?: budget
         if (lockBudget <= 0) return RootExecResult(RootBackend.NONE, -1, "", "ROOT_EXECUTION_BUSY")
         val acquired = try { executionLock.tryLock(lockBudget, TimeUnit.NANOSECONDS) }
@@ -306,7 +289,6 @@ class RootExecutionRouter(
             }
             return RootExecutionRouter(
                 liteKernel = LiteKernelRootExecutor(application),
-                hook = HookRootExecutor.production(application),
                 ultraEnv = UltraEnvRootExecutor(
                     runner = ultraRunner,
                     running = { UltraEnvironmentProbe.isRootAvailable(application) },
@@ -323,10 +305,7 @@ class RootExecutionRouter(
                         UltraEnvironmentProbe.requestRefresh(application)
                     },
                 ),
-                ultraIdentity = {
-                    !HookRootExecutor.production(application).available() &&
-                        UltraEnvironmentProbe.usesUltraBackend(application)
-                },
+                ultraIdentity = { UltraEnvironmentProbe.usesUltraBackend(application) },
             )
         }
     }
@@ -379,16 +358,10 @@ object RootExec {
             ?: RootExecResult(RootBackend.NONE, -1, "", "ROOT_BACKEND_UNAVAILABLE")
 
     /** One admission budget for the official libsu task, shared by the router and SDK queues. */
-    internal fun executeServiceLaunch(context: Context?, script: String, useHook: Boolean = false): RootExecResult =
+    internal fun executeServiceLaunch(context: Context?, script: String): RootExecResult =
         kotlinx.coroutines.runBlocking(PageReadDeadline.context(5_000L)) {
-            val command = RootServiceBootstrap.command(script)
-            if (useHook) executeHook(context, command) else execute(context, command)
+            execute(context, RootServiceBootstrap.command(script))
         }
-
-    /** Explicit Hook operation; a failed or expired gate never falls back to another root source. */
-    fun executeHook(context: Context?, script: String): RootExecResult =
-        resolve(context)?.executeHook(script)
-            ?: RootExecResult(RootBackend.NONE, -1, "", "ROOT_BACKEND_UNAVAILABLE")
 
     private fun resolve(context: Context?): RootExecutionRouter? {
         installed?.let { return it }

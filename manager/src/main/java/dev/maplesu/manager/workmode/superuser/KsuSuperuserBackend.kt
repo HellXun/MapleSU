@@ -4,7 +4,6 @@ import android.content.Context
 import dev.maplesu.manager.ksu.KsuBackends
 import dev.maplesu.manager.ksu.KsuSuperuserAdapter
 import dev.maplesu.manager.runtime.ultra.UltraAuthorization
-import dev.maplesu.manager.runtime.HookRootExecutor
 import dev.maplesu.manager.runtime.ultra.UltraSdkSession
 import dev.maplesu.manager.runtime.authorization.UltraAllowlistMirror
 import dev.maplesu.manager.runtime.authorization.UltraAllowlistPort
@@ -258,7 +257,7 @@ object SuperuserMirrors {
     fun current(context: Context): dev.maplesu.manager.runtime.authorization.SuperuserMirror {
         // Ultra-only：Normal（KSU）允许列表镜像已移除，只保留 Ultra 授权镜像。
         val ultraActive = UltraAuthorization.isActive(context) &&
-            (HookRootExecutor.production(context).available() || UltraSdkSession.current(context) != null ||
+            (UltraSdkSession.current(context) != null ||
                 dev.maplesu.manager.runtime.ultra.UltraEnvironmentProbe.currentSnapshot(context).let {
                     it.managerOwnerIdentity != null && it.kernelRootVerified
                 })

@@ -13,8 +13,8 @@ import dev.maplesu.manager.workmode.WorkMode
 
 /**
  * Manager-side privileged operations. Normal uses its registered KSU channel;
- * paired SDK and current Ultra Hook environments use the existing streaming root task,
- * released when the shell closes. Only credential-backed environments read a credential.
+ * paired SDK environments use the existing streaming root task, released when the
+ * shell closes. Only credential-backed environments read a credential.
  */
 object RootManagement {
     fun start(context: Context, argv: List<String>, globalMnt: Boolean = false): Process {
@@ -22,11 +22,9 @@ object RootManagement {
         return startRouted(
             mode = ModeRuntime.active,
             usesSdk = UltraEnvironmentProbe.usesUltraBackend(context),
-            usesHook = HookRootExecutor.production(context).available(),
             openSdk = { SdkRootShellClient.start(context, argv, globalMnt) },
             openCredential = { startCredential(context, argv, globalMnt) },
             openKsu = { SdkRootShellClient.start(context, argv, globalMnt, RootBackend.KSU) },
-            openHook = { SdkRootShellClient.start(context, argv, globalMnt, RootBackend.HOOK) },
         )
     }
 
@@ -38,10 +36,6 @@ object RootManagement {
             val environment = NativeBridge.captureModuleEnvironment(UltraSdkCredentials.read(context))
             return SdkRootShellClient.startModule(context, argv, environment)
         }
-        if (HookRootExecutor.production(context).available()) {
-            return SdkRootShellClient.startModule(context, argv,
-                ModuleTaskEnvironment.captureNonSdk(hook = true), RootBackend.HOOK)
-        }
         return startCredential(context, argv, false, ModuleTaskEnvironment.captureNonSdk(hook = false))
     }
 
@@ -52,12 +46,9 @@ object RootManagement {
         openSdk: () -> Process,
         openCredential: () -> Process,
         openKsu: () -> Process = { error("MANAGEMENT_KSU_UNAVAILABLE") },
-        usesHook: Boolean = false,
-        openHook: () -> Process = { error("MANAGEMENT_HOOK_UNAVAILABLE") },
     ): Process = when {
         mode == WorkMode.KSU -> openKsu()
         usesSdk -> openSdk()
-        usesHook -> openHook()
         else -> openCredential()
     }
 
@@ -80,20 +71,17 @@ object RootManagement {
         return openShellRouted(
             mode = ModeRuntime.active,
             usesSdk = UltraEnvironmentProbe.usesUltraBackend(context),
-            usesHook = HookRootExecutor.production(context).available(),
             openSdk = { openProcessShell(context,
                 SdkRootShellClient.start(context, listOf("/system/bin/sh"), globalMnt), globalMnt) },
             openKsu = { openKsuShell(context.applicationContext, globalMnt) },
             openCredential = { openCredentialShell(context, globalMnt) },
-            openHook = { openProcessShell(context,
-                SdkRootShellClient.start(context, listOf("/system/bin/sh"), globalMnt, RootBackend.HOOK), globalMnt) },
         )
     }
 
     /**
      * Root-channel routing (host-testable; no Android calls here).
      *
-     * KSU retains its credential fallback. SDK and Hook failures propagate directly:
+     * KSU retains its credential fallback. SDK failures propagate directly:
      * neither identity is a legacy credential, and a submitted task is never replayed.
      */
     internal fun openShellRouted(
@@ -102,12 +90,9 @@ object RootManagement {
         openSdk: () -> Shell,
         openKsu: () -> Shell,
         openCredential: () -> Shell,
-        usesHook: Boolean = false,
-        openHook: () -> Shell = { error("MANAGEMENT_HOOK_UNAVAILABLE") },
     ): Shell {
         if (mode != WorkMode.KSU) return when {
             usesSdk -> openSdk()
-            usesHook -> openHook()
             else -> openCredential()
         }
         val ksuFailure: Throwable

@@ -54,7 +54,6 @@ internal fun AboutMapleDialogMiuix(show: Boolean, showModes: Boolean, onDismiss:
             color = colorScheme.onSurface,
         )
         CreditsMiuix()
-        dev.maplesu.manager.jailbreak.JailbreakSpecialThanks(textRes = R.string.about_maple_special_thanks)
         AdvisorWallMiuix(Modifier.padding(top = 4.dp))
     }
 }

@@ -52,7 +52,7 @@ object LiteWebBackendPolicy {
 
     private fun backendStrategy(backend: RootBackend): LiteWebStartStrategy = when (backend) {
         RootBackend.LITE_KERNEL -> LiteWebStartStrategy.ROOT_SERVICE
-        RootBackend.ULTRA_ENV, RootBackend.HOOK -> LiteWebStartStrategy.ULTRA_ENV_DAEMON
+        RootBackend.ULTRA_ENV -> LiteWebStartStrategy.ULTRA_ENV_DAEMON
         // KSU 内核根不是 Lite WebUI 的合法后端（Ultra 专属功能，Normal 下不应起 daemon）。
         RootBackend.KSU -> LiteWebStartStrategy.UNAVAILABLE
         RootBackend.NONE -> LiteWebStartStrategy.UNAVAILABLE
@@ -95,10 +95,10 @@ object LiteWebBackendPolicy {
         // A 已装/正在跑：有 LITE 证据，但仍要求有一个可用的已装实现。
         ModeState.MODE_A_ACTIVE,
         ModeState.MODE_A_INSTALLED_UNBOUND,
-        -> installed == RootBackend.LITE_KERNEL || installed == RootBackend.ULTRA_ENV || installed == RootBackend.HOOK
+        -> installed == RootBackend.LITE_KERNEL || installed == RootBackend.ULTRA_ENV
         // 未判定 / 读不到：按"当前安装的 root 实现"推断（Ultra 内核或 Ultra 环境存在即算证据）。
         ModeState.INDETERMINATE,
         null,
-        -> installed == RootBackend.LITE_KERNEL || installed == RootBackend.ULTRA_ENV || installed == RootBackend.HOOK
+        -> installed == RootBackend.LITE_KERNEL || installed == RootBackend.ULTRA_ENV
     }
 }

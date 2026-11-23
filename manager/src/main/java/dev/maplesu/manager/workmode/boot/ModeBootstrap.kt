@@ -18,7 +18,6 @@ import dev.maplesu.manager.workmode.detect.EnvironmentDetectionProjection
 import dev.maplesu.manager.workmode.detect.probes.AndroidRootShellOpener
 import dev.maplesu.manager.workmode.detect.probes.BootIdSourceAdapter
 import dev.maplesu.manager.workmode.detect.probes.EnvironmentCheckProduction
-import dev.maplesu.manager.workmode.detect.probes.JailbreakLeaseAdapter
 import dev.maplesu.manager.workmode.detect.probes.KsuKernelProbeAdapter
 import dev.maplesu.manager.workmode.detect.probes.LiteCredentialProbeAdapter
 import dev.maplesu.manager.workmode.detect.probes.UltraEnvironmentAdapter
@@ -224,13 +223,10 @@ object ModeBootstrap {
                     val preparation = preparationProbeRunner.run(8_000) {
                         beforeDetection()
                         startupContext?.let {
-                            runCatching {
-                                dev.maplesu.manager.workmode.backend.KsuBackendRegistry.prepareJailbreakManager(it)
-                            }.onFailure { error -> Log.w(TAG, "Normal manager driver handover pending", error) }
                             val observed = dev.maplesu.manager.runtime.ultra.UltraEnvironmentProbe.currentSnapshot(it)
                             val currentUltraConfirmed = observed.rootAvailable ||
                                 observed.state == dev.maplesu.manager.runtime.ultra.UltraEnvironmentProbe.State.Fault ||
-                                dev.maplesu.manager.runtime.HookRootExecutor.production(it).available()
+                                dev.maplesu.manager.runtime.ultra.UltraRootGateway.available(it)
                             if (!currentUltraConfirmed) {
                                 dev.maplesu.manager.runtime.ultra.UltraInstallCredentialRecovery.recover(it)
                             }
@@ -271,7 +267,6 @@ object ModeBootstrap {
                 liteProbe = liteProbe,
                 liteHandshakeProbe = liteProbe,
                 ultraPort = UltraEnvironmentAdapter(context),
-                jailbreakLease = JailbreakLeaseAdapter(context),
                 bootIdSource = BootIdSourceAdapter,
                 rootEvidenceReader = RootEvidenceReaderAdapter(AndroidRootShellOpener(context)),
             ),

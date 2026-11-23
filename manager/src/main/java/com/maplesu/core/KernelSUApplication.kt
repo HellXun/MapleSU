@@ -576,9 +576,6 @@ class KernelSUApplication : Application(), ViewModelStoreOwner {
             return
         }
 
-        // Discovery has the same binding before and after Root becomes available.
-        dev.maplesu.manager.runtime.NativeSuBrokerService.initialize(this)
-
         // Set the window's back policy before Activity creates and registers its callbacks.
         runCatching {
             setEnableOnBackInvokedCallback(applicationInfo, SettingsRepositoryImpl().enablePredictiveBack)

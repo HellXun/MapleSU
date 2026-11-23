@@ -42,7 +42,7 @@ object RootExecModuleScriptRunner : ModuleScriptRunner {
     fun run(context: Context, script: String): ModuleScriptOutput = output(RootExec.execute(context, script))
 
     /** Policy operations belong to this Hook session, never a fallback KSU/SDK backend. */
-    fun runHook(context: Context, script: String): ModuleScriptOutput = output(RootExec.executeHook(context, script))
+    fun runHook(context: Context, script: String): ModuleScriptOutput = output(RootExec.execute(context, script))
 
     private fun output(result: RootExecResult): ModuleScriptOutput {
         return if (result.ok) {

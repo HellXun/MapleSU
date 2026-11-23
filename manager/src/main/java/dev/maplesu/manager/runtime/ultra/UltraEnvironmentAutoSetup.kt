@@ -75,16 +75,9 @@ object UltraEnvironmentAutoSetup {
         }
         val appContext = context.applicationContext
         if (!current()) return Result(false, false, "SDK_CREDENTIAL_SCOPE_CHANGED")
-        val hook = dev.maplesu.manager.runtime.HookRootExecutor.production(appContext).available()
         if (!current()) return Result(false, false, "SDK_CREDENTIAL_SCOPE_CHANGED")
-        blockedReason(appContext, bootSession = hook || UltraSdkSession.current(appContext) != null)
+        blockedReason(appContext, bootSession = UltraSdkSession.current(appContext) != null)
             ?.let { return Result(false, false, it) }
-        if (hook) {
-            if (bootId.isNullOrBlank()) return Result(false, false, "BOOT_ID_UNAVAILABLE")
-            val bootstrap = UltraSdkSession.bootstrap(appContext, bootId, current)
-            if (!current()) return Result(bootstrap.submitted, false, "SDK_CREDENTIAL_SCOPE_CHANGED")
-            if (!bootstrap.bound) return Result(bootstrap.submitted, false, bootstrap.reason)
-        }
         if (!current()) return Result(false, false, "SDK_CREDENTIAL_SCOPE_CHANGED")
         val session = UltraSdkSession.current(appContext)
         if (session != null) {

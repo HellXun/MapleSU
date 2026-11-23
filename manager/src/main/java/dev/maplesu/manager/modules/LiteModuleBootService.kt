@@ -90,9 +90,6 @@ class LiteModuleBootService : Service() {
                             "MODULE_ROOT_PROBE_FAILED:${root.backend}/${root.code}:${root.detail}"
                         }
                         check(!destroyed.get()) { "MODULE_BOOT_CANCELLED" }
-                        runCatching {
-                            dev.maplesu.manager.jailbreak.JailbreakSelinuxHide.prepareHook(this@LiteModuleBootService)
-                        }.onFailure { Log.w("MapleSUSELinux", "Jailbreak status view preparation failed", it) }
                         UltraModulePolicyRepository.prepareHook(this@LiteModuleBootService)
                         val workerBackend = LiteScriptModuleBackend.get(this@LiteModuleBootService)
                         backend = workerBackend

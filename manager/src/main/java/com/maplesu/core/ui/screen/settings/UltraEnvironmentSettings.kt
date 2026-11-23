@@ -45,7 +45,6 @@ import com.maplesu.core.ui.component.statustag.StatusTag
 import com.maplesu.core.ui.component.uninstalldialog.UninstallChoice
 import com.maplesu.core.ui.component.uninstalldialog.UninstallChooser
 import dev.maplesu.manager.modules.UltraRootKeyStore
-import dev.maplesu.manager.runtime.HookRootExecutor
 import dev.maplesu.manager.runtime.ultra.UltraAutoPair
 import dev.maplesu.manager.runtime.ultra.UltraEnvironmentInstaller
 import dev.maplesu.manager.runtime.ultra.UltraEnvironmentAutoSetup
@@ -168,21 +167,7 @@ class UltraEnvironmentPanel internal constructor(
     }
     /** 一次读全：减少重组次数，也避免版本行和状态胶囊错开刷新。 */
     private suspend fun readFacts(force: Boolean = false): Facts = withContext(Dispatchers.IO) {
-        val hook = HookRootExecutor.production(context)
-        if (ModeRuntime.active == WorkMode.LITE && UltraSdkCredentials.hookWithoutSdk(context) && hook.available()) {
-            val current = captureObservation()
-            val result = hook.run("/system/bin/id -u")
-            return@withContext Facts(
-                state = if (result.ok && result.output.trim() == "0") UltraEnvironmentProbe.State.Running
-                    else UltraEnvironmentProbe.State.Unknown,
-                version = null,
-                observedAt = System.currentTimeMillis(),
-                hasKey = false,
-                keyState = UltraAutoPair.KeyState.Present,
-                hookEnvironment = true,
-                current = current,
-            )
-        }
+        // Ultra-only：hook 临时环境形态随越狱一并移除，直接走 Ultra 环境探测。
         val key = UltraSdkCredentials.read(context)
         val boot = UltraEnvironmentAutoSetup.currentBootId()
         val nextState = runCatching { UltraEnvironmentProbe.refresh(context, force = force) }
@@ -562,8 +547,7 @@ class UltraEnvironmentInstallPanel internal constructor(
     private var refreshJob: Job? = null
 
     private fun localIdentity(mode: WorkMode? = ModeRuntime.active): String? {
-        if (mode == WorkMode.KSU || ModeRuntime.active == WorkMode.KSU ||
-            HookRootExecutor.production(context).available()) return null
+        if (mode == WorkMode.KSU || ModeRuntime.active == WorkMode.KSU) return null
         return UltraRootKeyStore.read(context)
     }
 

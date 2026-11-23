@@ -1,16 +1,9 @@
 package dev.maplesu.manager.runtime.authorization
 
 import android.content.Context
-import dev.maplesu.manager.jailbreak.JailbreakRequest
-import dev.maplesu.manager.jailbreak.JailbreakStatus
-import dev.maplesu.manager.jailbreak.carrierBindsAttempt
 import dev.maplesu.manager.runtime.DirectRoot
-import dev.maplesu.manager.runtime.HookRootExecutor
 
-import dev.maplesu.manager.runtime.JailbreakGrantStore
-import dev.maplesu.manager.runtime.NativeSu
 import dev.maplesu.manager.runtime.SuAuditLog
-import dev.maplesu.manager.runtime.SuGate
 import dev.maplesu.manager.runtime.ultra.UltraAuthorization
 import dev.maplesu.manager.runtime.ultra.UltraRuntimeClient
 import dev.maplesu.manager.runtime.ultra.UltraSdkSession
@@ -86,7 +79,6 @@ object SuperuserControl {
             is RootToolOutcome.Failed -> null
         }
         if (!scopeCurrent(scope)) return null
-        if (scope == null) dev.maplesu.manager.runtime.NativeSuAdmission.update(context, snapshot)
         return snapshot.takeIf { scopeCurrent(scope) }
     }
 
@@ -357,15 +349,6 @@ object SuperuserControl {
         if (!outcome.ok) return@synchronized outcome
         DirectPolicy.invalidate()
         val snapshot = snapshot(context, scope)
-        // Every committed Hook decision, including WebUI writes, refreshes live
-        // entry readiness. SDK synchronization is a separate transport step.
-        runCatching {
-            if (HookRootExecutor.production(context).available()) {
-                dev.maplesu.manager.runtime.RuntimeDeployment.start(context)
-            }
-        }.onFailure {
-            android.util.Log.w("MapleSU", "SU_AUTH_POST_FAILED ${it.javaClass.simpleName}")
-        }
         val mirror = if (scope == null) SuperuserMirrors.current(context)
             else SuperuserMirrors.forSdkScope(context, scope)
         if (snapshot == null) {
@@ -440,12 +423,6 @@ object SuperuserControl {
         if (!scopeCurrent(scope)) return null
         val sources = ArrayList<SuperuserLegacySource>()
         val migrated = snapshot.migrated
-        if (!migrated.containsKey(SuperuserMigration.SOURCE_JAILBREAK)) {
-            val uids = JailbreakGrantStore.grantedUids(context)
-            if (uids.isNotEmpty()) {
-                sources += SuperuserLegacySource(SuperuserMigration.SOURCE_JAILBREAK, uids = uids)
-            }
-        }
         if (!scopeCurrent(scope)) return null
         if (!migrated.containsKey(SuperuserMigration.SOURCE_ULTRA) &&
             (scope != null || UltraAuthorization.isActive(context))) {
@@ -489,21 +466,13 @@ object SuperuserControl {
     private fun runTool(context: Context, scope: UltraAuthorization.Scope?, vararg arguments: String): RootToolOutcome {
         if (!scopeCurrent(scope)) return RootToolOutcome.Failed("SU_AUTH_SCOPE_CHANGED")
         val outcome = if (scope != null) {
-            val command = command(context, *arguments, hook = false)
+            val command = command(context, *arguments)
             if (!scope.current()) return RootToolOutcome.Failed("SU_AUTH_SCOPE_CHANGED")
             runSdkTool(scope.client, command)
         } else {
             val resolution = resolve(context)
-            val command = command(context, *arguments, hook = resolution is Resolution.Hook)
+            val command = command(context, *arguments)
             when (resolution) {
-                is Resolution.Hook -> {
-                    val result = NativeSu.executeScript(
-                        resolution.gate,
-                        command,
-                        File(context.filesDir, NativeSu.FALLBACK_NAME),
-                    )
-                    RootToolOutcome.parse(result.code, result.out)
-                }
                 is Resolution.BootSdk -> runSdkTool(UltraSdkSession.client(context, resolution.session), command)
                 is Resolution.OwnerSdk -> {
                     if (!resolution.scope.current()) RootToolOutcome.Failed("SU_AUTH_SCOPE_CHANGED")
@@ -550,7 +519,7 @@ object SuperuserControl {
      * `Context`; it is the same device-protected file `SuAuditLog.file(context)` names,
      * so the root tool and the app still append to one log.
      */
-    internal fun command(context: Context, vararg arguments: String, hook: Boolean = false): String {
+    internal fun command(context: Context, vararg arguments: String): String {
         val application = context.applicationContext
         val legacy = File(application.noBackupFilesDir, "authorizations.bin").absolutePath
         val audit = SuAuditLog.file(application).absolutePath
@@ -560,7 +529,6 @@ object SuperuserControl {
             // The Hook kernel domain cannot find package_service there. Scope the shell
             // domain to this UID-0 tool so it can verify package identities through Binder.
             append(" exec ")
-            if (hook) append("/system/bin/runcon u:r:shell:s0 ")
             append("/system/bin/app_process /system/bin ")
             append(TOOL).append(' ')
             append(application.applicationInfo.uid).append(' ')
@@ -638,15 +606,13 @@ object SuperuserControl {
         )
     }
 
-    /** Which transport this mode offers; pure, so the host test can assert the table. */
-    internal enum class Transport { HOOK, BOOT_SDK, DIRECT, NONE }
+    /** Which transport this build offers; pure, so the host test can assert the table. */
+    internal enum class Transport { BOOT_SDK, DIRECT, NONE }
 
     internal fun transportOf(
-        hookBackend: Boolean,
         ultraActive: Boolean,
         bootSdk: Boolean = false,
     ): Transport = when {
-        hookBackend -> Transport.HOOK
         bootSdk -> Transport.BOOT_SDK
         // The Ultra kernel restarts if the one-shot root runtime is started; refusing by
         // name is the honest answer and keeps the "no faked success" rule.
@@ -659,7 +625,6 @@ object SuperuserControl {
      * and "which token" cannot be answered from two different reads.
      */
     internal sealed interface Resolution {
-        data class Hook(val gate: SuGate.Gate) : Resolution
         data class BootSdk(val session: UltraBootSdkSession) : Resolution
         data class OwnerSdk(val scope: UltraAuthorization.Scope) : Resolution
         object Direct : Resolution
@@ -667,68 +632,24 @@ object SuperuserControl {
     }
 
     /**
-     * Resolves the transport *and* the gate for one command.
+     * Resolves the transport for one command.
      *
-     * <p>On the hook route the authority is the helper's own record, not anything this
-     * process remembers: the live attempt must be [JailbreakStatus.STAGE_DAEMON_READY],
-     * its published state must be [SuGate.ARMED], and [SuGate.read] must yield an armed
-     * gate bound to *this* attempt and boot. The status record alone is observability -
-     * it can never arm anything - which is why both conditions are required.
-     *
-     * <p>Every missing part answers [Resolution.Unavailable]: there is deliberately no
-     * fallback to [Resolution.Direct] when the mode says hook, so a broken L3 gate
-     * cannot silently reach a different root path.
+     * <p>Ultra-only: the former jailbreak hook route is gone, so the decision is simply
+     * "is there an SDK boot session, an owner scope, or a direct credential". Every
+     * missing part answers [Resolution.Unavailable] rather than inventing success.
      */
     internal fun resolve(context: Context): Resolution {
-        val status = runCatching { JailbreakStatus.read(context) }.getOrNull()
-        val bootSession = UltraSdkSession.current(context).takeUnless {
-            dev.maplesu.manager.workmode.ModeRuntime.active == dev.maplesu.manager.workmode.WorkMode.KSU
-        }
+        val bootSession = UltraSdkSession.current(context)
         val ownerScope = dev.maplesu.manager.runtime.ultra.UltraEnvironmentProbe.currentSnapshot(context)
-            .takeIf { dev.maplesu.manager.workmode.ModeRuntime.active != dev.maplesu.manager.workmode.WorkMode.KSU }
             ?.managerOwnerIdentity?.let { UltraAuthorization.captureOwnerScope(context, it) { true } }
-        if (status?.rootBackend != JailbreakRequest.BACKEND_HOOK) {
-            if (bootSession != null) return Resolution.BootSdk(bootSession)
-            if (ownerScope != null) return Resolution.OwnerSdk(ownerScope)
-            val ultraActive = runCatching { UltraAuthorization.isActive(context) }.getOrDefault(false)
-            return if (transportOf(false, ultraActive) == Transport.DIRECT) {
-                Resolution.Direct
-            } else {
-                Resolution.Unavailable
-            }
+        if (bootSession != null) return Resolution.BootSdk(bootSession)
+        if (ownerScope != null) return Resolution.OwnerSdk(ownerScope)
+        val ultraActive = runCatching { UltraAuthorization.isActive(context) }.getOrDefault(false)
+        return if (transportOf(ultraActive) == Transport.DIRECT) {
+            Resolution.Direct
+        } else {
+            Resolution.Unavailable
         }
-        val gate = hookGate(status, SuGate.read(context, status.attemptId, status.bootId))
-        return when {
-            gate.armed -> Resolution.Hook(gate)
-            bootSession != null -> Resolution.BootSdk(bootSession)
-            ownerScope != null -> Resolution.OwnerSdk(ownerScope)
-            else -> Resolution.Unavailable
-        }
-    }
-
-    /**
-     * The one predicate that turns "hook mode" into a usable transport.
-     *
-     * <p>All three facts are required and each is checked against the binding, not a
-     * default: the attempt reached `DAEMON_READY` for this boot, the record mirrored
-     * `suGate=ARMED`, and the root-owned daemon record is bound to the same attempt and
-     * boot with a non-zero 64-bit token ([SuGate.Gate.armed]). Pure, so the whole
-     * fail-closed table is host-testable without a device or a root-owned file.
-     */
-    internal fun hookGate(status: JailbreakStatus?, gate: SuGate.Gate): SuGate.Gate {
-        if (status == null) return SuGate.Gate.UNAVAILABLE_GATE
-        if (status.stage != JailbreakStatus.STAGE_DAEMON_READY) return SuGate.Gate.UNAVAILABLE_GATE
-        if (status.suGate != SuGate.ARMED) return SuGate.Gate.UNAVAILABLE_GATE
-        // §6.2: a carrier proof must describe this attempt and boot; a stale proof is
-        // treated exactly like no proof at all.
-        if (!carrierBindsAttempt(status)) return SuGate.Gate.UNAVAILABLE_GATE
-        val attempt = status.attemptId
-        val bootId = status.bootId
-        if (attempt.isNullOrBlank() || bootId.isNullOrBlank()) return SuGate.Gate.UNAVAILABLE_GATE
-        // The record and the status must describe the same attempt and boot; a gate read
-        // for another binding is not this attempt's gate even if it says ARMED.
-        if (gate.attempt != attempt || gate.bootId != bootId) return SuGate.Gate.UNAVAILABLE_GATE
-        return if (gate.armed) gate else SuGate.Gate.UNAVAILABLE_GATE
     }
 
     private fun quote(value: String): String = "'" + value.replace("'", "'\\''") + "'"

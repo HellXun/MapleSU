@@ -3,9 +3,6 @@ package dev.maplesu.manager.workmode.detect.probes
 
 import android.content.Context
 import android.util.Log
-import dev.maplesu.manager.jailbreak.JailbreakStatus
-import dev.maplesu.manager.runtime.NativeSu
-import dev.maplesu.manager.runtime.SuGate
 import dev.maplesu.manager.runtime.SuPublication
 import dev.maplesu.manager.runtime.SuRootCandidates
 import dev.maplesu.manager.workmode.detect.ProcBootIdSource
@@ -21,13 +18,11 @@ import java.util.concurrent.TimeUnit
 /**
  * §5 C6 的设备侧探针：**枚举候选 → 真的把每个候选执行一次 → 只认退出码与 stdout 的 uid**。
  *
- * 候选来源（用户指定）：
+ * 候选来源（Ultra-only）：
  * 1. **MapleSU 自有 su**：凭据派生的 `/data/<16hex>/su`（[SuPublication.suPath]）、
  *    上次发布的目录、历史 `/dev/maplesu/bin/su`；
- * 2. **L3 gate**：`JailbreakStatus` 记录绑定到**本 boot** 且 `SuGate` 处于 ARMED 时，
- *    经 [NativeSu.executeScript] 起 `sh -c 'id -u'`；
- * 3. **KSU**：`/system/bin/su` 等既有落点，以及 APK 自带的 `<nativeLibraryDir>/libksud_ksu.so
- *    debug su`（stdin 写 `id -u` 后关掉 stdin，让它执行完退出）。
+ * 2. **KSU**：`/system/bin/su` 等既有落点（仅用于识别“本机还有别的 root”这一事实，
+ *    不再参与模式选择）。
  *
  * 纪律：
  * - 已知 su 路径逐个实探，APK 自带 daemon 只在打包存在时加入；任何一条结论都来自真实子进程
@@ -54,10 +49,7 @@ class SuReadinessProbeAdapter(private val context: Context) : SuReadinessProbe {
         val attempts = mutableListOf<SuProbeAttempt>()
         val candidates = candidates()
 
-        // ① L3 gate：只有记录绑定本 boot 且 ARMED 才可能起进程；否则不是一次可执行尝试。
-        gateAttempt(remainingMillis(deadline) / (candidates.size + 1))?.let { attempts += it }
-
-        // ② 其余候选：已知路径不按文件可见性裁剪，证据来自执行结果。
+        // 已知路径不按文件可见性裁剪，证据来自执行结果。
         if (attempts.none { it.readiness == SuReadiness.USABLE }) {
             for ((index, candidate) in candidates.withIndex()) {
                 val remaining = remainingMillis(deadline)
@@ -69,39 +61,6 @@ class SuReadinessProbeAdapter(private val context: Context) : SuReadinessProbe {
             }
         }
         return SuProbeDecision.report(attempts)
-    }
-
-    /** L3 gate 探针：`SuGate` 未 ARMED / 没有本 boot 记录 = 本次不做可执行尝试（返回 null）。 */
-    private fun gateAttempt(budgetMillis: Long): SuProbeAttempt? {
-        if (budgetMillis <= 0L) return null
-        val record = runCatching { JailbreakStatus.read(appContext) }.getOrNull() ?: return null
-        val attemptId = record.attemptId?.takeIf { it.isNotBlank() } ?: return null
-        val bootId = runCatching { ProcBootIdSource.read() }.getOrNull().orEmpty()
-        if (bootId.isBlank()) return null
-        val gate = SuGate.read(appContext, attemptId, bootId)
-        if (!gate.armed) return null
-        return try {
-            val result = NativeSu.executeScript(
-                gate,
-                "id -u",
-                File(appContext.filesDir, NativeSu.FALLBACK_NAME),
-                budgetMillis.toInt(),
-            )
-            SuProbeAttempt(
-                source = SuProbeDecision.SOURCE_L3_GATE,
-                readiness = SuProbeDecision.classify(true, false, result.code, result.out),
-                exitCode = result.code,
-                uid = SuProbeDecision.parseUid(result.out),
-                detail = result.err.take(MAX_DETAIL_CHARS),
-            )
-        } catch (error: Throwable) {
-            if (error is Error) throw error
-            SuProbeAttempt(
-                source = SuProbeDecision.SOURCE_L3_GATE,
-                readiness = SuReadiness.UNKNOWN,
-                detail = "native_unavailable:" + error.javaClass.simpleName,
-            )
-        }
     }
 
     private fun candidates(): List<Candidate> = SuRootCandidates.all(appContext).map {

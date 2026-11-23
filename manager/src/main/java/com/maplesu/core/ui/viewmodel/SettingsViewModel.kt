@@ -72,8 +72,6 @@ class SettingsViewModel(
     private var ultraPolicyGeneration = 0L
     private var ultraPolicyRead: Job? = null
     private var ultraPolicyCommitted = dev.maplesu.manager.modules.UltraModulePolicyRepository.peek()
-    private val jailbreakSelinuxHideMutex = Mutex()
-    private var jailbreakSelinuxHideGeneration = 0L
     private var normalHiddenController: NormalHiddenController? = null
     private var normalHiddenUrl: String? = null
     private var normalHiddenRevision = 0L
@@ -114,7 +112,6 @@ class SettingsViewModel(
             liteHiddenCard = LiteHiddenCardUi.HIDDEN,
             normalHidden = NormalHiddenUi(),
             ultraModulePolicy = dev.maplesu.manager.modules.UltraModulePolicyRepository.peek(),
-            jailbreakSelinuxHide = dev.maplesu.manager.jailbreak.JailbreakSelinuxHideState(),
         )
     }
 
@@ -204,7 +201,6 @@ class SettingsViewModel(
      */
     fun refresh() {
         if (refreshJob?.isActive == true) return
-        refreshJailbreakSelinuxHide()
         refreshUltraModulePolicy()
         refreshJob = viewModelScope.launch(Dispatchers.IO) {
             // Read preferences and MapleSU runtime state independently so a failed query
@@ -464,55 +460,6 @@ class SettingsViewModel(
                     loaded = true, error = "MODULE_POLICY_READ_FAILED")) }
             }
             SettingsSnapshotCache.store(_uiState.value)
-        }
-    }
-
-    private fun refreshJailbreakSelinuxHide() {
-        val generation = jailbreakSelinuxHideGeneration
-        val mode = dev.maplesu.manager.workmode.ModeRuntime.active
-        viewModelScope.launch {
-            jailbreakSelinuxHideMutex.withLock {
-                val state = withContext(Dispatchers.IO) {
-                    val preparation = runCatching {
-                        dev.maplesu.manager.jailbreak.JailbreakSelinuxHide.prepareNormal(ksuApp)
-                        dev.maplesu.manager.jailbreak.JailbreakSelinuxHide.prepareHook(ksuApp)
-                    }.onFailure { android.util.Log.w("MapleSUSELinux", "Jailbreak hiding preparation failed", it) }
-                    val state = dev.maplesu.manager.jailbreak.JailbreakSelinuxHide.read(ksuApp)
-                    if (state.visible && preparation.isFailure) state.copy(error =
-                        preparation.exceptionOrNull()?.message ?: "JAILBREAK_SELINUX_PREPARE_FAILED")
-                    else state
-                }
-                if (generation == jailbreakSelinuxHideGeneration)
-                    _uiState.update { it.copy(jailbreakSelinuxHide =
-                        if (mode == dev.maplesu.manager.workmode.ModeRuntime.active) state
-                        else dev.maplesu.manager.jailbreak.JailbreakSelinuxHideState()) }
-            }
-        }
-    }
-
-    fun setJailbreakSelinuxHide(enabled: Boolean) {
-        if (!_uiState.value.jailbreakSelinuxHide.visible) return
-        val generation = ++jailbreakSelinuxHideGeneration
-        val mode = dev.maplesu.manager.workmode.ModeRuntime.active
-        viewModelScope.launch {
-            jailbreakSelinuxHideMutex.withLock {
-                val result = withContext(Dispatchers.IO) {
-                    runCatching { dev.maplesu.manager.jailbreak.JailbreakSelinuxHide.save(ksuApp, enabled) }
-                }
-                if (generation != jailbreakSelinuxHideGeneration) return@withLock
-                if (mode != dev.maplesu.manager.workmode.ModeRuntime.active) {
-                    _uiState.update { it.copy(jailbreakSelinuxHide = dev.maplesu.manager.jailbreak.JailbreakSelinuxHideState()) }
-                    return@withLock
-                }
-                result.onSuccess { state -> _uiState.update { it.copy(jailbreakSelinuxHide = state) } }
-                val state = result.getOrNull()
-                val message = when {
-                    state == null -> R.string.ui_polish_setting_failed
-                    state.error == null && state.effective == state.requested -> R.string.settings_selinux_hide_applied
-                    else -> state.statusRes()
-                }
-                Toast.makeText(ksuApp, message, Toast.LENGTH_LONG).show()
-            }
         }
     }
 

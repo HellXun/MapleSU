@@ -325,37 +325,6 @@ object KsuBackendRegistry {
         return result
     }
 
-    /** Only a completed Normal attempt in this boot may request the late driver. */
-    fun prepareJailbreakManager(context: Context) {
-        val status = dev.maplesu.manager.jailbreak.JailbreakStatus.read(context) ?: return
-        val boot = dev.maplesu.manager.jailbreak.DirtyfragAttempt.readBootId()
-        if (boot.isNullOrBlank() || status.bootId != boot || status.attemptId.isNullOrBlank() ||
-            status.stage != dev.maplesu.manager.jailbreak.JailbreakStatus.STAGE_DAEMON_READY ||
-            status.failure != null || status.rootBackend != dev.maplesu.manager.jailbreak.JailbreakRequest.BACKEND_KSU ||
-            ModeRuntime.active == WorkMode.LITE) return
-        dev.maplesu.manager.ksu.KsuManagerFd.ensure(context)
-    }
-
-    /** Complete this boot's Normal handover without depending on mode detection. */
-    fun runNormalHandoverCommand(context: Context,
-                                request: dev.maplesu.manager.jailbreak.JailbreakRequest,
-                                command: String): Boolean {
-        val status = dev.maplesu.manager.jailbreak.JailbreakStatus.read(context) ?: return false
-        if (request.rootBackend != dev.maplesu.manager.jailbreak.JailbreakRequest.BACKEND_KSU ||
-            status.rootBackend != request.rootBackend || status.method != request.method ||
-            status.attemptId != request.attemptId || status.bootId != request.bootId ||
-            !status.isCurrentBoot(dev.maplesu.manager.jailbreak.DirtyfragAttempt.readBootId()) ||
-            status.failure != null || status.stage !in setOf(
-                dev.maplesu.manager.jailbreak.JailbreakStatus.STAGE_PROVIDER_RUNNING,
-                dev.maplesu.manager.jailbreak.JailbreakStatus.STAGE_DAEMON_READY)) return false
-        return runCatching {
-            dev.maplesu.manager.ksu.KsuManagerFd.ensure(context)
-            KsuRootChannel().openShell(context, globalMnt = true).use { shell ->
-                KsuRootChannel.execOn(shell, command, timeoutMs = 10_000).code == 0
-            }
-        }.onFailure { Log.w(TAG, "Normal handover command failed", it) }.getOrDefault(false)
-    }
-
     /** 首次部署（幂等；只有 KSU 模式会真的执行）。 */
     fun scheduleDeployment(mode: WorkMode?) {
         if (mode != WorkMode.KSU) {
@@ -683,11 +652,7 @@ object KsuBackendRegistry {
                 libadbroot,
                 onStdout = { line -> Log.i(TAG, "ksu-bootstrap: $line") },
                 onStderr = { line -> Log.w(TAG, "ksu-bootstrap: $line") },
-            ).also { outcome ->
-                if (outcome.ok) runCatching {
-                    dev.maplesu.manager.jailbreak.JailbreakSelinuxHide.prepareNormal(application)
-                }.onFailure { Log.w("MapleSUSELinux", "Normal default hiding failed", it) }
-            }
+            )
         }
     }
 

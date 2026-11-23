@@ -382,16 +382,17 @@ internal fun MaterialStatusCard(
                     backgroundColor = MaterialTheme.colorScheme.primary
                 )
             }
-        } else if (notInstalled && !state.isLateLoadMode) {
+        } else if (notInstalled) {
             {
+                // Ultra-only：未安装时的主动作是安装 Ultra（越狱入口已移除）。
                 Button(
-                    onClick = actions.onJailbreakClick,
+                    onClick = actions.onInstallClick,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF2563EB),
                         contentColor = Color.White,
                     ),
                 ) {
-                    Text(stringResource(R.string.home_jailbreak))
+                    Text(stringResource(R.string.home_click_to_install))
                 }
             }
         } else null

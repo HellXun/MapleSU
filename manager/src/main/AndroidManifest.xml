@@ -229,28 +229,6 @@
             <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="Run user-installed Lite module scripts after unlock with cancellation and exit receipts" />
         </service>
-        <provider
-            android:name="dev.maplesu.manager.runtime.NativeSuDirectoryProvider"
-            android:authorities="${applicationId}.root_directory"
-            android:exported="false"
-            android:directBootAware="false"
-            android:process=":root_directory" />
-        <service
-            android:name="dev.maplesu.manager.runtime.HookSuKeeperService"
-            android:directBootAware="false"
-            android:exported="false"
-            android:process=":root_directory"
-            android:foregroundServiceType="specialUse">
-            <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="Keep the user-started in-memory Hook superuser endpoint available to granted applications" />
-        </service>
-        <!-- Stable discovery hands the original restricted Binder only to admitted callers. -->
-        <service
-            android:name="dev.maplesu.manager.runtime.NativeSuBrokerService"
-            android:directBootAware="false"
-            android:exported="true"
-            android:process=":root_directory"
-            tools:ignore="ExportedService" />
         <receiver
             android:name="dev.maplesu.manager.runtime.RuntimeBootReceiver"
             android:directBootAware="false"

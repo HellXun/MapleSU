@@ -235,7 +235,6 @@ object LiteHiddenController {
     fun rootBackendLabel(): String = when (RootExec.capability().backend) {
         RootBackend.LITE_KERNEL -> RootBackend.LITE_KERNEL.label
         RootBackend.ULTRA_ENV -> RootBackend.ULTRA_ENV.label
-        RootBackend.HOOK -> RootBackend.HOOK.label
         RootBackend.KSU -> RootBackend.KSU.label
         RootBackend.NONE -> RootBackend.NONE.label
     }

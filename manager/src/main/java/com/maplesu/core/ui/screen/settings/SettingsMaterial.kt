@@ -188,21 +188,6 @@ fun SettingPagerMaterial(
                     }
                 }
 
-                if (uiState.jailbreakSelinuxHide.visible && !uiState.hiddenMasked) {
-                    SegmentedColumn(modifier = GroupPadding) {
-                        item(key = "jailbreak-selinux-hide") {
-                            SegmentedSwitchItem(
-                                icon = Icons.Filled.VisibilityOff,
-                                title = stringResource(R.string.jailbreak_selinux_hide),
-                                summary = stringResource(R.string.jailbreak_selinux_hide_summary) + "\n" +
-                                    stringResource(uiState.jailbreakSelinuxHide.statusRes()),
-                                checked = uiState.jailbreakSelinuxHide.requested,
-                                onCheckedChange = actions.onSetJailbreakSelinuxHide,
-                            )
-                        }
-                    }
-                }
-
                 if (modePolicy.shows(SettingsSection.ULTRA_MODULE_POLICY) && !uiState.hiddenMasked) {
                     val policy = uiState.ultraModulePolicy
                     SegmentedColumn(

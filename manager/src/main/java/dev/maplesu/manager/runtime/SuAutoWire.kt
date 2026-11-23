@@ -24,7 +24,6 @@ object SuAutoWire {
 
     fun reconcile(context: Context) {
         val application = context.applicationContext
-        if (HookRootExecutor.production(application).available()) return
         runCatching {
             val policy = DirectPolicy
             if (policy.isEnabled(application) != true) return

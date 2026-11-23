@@ -148,8 +148,6 @@ object UltraEnvironmentUpgrade {
             recordStatus(app, phase)
             if (ModeRuntime.active != WorkMode.LITE)
                 return preflightRefused(app, phase, "PREFLIGHT_MODE_NOT_LITE")
-            if (dev.maplesu.manager.runtime.HookRootExecutor.production(app).available())
-                return preflightRefused(app, phase, "PREFLIGHT_HOOK_ACTIVE")
             if (LiteImplantQuiesceGate.isBlocked())
                 return preflightRefused(app, phase, "PREFLIGHT_QUIESCING")
             if (WorkModeSwitchSession.executing)

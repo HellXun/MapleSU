@@ -9,7 +9,6 @@ import android.util.Log
 import android.provider.Settings
 import dev.maplesu.manager.litehidden.RecoveryIdentity
 import dev.maplesu.manager.modules.UltraRootKeyStore
-import dev.maplesu.manager.runtime.HookRootExecutor
 import dev.maplesu.manager.runtime.UltraRootCommandReceipt
 import dev.maplesu.manager.workmode.ModeRuntime
 import dev.maplesu.manager.workmode.WorkMode
@@ -30,10 +29,9 @@ internal object UltraSdkSession {
     @Synchronized
     internal fun bootstrap(context: Context, bootId: String, isCurrent: () -> Boolean): UltraBootSdkGateway.Result {
         check(Looper.myLooper() != Looper.getMainLooper()) { "BOOT_SDK_BACKGROUND_THREAD_REQUIRED" }
-        val hook = HookRootExecutor.production(context)
         val preferences = context.ultraPreferences(PREFS, Context.MODE_PRIVATE)
         fun allowed() = isCurrent() && UltraEnvironmentAutoSetup.currentBootId() == bootId &&
-            !Thread.currentThread().isInterrupted && hook.available() &&
+            !Thread.currentThread().isInterrupted && UltraRootGateway.available(context) &&
             UltraEnvironmentAutoSetup.blockedReason(context, bootSession = true) == null
         if (!isCurrent()) return UltraBootSdkGateway.Result(false, false, "SDK_CREDENTIAL_SCOPE_CHANGED")
         val result = UltraBootSdkGateway.connect(preferences.getString(BOOTSTRAP_SUBMITTED, null) == bootId,
@@ -44,7 +42,7 @@ internal object UltraSdkSession {
                     .putString(BOOTSTRAP_SUBMITTED, bootId).commit()
                 override fun start(): String? {
                     if (!allowed()) return "SESSION_CHANGED"
-                    val result = hook.run(gatewayCommand(context, start = true))
+                    val result = UltraRootGateway.run(context, gatewayCommand(context, start = true))
                     return if (!isCurrent()) "SDK_CREDENTIAL_SCOPE_CHANGED" else if (result.ok) null else UltraBootSdkGateway.commandFailure(result.code,
                         result.output + "\n" + result.detail)
                 }
@@ -63,9 +61,8 @@ internal object UltraSdkSession {
     private fun gateway(context: Context, bootId: String, isCurrent: () -> Boolean = { true }): UltraBootSdkGateway.Receipt? {
         if (!isCurrent() || Thread.currentThread().isInterrupted || UltraEnvironmentAutoSetup.currentBootId() != bootId ||
             UltraEnvironmentAutoSetup.blockedReason(context, bootSession = true) != null) return null
-        val hook = HookRootExecutor.production(context)
-        if (!hook.available() || !isCurrent()) return null
-        val result = hook.run(gatewayCommand(context, start = false))
+        if (!UltraRootGateway.available(context) || !isCurrent()) return null
+        val result = UltraRootGateway.run(context, gatewayCommand(context, start = false))
         return if (result.ok && isCurrent() && UltraEnvironmentAutoSetup.currentBootId() == bootId)
             UltraBootSdkGateway.parse(result.output, bootId) else null
     }
@@ -106,7 +103,7 @@ internal object UltraSdkSession {
         val candidate = UltraBootSdkSession.create(bootId, key) ?: return false
         if (!candidate.current(UltraEnvironmentAutoSetup.currentBootId()) || Thread.currentThread().isInterrupted ||
             UltraEnvironmentAutoSetup.blockedReason(context, bootSession = true) != null ||
-            !HookRootExecutor.production(context).available()) return false
+            !UltraRootGateway.available(context)) return false
         val previous = current(context)
         // A second bootstrap must keep the resident gateway's original identity and guard.
         if (previous != null && (previous.bootId != bootId || previous.key != key)) return false
@@ -143,9 +140,9 @@ internal object UltraSdkSession {
         check(Looper.myLooper() != Looper.getMainLooper()) { "BOOT_SDK_BACKGROUND_THREAD_REQUIRED" }
         fun allowed() = isCurrent() && usable(context, session)
         if (!allowed()) return UltraBootSdkInstall.Result(false, false, "SDK_CREDENTIAL_SCOPE_CHANGED")
-        val hook = HookRootExecutor.production(context).available()
+        val hasRoot = UltraRootGateway.available(context)
         if (!allowed()) return UltraBootSdkInstall.Result(false, false, "SDK_CREDENTIAL_SCOPE_CHANGED")
-        if (hook) {
+        if (hasRoot) {
             val gateway = gateway(context, session.bootId, ::allowed)
                 ?: return UltraBootSdkInstall.Result(false, false,
                     if (allowed()) "SDK_GATEWAY_UNAVAILABLE" else "SDK_CREDENTIAL_SCOPE_CHANGED")
@@ -217,12 +214,12 @@ internal object UltraSdkSession {
         check(Looper.myLooper() != Looper.getMainLooper()) { "BOOT_SDK_BACKGROUND_THREAD_REQUIRED" }
         val client = client(context, session)
         return UltraSelfWhitelist.verifyExec(
-            current = { usable(context, session) && HookRootExecutor.production(context).available() },
+            current = { usable(context, session) && UltraRootGateway.available(context) },
             probe = probe,
             rootVerified = { UltraIdentityRecovery.uid(client) == 0 },
             refresh = {
                 val refreshed = UltraSelfWhitelist.ensureCurrentAuthority(context, client) {
-                    usable(context, session) && HookRootExecutor.production(context).available()
+                    usable(context, session) && UltraRootGateway.available(context)
                 }
                 refreshed.succeeded
             },
@@ -242,8 +239,7 @@ internal object UltraSdkSession {
     fun restore(context: Context): String? {
         check(Looper.myLooper() != Looper.getMainLooper()) { "BOOT_SDK_BACKGROUND_THREAD_REQUIRED" }
         if (current(context) != null) return "BOOT_SDK_CURRENT"
-        if (UltraEnvironmentAutoSetup.blockedReason(context, bootSession = true) != null ||
-            HookRootExecutor.production(context).available()) return null
+        if (UltraEnvironmentAutoSetup.blockedReason(context, bootSession = true) != null) return null
         val su = UltraSuChannel(timeoutMillis = 700L)
         val path = UltraBootSdkRecovery.PATH
         val read = su.runRoot("""
@@ -321,13 +317,8 @@ internal object UltraSdkSession {
             echo MAPLESU_BOOT_SDK_RECOVERY_OK
         """.trimIndent()
         if (!usable(context, session)) return false
-        val hook = HookRootExecutor.production(context)
-        val output = if (hook.available()) {
-            // Once submitted, an uncertain Hook reply is never replayed using the SDK.
-            val result = hook.run(script)
-            if (!result.ok) return false
-            result.output
-        } else {
+        // Ultra-only：恢复只走 SDK 回执通道（越狱 hook 分支已移除）。
+        val output = run {
             val command = UltraRootCommandReceipt(script)
             val client = client(context, session)
             val receipt = client.runRootCommand(command.command)
@@ -345,7 +336,6 @@ internal object UltraSdkCredentials {
     fun read(context: Context): String? {
         if (ModeRuntime.active == WorkMode.KSU) return UltraRootKeyStore.read(context)
         UltraSdkSession.current(context)?.let { return it.key }
-        if (HookRootExecutor.production(context).available()) return null
         return UltraRootKeyStore.read(context)
     }
 
@@ -375,8 +365,12 @@ internal object UltraSdkCredentials {
         }
     }
 
-    fun hookWithoutSdk(context: Context): Boolean =
-        HookRootExecutor.production(context).available() && UltraSdkSession.current(context) == null
+    /**
+     * Ultra-only：越狱 hook 形态已随 provider 一并移除，此判据恒为 false。
+     * 保留函数签名只是为了让仍在调用它的 UI/仓储层在本次重构中保持编译；
+     * 调用方会逐步收敛（见 S3 的 WorkMode 清理）。
+     */
+    fun hookWithoutSdk(@Suppress("UNUSED_PARAMETER") context: Context): Boolean = false
 
     fun suspended(context: Context): Boolean =
         UltraSdkSession.current(context) == null && UltraRootKeyStore.isSuspended(context)

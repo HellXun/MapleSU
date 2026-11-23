@@ -718,16 +718,15 @@ internal fun StatusCard(
                             )
                         },
                         endActions = {
-                            if (!state.isLateLoadMode) {
-                                TextButton(
-                                    text = stringResource(R.string.home_jailbreak),
-                                    onClick = actions.onJailbreakClick,
-                                    colors = ButtonDefaults.textButtonColors(
-                                        color = Color(0xFF2563EB),
-                                        textColor = Color.White,
-                                    ),
-                                )
-                            }
+                            // Ultra-only：未安装时的主动作是安装 Ultra（越狱入口已移除）。
+                            TextButton(
+                                text = stringResource(R.string.home_click_to_install),
+                                onClick = actions.onInstallClick,
+                                colors = ButtonDefaults.textButtonColors(
+                                    color = Color(0xFF2563EB),
+                                    textColor = Color.White,
+                                ),
+                            )
                         },
                     )
                     }

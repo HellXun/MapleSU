@@ -3,20 +3,11 @@ package dev.maplesu.manager.installer
 import android.content.Context
 import dev.maplesu.manager.workmode.ModeRuntime
 import dev.maplesu.manager.workmode.service.ModeSwitchRootSession
-import dev.maplesu.manager.runtime.HookRootExecutor
 import dev.maplesu.manager.runtime.RootExec
 
 /** Called only after choosing an installation source, on an IO thread. */
 internal object StockInstallPreflight {
     fun discoverTarget(context: Context, rootTarget: InstallTargetMode? = null): InstallerBootTarget {
-        if (usesHook(context, rootTarget)) {
-            val result = RootExec.executeHook(context, "/system/bin/getprop ro.boot.slot_suffix")
-            check(result.ok) { "INSTALLER_ROOT_UNAVAILABLE" }
-            val slot = InstallerSnapshotParser.slot(result.output.trim())
-            val nodes = RootExec.executeHook(context, InstallerBootTarget.discoveryCommand(slot))
-            check(nodes.ok) { "INSTALLER_BLOCK_DEVICE_REQUIRED" }
-            return InstallerBootTarget.fromOutput(slot, nodes.output)
-        }
         if (ModeRuntime.active == null && !hasUltraIdentity(context)) {
             return InstallerRootSession.open(context).use { it.discoverBootTarget() }
         }
@@ -30,12 +21,6 @@ internal object StockInstallPreflight {
         check(nodes.ok) { "INSTALLER_BLOCK_DEVICE_REQUIRED" }
         return InstallerBootTarget.fromOutput(slot, nodes.output)
     }
-
-    private fun usesHook(context: Context, target: InstallTargetMode?): Boolean =
-        installerServiceLaunchRoute(ModeRuntime.active, target,
-            target == InstallTargetMode.ULTRA && HookRootExecutor.production(context).available(),
-            hasUltraIdentity(context)) ==
-            InstallerServiceLaunchRoute.HOOK
 
     private fun hasUltraIdentity(context: Context): Boolean =
         dev.maplesu.manager.runtime.ultra.UltraEnvironmentProbe.usesUltraBackend(context)

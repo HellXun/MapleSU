@@ -77,7 +77,6 @@ fun SettingPager(
         onSetSuCompatMode = viewModel::setSuCompatMode,
         onSetKernelUmountEnabled = viewModel::setKernelUmountEnabled,
         onSetSelinuxHideEnabled = viewModel::setSelinuxHideEnabled,
-        onSetJailbreakSelinuxHide = viewModel::setJailbreakSelinuxHide,
         onSetUltraModulePolicyLoad = viewModel::setUltraModulePolicyLoad,
         onSetUltraModulePolicyHide = { enabled ->
             if (enabled && uiState.ultraModulePolicy.hideNeedsRiskConfirmation) showUltraPolicyRisk = true

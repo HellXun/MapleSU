@@ -51,7 +51,6 @@ internal fun AboutMapleDialogMaterial(showModes: Boolean, onDismiss: () -> Unit)
             fontWeight = FontWeight.Medium,
         )
         CreditsMaterial()
-        dev.maplesu.manager.jailbreak.JailbreakSpecialThanks(textRes = R.string.about_maple_special_thanks)
         AdvisorWallMaterial(Modifier.padding(top = 4.dp))
     }
 }

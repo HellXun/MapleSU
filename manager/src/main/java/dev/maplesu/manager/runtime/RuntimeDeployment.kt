@@ -144,8 +144,7 @@ object RuntimeDeployment {
     fun resumeBootSdk(context: Context) {
         val application = context.applicationContext
         val session = publicationSession(application) ?: return
-        if (session.entryMode != SuEntryMode.Mode.TRADITIONAL_COMPAT ||
-            HookSuCompatibility.traditionalReady(application)) return
+        if (session.entryMode != SuEntryMode.Mode.TRADITIONAL_COMPAT) return
         start(application, null, RuntimePublicationRetry(publicationGeneration.incrementAndGet()), session)
     }
 
@@ -165,33 +164,19 @@ object RuntimeDeployment {
         if (!requests.request()) return
         worker.execute {
             val generation = requests.snapshot()
-            var hook = false
             var brokerReady = false
             var ready = false
             val mode = SuEntryMode.read(application)
             val publishClient = mode == SuEntryMode.Mode.TRADITIONAL_COMPAT
             Log.i("MapleSU", "SU_ENTRY_MODE:${mode.wire} publishClient=$publishClient")
             try {
-                // Hook has no Direct credential to deliver. Traditional exec uses
-                // the SDK UID redirect; cooperative clients retain the broker.
+                // Ultra-only：发布走 SuAutoWire/SuPublication（越狱 hook broker 分支已删除）。
                 if (!publicationCurrent(application, retry, expectedSession)) return@execute
-                hook = HookRootExecutor.production(application).available()
-                if (hook) {
-                    val published = HookSuCompatibility.publish(application, mode,
-                        prepareEnvironment = expectedSession == null)
-                    if (!publicationCurrent(application, retry, expectedSession) ||
-                        SuEntryMode.read(application) != mode) return@execute
-                    current = published
-                    brokerReady = current.brokerReady
-                    ready = brokerReady
-                } else {
-                    NativeSuDaemon.ensure(application)
-                    brokerReady = false
-                    current = current.copy(clientPath = null, brokerReady = false)
-                    ready = true
-                    // Completes PATH wiring for applications granted while they were closed.
-                    SuAutoWire.reconcile(application)
-                }
+                brokerReady = false
+                current = current.copy(clientPath = null, brokerReady = false)
+                ready = true
+                // Completes PATH wiring for applications granted while they were closed.
+                SuAutoWire.reconcile(application)
                 current = current.copy(brokerReady = brokerReady,
                     error = if (ready) current.error else (current.error ?: "SU_CLIENT_NOT_PUBLISHED"))
                 if (ready) {
@@ -208,15 +193,8 @@ object RuntimeDeployment {
                         it.startsWith("SDK_") || it.startsWith("BOOT_SDK_") ||
                         it.startsWith("MODULE_POLICY_LAYOUT_")
                 } ?: "SU_DEPLOYMENT_FAILED"
-                if (hook) {
-                    // SDK/exec failure does not revoke a separately live cooperative broker.
-                    // Clear the old traditional receipt: it was not verified by this pass.
-                    brokerReady = HookSuCompatibility.brokerReady(application)
-                    current = Status(brokerReady = brokerReady, error = reason)
-                } else {
-                    current = current.copy(brokerReady = brokerReady, error = reason)
-                }
-                SuAuditLog.append(application, SuAuditEvent(backend = if (hook) "hook" else "runtime",
+                current = current.copy(brokerReady = brokerReady, error = reason)
+                SuAuditLog.append(application, SuAuditEvent(backend = "runtime",
                     event = "entry", decision = "error", reason = reason))
             } finally {
                 val superseded = expectedSession != null && retry.generation != publicationGeneration.get()
@@ -225,7 +203,7 @@ object RuntimeDeployment {
                 }
                 val changed = requests.finish(generation)
                 if (changed || superseded || completions.isNotEmpty()) start(application)
-                else if (!ready && hook && mode == SuEntryMode.Mode.TRADITIONAL_COMPAT) {
+                else if (!ready && mode == SuEntryMode.Mode.TRADITIONAL_COMPAT) {
                     val session = publicationSession(application)
                     val latestGeneration = publicationGeneration.get()
                     val next = (if (expectedSession == null) RuntimePublicationRetry(latestGeneration) else retry)
@@ -241,7 +219,7 @@ object RuntimeDeployment {
     }
 
     private data class PublicationSession(val bootId: String, val origin: TrustedRuntime.Origin,
-        val attemptId: String?, val workMode: WorkMode?, val entryMode: SuEntryMode.Mode, val sdkKey: String) {
+        val workMode: WorkMode?, val entryMode: SuEntryMode.Mode, val sdkKey: String) {
         override fun toString() = "PublicationSession"
     }
 
@@ -249,9 +227,9 @@ object RuntimeDeployment {
         val sdk = UltraSdkSession.current(context) ?: return null
         val bootId = UltraEnvironmentAutoSetup.currentBootId() ?: return null
         val runtime = TrustedRuntime.state(context)
-        if (!runtime.ready || sdk.bootId != bootId || !HookRootExecutor.production(context).available() ||
+        if (!runtime.ready || sdk.bootId != bootId ||
             UltraEnvironmentAutoSetup.blockedReason(context, bootSession = true) != null) return null
-        return PublicationSession(bootId, runtime.origin, runtime.attemptId, ModeRuntime.active,
+        return PublicationSession(bootId, runtime.origin, ModeRuntime.active,
             SuEntryMode.read(context), sdk.key)
     }
 
@@ -310,23 +288,14 @@ object RuntimeDeployment {
      * mode. The script is fixed text built here; neither branch accepts a caller
      * supplied command.
      */
-    private fun runScript(context: Context, script: String, origin: TrustedRuntime.Origin): ScriptRun =
-        if (origin == TrustedRuntime.Origin.JAILBREAK) {
-            val result = com.maplesu.core.ui.util.ProviderCall.call(context.contentResolver,
-                android.net.Uri.parse("content://${NativeSuDirectoryProvider.AUTHORITY}"), "deploySu",
-                null, android.os.Bundle().apply { putString("script", script) })
-                ?: throw IllegalStateException("SU_DEPLOY_UNAVAILABLE")
-            ScriptRun(result.getInt("code", -1),
-                result.getString("out").orEmpty().lines().filter { it.isNotEmpty() },
-                result.getString("err").orEmpty())
-        } else {
-            val result = MapleSuRuntime.openShell(context, globalMnt = true).use { shell ->
-                shell.newJob().add(script).to(ArrayList<String>(), ArrayList<String>()).exec()
-            }
-            ScriptRun(result.code, result.out, result.err.joinToString("\n"))
+    private fun runScript(context: Context, script: String, @Suppress("UNUSED_PARAMETER") origin: TrustedRuntime.Origin): ScriptRun {
+        val result = MapleSuRuntime.openShell(context, globalMnt = true).use { shell ->
+            shell.newJob().add(script).to(ArrayList<String>(), ArrayList<String>()).exec()
         }
+        return ScriptRun(result.code, result.out, result.err.joinToString("\n"))
+    }
 
-    internal fun deploy(context: Context, origin: TrustedRuntime.Origin = TrustedRuntime.Origin.NORMAL_MAPLESU): Status {
+    internal fun deploy(context: Context, origin: TrustedRuntime.Origin = TrustedRuntime.Origin.ULTRA): Status {
         val source = File(context.applicationInfo.nativeLibraryDir, "libmaplesu_su.so")
         check(source.isFile && source.canExecute()) { "SU_CLIENT_UNAVAILABLE" }
         check(File(context.applicationInfo.sourceDir).isFile) { "SU_CLIENT_APK_UNRESOLVED" }

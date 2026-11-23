@@ -1,6 +1,6 @@
 package com.maplesu.core.ui.util
 
-internal enum class RebootBackend { NORMAL, ULTRA, HOOK, DIRECT }
+internal enum class RebootBackend { NORMAL, ULTRA, DIRECT }
 
 /** One selected reboot route; a failed mutation is never retried through another backend. */
 internal class RebootDispatcher(
@@ -13,31 +13,15 @@ internal class RebootDispatcher(
         if (reason == "soft_reboot") return when (backend) {
             RebootBackend.NORMAL -> runRoot("${KsuDaemonPolicy.DEPLOYED_KSUD} soft-reboot")
             RebootBackend.ULTRA -> restartUltra()
-            // SK reference semantics: a soft reboot restarts the framework only
-            // (`ctl.restart zygote64`). Never fall back to a full reboot here - that
-            // would tear down the L3 gate this attempt just proved.
-            RebootBackend.HOOK -> runRoot(
-                "/system/bin/setprop ctl.restart zygote64 || " +
-                    "/system/bin/setprop ctl.restart zygote || { " +
-                    "zygotes=${'$'}(/system/bin/pidof zygote64 zygote); " +
-                    "[ -n \"${'$'}zygotes\" ] && /system/bin/kill -9 ${'$'}zygotes; }",
-            )
             RebootBackend.DIRECT ->
                 runRoot("/system/bin/setprop ctl.restart zygote64 || " +
                     "/system/bin/setprop ctl.restart zygote")
         }
         val command = buildString {
             if (reason == "recovery") append("/system/bin/input keyevent 26 >/dev/null 2>&1; ")
-            // Hook credentials use kernel:s0: svc can return zero after a failed
-            // Binder lookup, and init rejects powerctl from that domain. Change
-            // only this child to the platform power-control domain before exec.
-            if (backend == RebootBackend.HOOK) {
-                append("/system/bin/toybox runcon u:r:init:s0 ")
-            } else {
-                append("/system/bin/svc power reboot")
-                if (reason.isNotEmpty()) append(' ').append(reason)
-                append(" || ")
-            }
+            append("/system/bin/svc power reboot")
+            if (reason.isNotEmpty()) append(' ').append(reason)
+            append(" || ")
             append("/system/bin/reboot")
             if (reason.isNotEmpty()) append(' ').append(reason)
         }
@@ -66,13 +50,11 @@ internal class RebootDispatcher(
         // record; a cached Running observation alone does not establish that identity.
         fun backend(
             normal: Boolean,
-            hook: Boolean,
             ultraRunning: Boolean,
             verifiedUltraIdentity: Boolean,
         ): RebootBackend = when {
             normal -> RebootBackend.NORMAL
             verifiedUltraIdentity -> RebootBackend.ULTRA
-            hook -> RebootBackend.HOOK
             ultraRunning -> RebootBackend.ULTRA
             else -> RebootBackend.DIRECT
         }

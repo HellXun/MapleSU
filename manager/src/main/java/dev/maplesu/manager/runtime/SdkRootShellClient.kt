@@ -52,11 +52,9 @@ internal object SdkRootShellClient {
             pending.get(5, TimeUnit.SECONDS)?.let { launch ->
                 val script = ByteArrayOutputStream()
                 launch.run(script, ByteArrayInputStream(ByteArray(0)), ByteArrayInputStream(ByteArray(0)))
-                val result = RootExec.executeServiceLaunch(app, script.toString(Charsets.UTF_8.name()),
-                    backend == RootBackend.HOOK)
+                val result = RootExec.executeServiceLaunch(app, script.toString(Charsets.UTF_8.name()))
                 check(result.ok && result.backend == backend) {
                     when (backend) {
-                        RootBackend.HOOK -> "MANAGEMENT_HOOK_LAUNCH_FAILED:${result.detail}"
                         RootBackend.KSU -> "MANAGEMENT_KSU_LAUNCH_FAILED:${result.detail}"
                         else -> "MANAGEMENT_SDK_LAUNCH_FAILED"
                     }

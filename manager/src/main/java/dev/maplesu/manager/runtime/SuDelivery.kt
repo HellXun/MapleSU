@@ -326,12 +326,6 @@ fun statesFor(
     stale: Set<String> = emptySet(),
 ): Map<String, State> {
     if (identities.isEmpty()) return emptyMap()
-    if (HookRootExecutor.production(context).available()) {
-        val wired = HookSuCompatibility.traditionalReady(context)
-        return identities.mapValues { (packageName, isGranted) ->
-            managerSuState(isGranted, packageName in stale, pending = false, entryReady = wired)
-        }
-    }
     // 🟢 Ultra 环境（2026-10-29）：授权真相是 MapleSU SDK 的 su_auth 白名单，内核在应用请求
     //    root 时直接放行。这里**没有** su 客户端要投递、也没有 PATH 要注入，所以既不存在
     //    「已投递」也不存在「待运行时接线」—— 在白名单就是 wired，否则就是未授权。

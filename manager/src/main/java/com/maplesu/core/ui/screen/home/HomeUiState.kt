@@ -325,7 +325,6 @@ internal fun HomeUiState.checkingAfterSuMissing(): HomeUiState = if (environment
 data class HomeActions(
     val onInstallClick: () -> Unit,
     val onOpenUrl: (String) -> Unit,
-    val onJailbreakClick: () -> Unit = {},
     val onEnvironmentRetry: () -> Unit = {},
     val onManageModules: () -> Unit = {},
     val onFeedbackClick: () -> Unit = {},

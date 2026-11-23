@@ -24,7 +24,6 @@ import com.maplesu.core.ui.screen.settings.rememberUltraEnvironmentPanel
 import com.maplesu.core.ui.navigation3.Navigator
 import com.maplesu.core.ui.navigation3.Route
 import com.maplesu.core.ui.viewmodel.HomeViewModel
-import dev.maplesu.manager.jailbreak.JailbreakSelectionDialog
 import dev.maplesu.manager.workmode.ui.WorkModeSwitchSheet
 
 @Composable
@@ -42,7 +41,6 @@ fun HomePager(
     val latestIsCurrentPage by rememberUpdatedState(isCurrentPage)
     val initialResumeHandled = rememberSaveable { mutableStateOf(false) }
     var initialPageEntryHandled by rememberSaveable { mutableStateOf(false) }
-    var showJailbreakSelection by rememberSaveable { mutableStateOf(false) }
 
     // A（Lite 隐藏）生效（含读失败 UNKNOWN）→ 首页整体走与 KSU 隐身**同一条**
     // 「未安装」伪装路径（见 HomeUiState.asLiteHiddenNotInstalled）；同时切换模式入口
@@ -112,7 +110,6 @@ fun HomePager(
     val actions = HomeActions(
         onInstallClick = { navigator.push(Route.Install) },
         onOpenUrl = uriHandler::openUri,
-        onJailbreakClick = { showJailbreakSelection = true },
         onEnvironmentRetry = viewModel::refresh,
         onManageModules = { navigator.push(Route.Module) },
         onFeedbackClick = { openFeedbackInBrowser(context) },
@@ -132,11 +129,6 @@ fun HomePager(
 
     // W20/W21 外部 Root 迁移入口：有 root、未识别本机模式且非安全模式时显示；
     // 隐身时 HomeUiState 已被 asStealthKernelNotReady 归一化 ⇒ 条件自然为 false（00 §3.8 隐身互斥）。
-
-    if (showJailbreakSelection) {
-        JailbreakSelectionDialog(onDismiss = { showJailbreakSelection = false },
-            onActivated = viewModel::refreshAfterJailbreak)
-    }
 
     // 隐藏一旦生效，选择框随入口一起收起，不留下任何模式信息。
     WorkModeSwitchSheet(

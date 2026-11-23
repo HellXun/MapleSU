@@ -455,33 +455,6 @@ class HomeViewModel(
         }
     }
 
-    /** Dialog completion does not resume the Activity; queue its refresh even during an older read. */
-    fun refreshAfterJailbreak() {
-        viewModelScope.launch {
-            if (ModeRuntime.active == null) {
-                ModeBootstrap.retryEnvironmentDetection()
-                // A scheduled retry has not replaced the old settled Deferred yet.
-                ModeRuntime.awaitActivated(LITE_MODE_SETTLE_TIMEOUT_MS)
-            }
-            ksuApp.requestUltraRecovery()
-            checkEnvironmentPresence()
-            var state = probeAndPublish(
-                rootProbeSettled = ModeRuntime.detectionComplete,
-                modeSettled = ModeRuntime.detectionComplete,
-                showChecking = true,
-            )
-            var attemptsDone = 0
-            while (ModeRuntime.active == WorkMode.LITE &&
-                attemptsDone < LiteStartupStatusPolicy.ROOT_RETRY_ATTEMPTS &&
-                (state.liteRootFailure || LiteHiddenRuntime.needsRealRead())) {
-                attemptsDone++
-                delay(LITE_ROOT_RETRY_STEP_MS * attemptsDone)
-                state = probeAndPublish(rootProbeSettled = true,
-                    modeSettled = ModeRuntime.detectionComplete)
-            }
-        }
-    }
-
     fun refresh() {
         refreshFlight.launch(viewModelScope) {
             refreshInformation()

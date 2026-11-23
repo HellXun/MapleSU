@@ -21,7 +21,6 @@ import dev.maplesu.manager.workmode.service.SwitchOutcome
 import dev.maplesu.manager.workmode.ModeRuntime
 import dev.maplesu.manager.workmode.WorkMode
 import dev.maplesu.manager.runtime.RootExec
-import dev.maplesu.manager.runtime.HookRootExecutor
 import dev.maplesu.manager.runtime.PageReadDeadline
 import dev.maplesu.manager.runtime.RootServiceBootstrap
 import dev.maplesu.manager.runtime.SuRootCandidates
@@ -551,19 +550,11 @@ internal object InstallerServiceClient {
             val launch = task.get(5, TimeUnit.SECONDS)
             if (launch != null) {
                 val route = installerServiceLaunchRoute(ModeRuntime.active, rootTarget,
-                    rootTarget == InstallTargetMode.ULTRA && HookRootExecutor.production(context).available(),
                     dev.maplesu.manager.runtime.ultra.UltraEnvironmentProbe.usesUltraBackend(context))
                 val script = ByteArrayOutputStream()
                 launch.run(script, ByteArrayInputStream(ByteArray(0)), ByteArrayInputStream(ByteArray(0)))
                 val command = script.toString(Charsets.UTF_8.name())
                 val candidates = buildList {
-                    if (route == InstallerServiceLaunchRoute.HOOK) {
-                        add(RootServiceBootstrap.Candidate("hook") { probe ->
-                            runBlocking(PageReadDeadline.context(5_000L)) {
-                                RootServiceBootstrap.Result(RootExec.executeHook(context, probe))
-                            }
-                        })
-                    }
                     // Use the same inventory as SU detection, even with a missing/stale SDK key.
                     // Each explicit installation probe has its own budget; one timeout cannot
                     // consume the later sources' chance to establish root and framework access.

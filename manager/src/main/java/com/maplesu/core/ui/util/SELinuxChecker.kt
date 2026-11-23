@@ -1,7 +1,6 @@
 package com.maplesu.core.ui.util
 
 import com.maplesu.core.ksuApp
-import dev.maplesu.manager.runtime.HookRootExecutor
 import dev.maplesu.manager.runtime.RootManagement
 import dev.maplesu.manager.runtime.ultra.UltraEnvironmentProbe
 import dev.maplesu.manager.runtime.ultra.UltraSdkCredentials
@@ -14,16 +13,7 @@ import java.util.concurrent.CountDownLatch
  * SDK systemStatus can also use an app-domain file read; Unknown is preserved.
  */
 fun getSELinuxStatusRaw(): String {
-    val hook = HookRootExecutor.production(ksuApp)
-    if (hook.available()) {
-        return resolveSELinuxStatus(
-            readEnforce = { File("/sys/fs/selinux/enforce").readText() },
-            queryStatus = {
-                val result = hook.run("/system/bin/getenforce")
-                if (result.ok) result.output else ""
-            },
-        )
-    }
+    // Ultra-only：越狱 hook 探测器已移除，状态优先从 Ultra 环境读取。
     if (usesUltraEnvironment()) {
         val scope = currentUltraScope() ?: return "Unknown"
         return readUltraStatus(scope)
@@ -70,7 +60,7 @@ private val ultraStatusReads = mutableMapOf<UltraSELinuxScope, UltraSELinuxRead>
 private var ultraStatusRevision = 0L
 
 private fun currentUltraScope(): UltraSELinuxScope? = runCatching {
-    if (HookRootExecutor.production(ksuApp).available() || !usesUltraEnvironment()) return null
+    if (!usesUltraEnvironment()) return null
     val key = UltraSdkCredentials.read(ksuApp) ?: return null
     val bootId = dev.maplesu.manager.runtime.ultra.UltraEnvironmentAutoSetup.currentBootId() ?: return null
     UltraSELinuxScope(key, bootId)

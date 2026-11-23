@@ -60,12 +60,10 @@ object Natives {
             NativesFacadeTarget.KSU -> NativesFacade.ksuPort().isLkmBundled
             NativesFacadeTarget.BLOCKED -> NativesFacade.blockedPort().isLkmBundled
         }
-    // A jailbreak daemon is a real runtime, not a late-load of a boot-patched kernel.
+    // Ultra-only：越狱 late-load 运行时已从本构建移除，该状态恒为 false。
     val isLateLoadMode: Boolean
         get() = when (NativesFacade.target()) {
-            NativesFacadeTarget.LITE -> runCatching {
-                !ultraBackendSelected() && TrustedRuntime.origin(ksuApp) == TrustedRuntime.Origin.JAILBREAK
-            }.getOrDefault(false)
+            NativesFacadeTarget.LITE -> false
             NativesFacadeTarget.KSU -> NativesFacade.ksuPort().isLateLoadMode
             NativesFacadeTarget.BLOCKED -> NativesFacade.blockedPort().isLateLoadMode
         }

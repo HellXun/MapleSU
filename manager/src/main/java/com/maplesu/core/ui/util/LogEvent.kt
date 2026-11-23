@@ -21,12 +21,9 @@ import dev.maplesu.manager.runtime.ultra.UltraBugreportDiagnostics
 import dev.maplesu.manager.runtime.ultra.UltraEnvironmentProbe
 import dev.maplesu.manager.runtime.ultra.UltraRuntimeClient
 import dev.maplesu.manager.runtime.ultra.UltraSuChannel
-import dev.maplesu.manager.jailbreak.JailbreakScreenLog
 
-fun getBugreportFile(context: Context, includePrivileged: Boolean = true,
-                     screenLog: JailbreakScreenLog? = null): File = BugreportArchive.withStagingDirectory(context.cacheDir) { bugreportDir ->
-
-    screenLog?.writeTo(bugreportDir)
+fun getBugreportFile(context: Context, includePrivileged: Boolean = true): File =
+    BugreportArchive.withStagingDirectory(context.cacheDir) { bugreportDir ->
 
     runCatching { ProcessExitDiagnostics.collect(context, bugreportDir) }
         .onFailure { android.util.Log.w("LogEvent", "App process exit diagnostics failed", it) }
@@ -199,12 +196,6 @@ fun getBugreportFile(context: Context, includePrivileged: Boolean = true,
     val modulesFile = File(bugreportDir, "modules.json")
     if (includePrivileged) runCatching { modulesFile.writeText(listModules()) }
 
-    // These app-owned traces remain available when the privileged channel itself is failing.
-    runCatching {
-        context.assets.open(dev.maplesu.manager.jailbreak.IrImages.MANIFEST_ASSET).use { input ->
-            File(bugreportDir, "jailbreak-artifacts.json").outputStream().use { input.copyTo(it) }
-        }
-    }.onFailure { android.util.Log.w("LogEvent", "Reading packaged jailbreak inventory failed", it) }
     val deviceContext = context.createDeviceProtectedStorageContext()
     BugreportDiagnostics.collect(deviceContext.dataDir, context.filesDir, bugreportDir)
 
@@ -216,11 +207,10 @@ fun getBugreportFile(context: Context, includePrivileged: Boolean = true,
     BugreportArchive.pack(bugreportDir, targetFile, knownSecrets)
 }
 
-fun saveBugreport(context: Context, uri: Uri, includePrivileged: Boolean = true,
-                  screenLog: JailbreakScreenLog? = null) {
+fun saveBugreport(context: Context, uri: Uri, includePrivileged: Boolean = true) {
     var report: File? = null
     try {
-        val archive = getBugreportFile(context, includePrivileged, screenLog).also { report = it }
+        val archive = getBugreportFile(context, includePrivileged).also { report = it }
         BugreportArchive.copy(archive) { context.contentResolver.openOutputStream(uri, "wt") }
     } catch (error: Exception) {
         runCatching { DocumentsContract.deleteDocument(context.contentResolver, uri) }

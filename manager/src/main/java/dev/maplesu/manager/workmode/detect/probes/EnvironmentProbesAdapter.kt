@@ -4,7 +4,6 @@ package dev.maplesu.manager.workmode.detect.probes
 import dev.maplesu.manager.compat.ultraPreferences
 
 import android.content.Context
-import dev.maplesu.manager.runtime.HookRootExecutor
 import dev.maplesu.manager.runtime.ultra.UltraEnvironmentProbe
 import dev.maplesu.manager.workmode.detect.EnvironmentCheckRunner
 import dev.maplesu.manager.workmode.detect.EnvironmentInvalidation
@@ -53,8 +52,6 @@ class EnvironmentProbesAdapter(private val context: Context) : EnvironmentProbes
     override fun currentUltraFingerprint(): String? {
         // 与完整判定一致：当前认主的 Normal 内核优先于另一模式留下的缓存。
         if (ksuNormal() == true) return null
-        // A live Hook supersedes cached SDK identity without starting competing IPC.
-        if (HookRootExecutor.production(context.applicationContext).available()) return "hook:ready"
         // Otherwise revalidate the SDK TTL before inheriting a same-boot fingerprint.
         UltraEnvironmentProbe.refresh(context.applicationContext, force = false)
         val failures = mutableListOf<String>()
@@ -77,7 +74,6 @@ class EnvironmentProbesAdapter(private val context: Context) : EnvironmentProbes
 
     override fun ultraFingerprint(): String? {
         if (ksuNormal() == true) return null
-        if (HookRootExecutor.production(context.applicationContext).available()) return "hook:ready"
         // Last chance before the resolver publishes NotInstalled. A reinstall may
         // have lost all app preferences while the environment/key backup survives.
         // The current channel was already read before SU; avoid repeating Unknown
@@ -101,7 +97,6 @@ class EnvironmentProbesAdapter(private val context: Context) : EnvironmentProbes
         "ultra:running" to { UltraEnvironmentProbe.currentSnapshot(context).state == UltraEnvironmentProbe.State.Running },
         "ultra:fault" to { UltraEnvironmentProbe.isSafeMode(context) },
         "ultra:kernel" to { UltraEnvironmentProbe.isKernelRootVerified(context) },
-        "hook:ready" to { HookRootExecutor.production(context.applicationContext).available() },
     )
 
     companion object {

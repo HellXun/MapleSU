@@ -32,8 +32,6 @@ import com.maplesu.core.ui.util.PinyinUtil
 import com.maplesu.core.ui.util.ownerNameForUid
 import com.maplesu.core.ui.util.pickPrimary
 import dev.maplesu.manager.runtime.State
-import dev.maplesu.manager.runtime.HookRootExecutor
-import dev.maplesu.manager.runtime.HookSuCompatibility
 import dev.maplesu.manager.runtime.RuntimeDeployment
 import dev.maplesu.manager.runtime.managerSuState
 import dev.maplesu.manager.runtime.authorization.DirectPolicy
@@ -186,9 +184,8 @@ class SuperUserViewModel(
     private suspend fun refreshEntryStates() = refreshMutex.withLock {
         if (!_uiState.value.hasLoaded || ModeRuntime.active != WorkMode.LITE) return@withLock
         val entryReady = withContext(Dispatchers.IO) {
-            if (!ManagerAuthorizations.usesManagerAuthority(ksuApp)) null else {
-                !HookRootExecutor.production(ksuApp).available() || HookSuCompatibility.traditionalReady(ksuApp)
-            }
+            // Ultra-only：不再有 hook 传统入口需要等待，管理器授权一旦成立即可用。
+            if (!ManagerAuthorizations.usesManagerAuthority(ksuApp)) null else true
         } ?: return@withLock
         if (ModeRuntime.active != WorkMode.LITE) return@withLock
         _uiState.update {
@@ -419,9 +416,8 @@ class SuperUserViewModel(
         }
         if (dev.maplesu.manager.runtime.authorization.ManagerAuthorizations.usesManagerAuthority(ksuApp)) {
             // Read publication once for the page; no root process or target launch per row.
-            val entryReady = !HookRootExecutor.production(ksuApp).available() ||
-                HookSuCompatibility.traditionalReady(ksuApp)
-            return withManagerSuStates(groups, entryReady)
+            // Ultra-only：没有 hook 传统入口的过渡态，授权成立即可用。
+            return withManagerSuStates(groups, entryReady = true)
         }
         return withLiteSuStates(groups)
     }

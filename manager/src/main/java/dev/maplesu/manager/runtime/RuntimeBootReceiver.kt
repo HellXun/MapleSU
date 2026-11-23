@@ -21,7 +21,6 @@ import dev.maplesu.manager.runtime.authorization.SuperuserControl
  */
 class RuntimeBootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        NativeSuBrokerService.initialize(context)
         if (!SuperuserControl.hasPendingMarker(context)) return
         val pending = goAsync()
         Thread({

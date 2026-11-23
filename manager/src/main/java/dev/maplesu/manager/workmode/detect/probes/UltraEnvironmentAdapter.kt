@@ -1,7 +1,6 @@
 package dev.maplesu.manager.workmode.detect.probes
 
 import android.content.Context
-import dev.maplesu.manager.runtime.HookRootExecutor
 import dev.maplesu.manager.runtime.ultra.UltraEnvironmentProbe
 import dev.maplesu.manager.runtime.ultra.UltraRuntimeClient
 import dev.maplesu.manager.runtime.ultra.UltraSdkCredentials
@@ -22,12 +21,12 @@ class UltraEnvironmentAdapter internal constructor(
     constructor(context: Context) : this(
         readSnapshot = { UltraEnvironmentProbe.currentSnapshot(context.applicationContext) },
         refreshSnapshot = { UltraEnvironmentProbe.refresh(context.applicationContext, force = false) },
-        hookActive = { HookRootExecutor.production(context.applicationContext).available() },
+        hookActive = { false },
+        // Ultra-only：hook 形态已移除。
         readManagerOwnerBound = {
             val app = context.applicationContext
             fun eligible() = UltraSdkCredentials.read(app) == null &&
-                !UltraSdkCredentials.suspended(app) && UltraSdkSession.current(app) == null &&
-                !HookRootExecutor.production(app).available()
+                !UltraSdkCredentials.suspended(app) && UltraSdkSession.current(app) == null
             eligible() && UltraRuntimeClient().queryManagerOwnerIdentity().succeeded && eligible()
         },
     )
