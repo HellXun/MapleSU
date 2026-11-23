@@ -6,16 +6,11 @@ import dev.maplesu.manager.workmode.WorkMode
 /**
  * 安装/修补页「目标工作模式」的唯一枚举（**纯 Kotlin**，无 Android / Compose 依赖，主机可测）。
  *
- * 与内部 [WorkMode] 的对应（内部标识不变，只决定**这一次修补**的走向）：
- * - [ULTRA]  → [WorkMode.LITE]：Ultra 内核 release 资产/门禁
- *   （`dev.maplesu.manager.ultrakernel.{UltraKernelFlow,UltraKernelBuilder,UltraKernelReleaseCatalog}`）；
- * - [NORMAL] → [WorkMode.KSU]：KSU LKM 链路
- *   （`dev.maplesu.manager.installer.{InstallCommitCoordinator,KsuModeInstallContract,KsuKmiMatrix}`
- *   + `dev.maplesu.manager.ksu.{KsuKmiDetector,KsuKmiSelector,KsuInstallProducer}`），
- *   即 `init_boot` 补丁 + 该 KMI 的 `kernelsu.ko`。
+ * 上游同时支持 Ultra 与 Normal（KernelSU）两个安装目标。本分支只发布 Ultra，
+ * Normal 目标、KSU LKM 链路与对应的 `kernelsu.ko` 打包代码已删除，因此这里只剩一个取值。
  *
- * **选择与"当前已激活模式"无关**：用户可以在这台 Ultra 设备上修补一枚 Normal 目标的镜像。
- * 分派本身收敛在 [InstallTargetDispatch]（纯函数），UI 只消费结果。
+ * 保留枚举本身是为了让「这一次修补的目标」在日志/事务记录里仍然是一个显式事实，
+ * 而不是散落在各调用点的隐式约定。
  *
  * [productName] 只用于日志/事务记录与纯 JVM 契约测试；界面文案仍然走
  * `R.string.work_mode_lite` / `R.string.work_mode_ksu`（产品名只在
@@ -29,10 +24,7 @@ enum class InstallTargetMode(
     /** 产品显示名（与 `strings_workmode.xml` 的同名键逐字一致）。 */
     val productName: String,
 ) {
-    ULTRA("ultra", WorkMode.LITE, "MapleSU_Ultra"),
-
-    /** MapleSU_Normal（KernelSU 分支 / LKM，`init_boot` 补丁）。 */
-    NORMAL("normal", WorkMode.KSU, "MapleSU_Normal");
+    ULTRA("ultra", WorkMode.LITE, "MapleSU_Ultra");
 
     companion object {
         /** 默认目标 = Ultra（全新安装 / 升级后无持久化值 / 坏值都落在这里）。 */
@@ -54,18 +46,8 @@ enum class InstallTargetMode(
         /** wire → 枚举，带默认值（持久化读取/升级迁移用）。 */
         fun fromWireOrDefault(value: String?): InstallTargetMode = fromWire(value) ?: DEFAULT
 
-        /**
-         * 已激活模式 → 目标模式（兼容旧调用点：下拉传 null = 沿用原语义）。
-         *
-         * - `LITE` → Ultra（原实现逐字保留）；
-         * - `KSU` → Normal；
-         * - 未判定（`null`）→ Ultra：这是用户**显式**点安装的动作，D15 只禁止"默认执行 Lite"，
-         *   不禁止用户自装，故保留原显式放行语义。
-         */
-        fun fromWorkMode(mode: WorkMode?): InstallTargetMode = when (mode) {
-            WorkMode.KSU -> NORMAL
-            WorkMode.LITE, null -> ULTRA
-        }
+        /** 已激活模式 → 目标模式：只有 Ultra 一个目标。 */
+        fun fromWorkMode(mode: WorkMode?): InstallTargetMode = ULTRA
     }
 }
 

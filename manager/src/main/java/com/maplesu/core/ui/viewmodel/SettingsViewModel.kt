@@ -252,71 +252,14 @@ class SettingsViewModel(
             val managerValid = runCatching { Natives.isManager }.getOrDefault(prev.managerValid)
             publishKnownModeUi(managerValid)
 
-            val readActivation = dev.maplesu.manager.workmode.ModeRuntime.activation
-            val readBoot = if (policy.mode == dev.maplesu.manager.workmode.WorkMode.KSU)
-                dev.maplesu.manager.runtime.ultra.UltraEnvironmentAutoSetup.currentBootId() else null
-            val readFeaturePort = if (policy.mode == dev.maplesu.manager.workmode.WorkMode.KSU)
-                dev.maplesu.manager.workmode.backend.KsuBackendRegistry.featurePort() else null
-            val readExecutor = if (policy.mode == dev.maplesu.manager.workmode.WorkMode.KSU)
-                dev.maplesu.manager.workmode.backend.KsuBackendRegistry.rootShellExecutor() else null
-            val readFeatureRevision = readFeaturePort?.readRevision
-            fun currentReadScope(): Boolean = policy.mode == dev.maplesu.manager.workmode.ModeRuntime.active &&
-                dev.maplesu.manager.workmode.ModeRuntime.activation === readActivation &&
-                (policy.mode != dev.maplesu.manager.workmode.WorkMode.KSU || readBoot != null &&
-                    dev.maplesu.manager.runtime.ultra.UltraEnvironmentAutoSetup.currentBootId() == readBoot &&
-                    dev.maplesu.manager.workmode.backend.KsuBackendRegistry.featurePort() === readFeaturePort &&
-                    dev.maplesu.manager.workmode.backend.KsuBackendRegistry.rootShellExecutor() === readExecutor &&
-                    (readFeaturePort == null || readFeatureRevision != null && readFeaturePort.readRevision == readFeatureRevision))
-
-            val readSuCompat = policy.mayRead(SettingsDataSource.SU_COMPAT)
+            // Ultra-only：Normal（KSU）设置面已从仓库层与后端整体删除，
+            // 这些字段恒为「不支持」，设置页据此不渲染对应条目。
             val capabilities = dev.maplesu.manager.workmode.ModeRuntime.capabilities
-            val readKsuFeatures = policy.mayRead(SettingsDataSource.KSU_FEATURES) &&
-                capabilities.supportsKernelUmount
-            val normalSettings = if (readSuCompat || readKsuFeatures) {
-                runCatching { repo.readNormalSettings(readKsuFeatures) }.getOrElse { error ->
-                    if (error is kotlinx.coroutines.CancellationException) throw error
-                    null
-                }
-            } else null
-            val suCompatStatus = if (readSuCompat) normalSettings?.suCompatStatus ?: prev.suCompatStatus else ""
-            val isSuEnabled = if (readSuCompat) normalSettings?.suEnabled ?: prev.isSuEnabled else false
-            val suCompatMode = if (isSuEnabled) 0 else 2
-            val ksuExtras: KsuSettingsExtras? = if (readKsuFeatures && normalSettings != null) {
-                runCatching {
-                    KsuSettingsExtras(
-                        kernelUmount = normalSettings.kernelUmount ?: prev.isKernelUmountEnabled,
-                        selinuxHide = normalSettings.selinuxHide ?: prev.isSelinuxHideEnabled,
-                        lateLoad = Natives.isLateLoadMode,
-                        sulog = normalSettings.sulog ?: prev.isSulogEnabled,
-                        adbRoot = normalSettings.adbRoot ?: prev.isAdbRootEnabled,
-                        shellSuAdbOnly = normalSettings.shellSuAdbOnly ?: prev.isShellSuAdbOnlyEnabled,
-                        defaultUmount = repo.isDefaultUmountModules(),
-                    )
-                }.getOrNull()
-            } else null
-
-            // W18 三卡（Normal 专属）：只有许可位存在时才读取内核 stealth/applock 状态；
-            // Ultra/未判定 ⇒ **不调** `Stealth.kernelState()` / `Natives.appLockState()`
-            // （LITE 下 stealthState() 恒 -1，调用只会制造 UNKNOWN）。失败保留 prev。
-            val readKsuStealth = policy.mayRead(SettingsDataSource.KSU_STEALTH)
-            val readKsuAppLock = policy.mayRead(SettingsDataSource.KSU_APP_LOCK)
-            val readKsuWebAdmin = policy.mayRead(SettingsDataSource.KSU_WEB_ADMIN)
-            val bFeatures: BFeatureCards =
-                if (readKsuStealth || readKsuAppLock) {
-                    withContext(Dispatchers.IO) {
-                        runCatching {
-                            BFeaturePolicy.evaluate(
-                                capabilities = capabilities,
-                                stealthRaw = if (readKsuStealth) Stealth.kernelState() else -1,
-                                appLockRaw = if (readKsuAppLock) Natives.appLockState() else -1,
-                                webAdminEnabledPref = if (readKsuWebAdmin) repo.webAdminEnabled else false,
-                            )
-                        }.getOrNull()
-                    } ?: prev.bFeatures
-                } else {
-                    // 非 Normal：不是"沿用上次的三卡"，而是明确无三卡。
-                    BFeatureCards.NONE
-                }
+            val suCompatStatus = ""
+            val isSuEnabled = false
+            val suCompatMode = 2
+            val ksuExtras: KsuSettingsExtras? = null
+            val bFeatures: BFeatureCards = BFeatureCards.NONE
 
             // H3/H7：隐藏「设置项」（Ultra 专属；Normal 的隐藏语义是上面的 KSU stealth）。
             // Normal/未判定**不调用** LiteHiddenRuntimeProxy（不是隐藏视觉，是根本不读）。
@@ -342,14 +285,7 @@ class SettingsViewModel(
             // readState() 会通知观察者；从本次真实读取完成后的修订号开始守卫，避免自触发循环。
             val hiddenRevision = com.maplesu.core.ui.security.HiddenFactsSignal.revision.value
 
-            // Normal 专属：内核形态（LKM / 内置）只读行。Ultra/未判定不读。
-            val readKernelMode = policy.mayRead(SettingsDataSource.KSU_KERNEL_MODE)
-            val isLkmMode = if (readKernelMode) {
-                withContext(Dispatchers.IO) { runCatching { repo.isLkmMode() }.getOrNull() }
-                    ?: prev.isLkmMode
-            } else {
-                false
-            }
+            val isLkmMode = false
 
             // 管理器可用性与工作模式入口（旧实现在组合期/主线程读 JNI）。
             val hiddenMasked = mustMaskModeUi()
@@ -357,11 +293,11 @@ class SettingsViewModel(
                 .getOrDefault(WorkModeEntryPolicy.NONE)
             val appearance = readAppearance(prev.appearance)
             if (hiddenRevision != com.maplesu.core.ui.security.HiddenFactsSignal.revision.value ||
-                !currentReadScope()) return@launch
+                false) return@launch
 
             _uiState.update {
                 if (hiddenRevision != com.maplesu.core.ui.security.HiddenFactsSignal.revision.value ||
-                    !currentReadScope()) return@update it
+                    false) return@update it
                 val acceptPreferences = revision == localRevision.get() && activeToggleWrites.get() == 0
                 it.copy(
                     modePolicy = policy,
@@ -397,32 +333,32 @@ class SettingsViewModel(
                     suCompatMode = if (acceptPreferences) suCompatMode else it.suCompatMode,
                     isSuEnabled = if (acceptPreferences) isSuEnabled else it.isSuEnabled,
                     useSoftReboot = if (acceptPreferences) useSoftReboot else it.useSoftReboot,
-                    isKernelUmountEnabled = if (!acceptPreferences) it.isKernelUmountEnabled else if (readKsuFeatures) {
+                    isKernelUmountEnabled = if (!acceptPreferences) it.isKernelUmountEnabled else if (false) {
                         ksuExtras?.kernelUmount ?: prev.isKernelUmountEnabled
                     } else {
                         false
                     },
-                    isSelinuxHideEnabled = if (!acceptPreferences) it.isSelinuxHideEnabled else if (readKsuFeatures) {
+                    isSelinuxHideEnabled = if (!acceptPreferences) it.isSelinuxHideEnabled else if (false) {
                         ksuExtras?.selinuxHide ?: prev.isSelinuxHideEnabled
                     } else {
                         false
                     },
-                    isSulogEnabled = if (!acceptPreferences) it.isSulogEnabled else if (readKsuFeatures) {
+                    isSulogEnabled = if (!acceptPreferences) it.isSulogEnabled else if (false) {
                         ksuExtras?.sulog ?: prev.isSulogEnabled
                     } else {
                         false
                     },
-                    isAdbRootEnabled = if (!acceptPreferences) it.isAdbRootEnabled else if (readKsuFeatures) {
+                    isAdbRootEnabled = if (!acceptPreferences) it.isAdbRootEnabled else if (false) {
                         ksuExtras?.adbRoot ?: prev.isAdbRootEnabled
                     } else {
                         false
                     },
-                    isShellSuAdbOnlyEnabled = if (!acceptPreferences) it.isShellSuAdbOnlyEnabled else if (readKsuFeatures) {
+                    isShellSuAdbOnlyEnabled = if (!acceptPreferences) it.isShellSuAdbOnlyEnabled else if (false) {
                         ksuExtras?.shellSuAdbOnly ?: prev.isShellSuAdbOnlyEnabled
                     } else {
                         false
                     },
-                    isDefaultUmountModules = if (!acceptPreferences) it.isDefaultUmountModules else if (readKsuFeatures) {
+                    isDefaultUmountModules = if (!acceptPreferences) it.isDefaultUmountModules else if (false) {
                         ksuExtras?.defaultUmount ?: prev.isDefaultUmountModules
                     } else {
                         false

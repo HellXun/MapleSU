@@ -120,7 +120,7 @@ internal object NativeInstallTransaction {
         val record = JSONObject().apply {
             put("kind", "NATIVE"); put("schema", 1); put("taskId", taskId); put("targetMode", targetMode)
             put("operation", operation)
-            put("vivoCompatibility", operation == "INSTALL" && VivoCompatibility.deviceSupported())
+            put("vivoCompatibility", false)
             put("signingMode", signingMode)
             put("partition", partition); put("restoreOriginal", restoreOriginal); put("selectedManager", selectedManager)
             put("userId", userId)
@@ -266,40 +266,13 @@ internal object NativeInstallTransaction {
     }
 
     fun commit(taskId: String, candidate: ParcelFileDescriptor, candidateSha256: String,
-               companionImages: Bundle = Bundle(),
-               ensureNormalUserland: () -> Unit = { error("INSTALLER_NORMAL_USERLAND_UNWIRED") }): Bundle = locked {
+               companionImages: Bundle = Bundle()): Bundle = locked {
         val directory = directory(taskId)
         val record = read(directory)
         check(record.optString("operation", "INSTALL") == "INSTALL") { "INSTALLER_TASK_CONFLICT" }
-        var normalUserlandFailure: dev.maplesu.manager.ksu.KsuBootstrapFailure? = null
-        fun deployNormalUserland(beforeReboot: Boolean = false) {
-            if (record.getString("targetMode") != "KSU") return
-            try {
-                ensureNormalUserland()
-                if (record.has("normalUserlandFailure")) {
-                    record.remove("normalUserlandFailure")
-                    record.remove("errorDetail")
-                    record.put("error", "")
-                    save(directory, record)
-                }
-            } catch (error: dev.maplesu.manager.ksu.KsuBootstrapFailure) {
-                normalUserlandFailure = error
-                // record.json is bounded; full command output remains in the bootstrap log callbacks.
-                val rawDetail = error.result.detail
-                val detail = if (rawDetail.length <= 2_048) rawDetail else
-                    rawDetail.take(1_024) + "\n...[NormalBoot log contains full output]...\n" + rawDetail.takeLast(1_024)
-                record.put("normalUserlandFailure", JSONObject()
-                    .put("code", error.message).put("detail", detail).put("detailTruncated", detail != rawDetail))
-                    .put("error", error.message).put("errorDetail", detail)
-                try { save(directory, record) } catch (journalError: Exception) { error.addSuppressed(journalError) }
-                if (beforeReboot) throw java.io.IOException("INSTALLER_NORMAL_USERLAND_FAILED", error)
-                throw error
-            }
-        }
         if (record.getString("state") in setOf("REBOOT_REQUIRED", "REBOOT_REQUESTED", "BOOT_IMAGE_VERIFIED")) {
             check(record.optString("candidateSha256") == candidateSha256) { "INSTALLER_TASK_CONFLICT" }
             verifyImages(record, rebind(record, requirePre = false), target = true)
-            deployNormalUserland()
             return@locked response(record)
         }
         check(record.getString("state") == "PREPARED") { "INSTALLER_TRANSACTION_NOT_PREPARED" }
@@ -380,10 +353,9 @@ internal object NativeInstallTransaction {
             val outcome = withDevices(snapshot, writable = true, onIoFailure = ioJournal(directory, record)) { devices ->
                 NativeInstallSequence.commit(devices, pre(directory, snapshot), writes, journal(directory, record),
                     beforeReboot = {
-                        deployNormalUserland(beforeReboot = true)
                     })
             }
-            val outcomeError = normalUserlandFailure?.message
+            val outcomeError: String? = null
                 ?.takeIf { outcome.error == "INSTALLER_NORMAL_USERLAND_FAILED" } ?: outcome.error
             if (record.getString("state") != outcome.state || record.optString("error") != outcomeError) {
                 record.put("state", outcome.state).put("error", outcomeError)
@@ -509,7 +481,6 @@ internal object NativeInstallTransaction {
                 digest(File(directory, "candidate.img")) == record.getString("candidateSha256") &&
                 dev.maplesu.manager.ultrakernel.UltraKernelVivoFilter.present(
                     dev.maplesu.manager.ultrakernel.UltraKernelPlan.readKernel(File(directory, "candidate.img")))
-            VivoCompatibility.verifyRuntime(record.getString("targetMode"), daemon, kernelFilter)
             record.put("vrVerifiedBootId", bootId())
         }
         record.put("state", "BOOT_IMAGE_VERIFIED").put("verifiedBootId", bootId()).put("error", "")
@@ -676,9 +647,7 @@ internal object NativeInstallTransaction {
         check(it.matches(Regex("[0-9a-fA-F-]{36}"))) { "INSTALLER_BOOT_ID_INVALID" }
     }
     private fun validId(id: String) { require(UUID.fromString(id).toString() == id) { "INSTALLER_TASK_INVALID" } }
-    private fun code(error: Throwable) = generateSequence(error) { it.cause }
-        .filterIsInstance<dev.maplesu.manager.ksu.KsuBootstrapFailure>().firstOrNull()?.message
-        ?: error.message?.substringBefore(':')?.takeIf {
+    private fun code(error: Throwable) = error.message?.substringBefore(':')?.takeIf {
             it.matches(Regex("(?:INSTALLER|LENOVO_AVB|ULTRA_KERNEL|ULTRA_INIT)_[A-Z0-9_]+")) }
         ?: "INSTALLER_OPERATION_FAILED"
     private fun image(directory: File, record: JSONObject, name: String) = File(directory,

@@ -3,9 +3,6 @@ package dev.maplesu.manager.installer
 import android.content.Context
 import android.os.Build
 import dev.maplesu.image.VendorBootInspector
-import dev.maplesu.manager.ksu.KsuFileCommandRunner
-import dev.maplesu.manager.ksu.KsuLog
-import dev.maplesu.manager.ksu.KsuTimeouts
 import dev.maplesu.manager.runtime.ultra.UltraSdkLogging
 import dev.maplesu.manager.workmode.Hashes
 import dev.maplesu.manager.workmode.WorkMode
@@ -96,27 +93,33 @@ object VivoCompatibility {
         VivoCompatibilityStatus.requireActive(mode, status, File("/proc/modules").readText())
     }
 
-    private fun command(context: Context, arguments: List<String>) =
-        command(File(context.applicationInfo.nativeLibraryDir, "libksud_ksu.so"), arguments)
+    /**
+     * Normal（KernelSU）的 vivo 生产者：上游经 `libksud_ksu.so feature get vr_filter` 读状态。
+     * 本分支已删除 ksud，Normal 也不再是可选目标，因此这里显式失败，不伪造成功。
+     */
+    private fun command(context: Context, arguments: List<String>): String =
+        throw IllegalStateException("INSTALLER_VIVO_PRODUCER_MISSING: ksud removed (Ultra-only)")
 
     private fun command(daemon: File, arguments: List<String>): String {
         check(daemon.isFile) { "INSTALLER_VIVO_PRODUCER_MISSING" }
         val argv = listOf(daemon.path) + arguments
         val stage = arguments.firstOrNull().orEmpty()
-        val result = KsuFileCommandRunner().run(argv, KsuTimeouts.BOOT_PATCH_MS)
-        val failure = when {
-            result.code == 130 && Thread.currentThread().isInterrupted ->
-                InterruptedException("INSTALLER_CANCELLED:stage=$stage code=${result.code}")
-            result.code != 0 -> IllegalStateException("INSTALLER_VIVO_PRODUCER_FAILED:stage=$stage code=${result.code}")
-            else -> null
+        val process = ProcessBuilder(argv).redirectErrorStream(true).start()
+        val finished = process.waitFor(BOOT_PATCH_TIMEOUT_MS, java.util.concurrent.TimeUnit.MILLISECONDS)
+        if (!finished) {
+            process.destroyForcibly()
+            if (Thread.currentThread().isInterrupted) throw InterruptedException("INSTALLER_CANCELLED:stage=$stage")
+            throw IllegalStateException("INSTALLER_VIVO_PRODUCER_FAILED:stage=$stage timeout")
         }
-        try {
-            KsuLog.record("vivo-compatibility", UltraSdkLogging.redact(
-                "stage=$stage argv=$argv code=${result.code} stdout=${result.outText} stderr=${result.errText}"))
-        } catch (error: Exception) {
-            failure?.addSuppressed(error)
+        val out = process.inputStream.bufferedReader().use { it.readText() }
+        android.util.Log.i("VivoCompatibility", UltraSdkLogging.redact(
+            "stage=$stage argv=$argv code=${process.exitValue()} out=$out"))
+        if (process.exitValue() != 0) {
+            throw IllegalStateException(
+                "INSTALLER_VIVO_PRODUCER_FAILED:stage=$stage code=${process.exitValue()}")
         }
-        if (failure != null) throw failure
-        return result.outText
+        return out
     }
+
+    private const val BOOT_PATCH_TIMEOUT_MS = 300_000L
 }

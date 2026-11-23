@@ -7,8 +7,6 @@ import android.os.IBinder
 import android.os.ParcelFileDescriptor
 import android.os.Process
 import com.topjohnwu.superuser.ipc.RootService
-import dev.maplesu.manager.ksu.KsuFileCommandRunner
-import dev.maplesu.manager.ksu.ensureNormalBootUserland
 import dev.maplesu.manager.runtime.ManagerCallerVerifier
 import dev.maplesu.manager.workmode.service.DeviceSwitchError
 import dev.maplesu.manager.workmode.service.ModeSwitchAidlCodec
@@ -57,12 +55,15 @@ class InstallerPartitionService : RootService() {
     }
 
     private fun receipts(userId: Int) = File("/data/user/$userId/$packageName/files/ultra-flash")
+    /**
+     * Normal（KernelSU）用户态引导。
+     *
+     * 上游会在切换/安装 Normal 目标前部署 ksud 用户态。本分支已删除 KSU 后端与
+     * `libksud_ksu.so`，切换链路也不会再把目标设为 KSU，因此这里是显式空操作；
+     * 保留函数名只为让事务侧的注入点继续编译。
+     */
     private fun prepareNormalUserland() {
-        val result = ensureNormalBootUserland(File(applicationInfo.nativeLibraryDir), KsuFileCommandRunner(),
-            onStdout = { android.util.Log.i("NormalBoot", it) },
-            onStderr = { android.util.Log.w("NormalBoot", it) })
-        if (!result.ok) android.util.Log.w("NormalBoot", "${result.failureCode}: ${result.detail}")
-        if (!result.ok) throw dev.maplesu.manager.ksu.KsuBootstrapFailure(result)
+        android.util.Log.i("NormalBoot", "NORMAL_BACKEND_REMOVED")
     }
     private fun retainedOriginals(userId: Int) = listOf(
         File("/data/user/$userId/$packageName/files/images/imported.img"),
@@ -153,7 +154,7 @@ class InstallerPartitionService : RootService() {
         }
         override fun verifyBootInstall(taskId: String): Bundle = operation {
             if (NativeInstallTransaction.owns(taskId)) nativeOperation(taskId) {
-                NativeInstallTransaction.verify(taskId, File(applicationInfo.nativeLibraryDir, "libksud_ksu.so"))
+                NativeInstallTransaction.verify(taskId, File(applicationInfo.nativeLibraryDir, "libmaplesu_su.so"))
             }
             else InstallerBootTransaction.verifyBoot(taskId)
         }
@@ -200,8 +201,7 @@ class InstallerPartitionService : RootService() {
 
         override fun commitNativeInstall(taskId: String, candidate: ParcelFileDescriptor,
                                          candidateSha256: String): Bundle = candidate.use { image ->
-            writeOperation { NativeInstallTransaction.commit(taskId, image, candidateSha256,
-                ensureNormalUserland = ::prepareNormalUserland) }
+            writeOperation { NativeInstallTransaction.commit(taskId, image, candidateSha256) }
         }
 
         override fun cancelNativeInstall(taskId: String): Bundle = operation {
@@ -227,8 +227,7 @@ class InstallerPartitionService : RootService() {
                 companionImages.getParcelable<ParcelFileDescriptor>(it)
             }
             try { writeOperation { nativeOperation(taskId) {
-                NativeInstallTransaction.commit(taskId, image, candidateSha256, companionImages,
-                    ensureNormalUserland = ::prepareNormalUserland)
+                NativeInstallTransaction.commit(taskId, image, candidateSha256, companionImages)
             } } }
             finally { descriptors.forEach { it.close() } }
         }

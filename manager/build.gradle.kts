@@ -208,10 +208,6 @@ android {
     if (providers.gradleProperty("maplesuThemeIsolatedTests").orNull == "true") {
         sourceSets["debug"].manifest.srcFile("src/themeTest/AndroidManifest.xml")
     }
-    // MapleSU 双工作模式：KSU 后端独立目录（W10/W11）。D5 要求「独立 sourceSet」，
-    // 但 AGP 不把任意命名的 sourceSet 编进 variant，故使用单 sourceSet
-    // 多目录方案并入 main；边界由 KsuSourceIsolationTest 机器校验（目录 + import 规则）。
-    sourceSets["main"].kotlin.srcDir("src/ksu/java")
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
@@ -241,7 +237,6 @@ android {
         // KSU JNI (W12d): built by third_party/kernelsu/scripts/build_jni.sh (NDK 26.1,
         // 16KB page). ksu-payload.json records their exact sha256, and the KSU facade is
         // validated against those bytes; AGP strip would change them, so keep them intact.
-        keepDebugSymbols += "**/libmaplesu_ksu.so"
         keepDebugSymbols += "**/libksud_ksu.so"
         keepDebugSymbols += "**/libadbroot.so"
     }

@@ -1,18 +1,15 @@
 package dev.maplesu.manager.workmode.detect.probes
 
-import dev.maplesu.manager.ksu.KsuBackends
 import dev.maplesu.manager.workmode.detect.KsuFacts
 import dev.maplesu.manager.workmode.detect.KsuKernelProbe
 
 /**
- * KSU 内核探针适配器（取值来源为同树 JNI `KsuNatives` 与后端门面）。
+ * KSU 内核探针适配器。
  *
- * 接线（W04b）：`manager/src/ksu/java/.../KsuNatives.kt`（main sourceSet，见
- * `manager/build.gradle.kts:61`）。**只走安全调用层** [KsuBackends.natives]：
- * native 未加载 / 符号缺失 / 结构失败 → `available=false`，抛出固定探针异常，
- * 由探测器保留 S1/S2 unknown；不把映射默认值写成"没有 KSU"。
- *
- * 映射是纯函数 [KsuProbeMapping]（主机可测）；真机路径只负责取一次快照。
+ * 上游经同树 JNI（`manager/src/ksu/java/.../KsuNatives.kt`）读取 Normal 后端的内核事实。
+ * 本分支只发布 Ultra，KSU 后端源码与 `libmaplesu_ksu.so` 已整体删除，因此这里始终返回
+ * [KsuNativeSnapshot.UNAVAILABLE]——探测层据此把 Normal 相关事实记为 unknown，判定的
+ * 结论只会落到 Ultra。**不加载任何 JNI、不打开任何设备节点。**
  */
 object KsuKernelProbeAdapter : KsuKernelProbe {
     override fun probe(): KsuFacts {
@@ -21,17 +18,7 @@ object KsuKernelProbeAdapter : KsuKernelProbe {
         return KsuProbeMapping.from(snapshot)
     }
 
-    /** 一次 native 只读快照；任何异常 → unavailable（unknown）。 */
-    internal fun currentSnapshot(): KsuNativeSnapshot = runCatching {
-        val natives = KsuBackends.natives()
-        KsuNativeSnapshot(
-            available = natives.available,
-            version = natives.version,
-            kernelUapi = natives.kernelUAPIVersion,
-            isManager = natives.isManager,
-            isLkm = natives.isLkmMode,
-        )
-    }.getOrDefault(KsuNativeSnapshot.UNAVAILABLE)
+    internal fun currentSnapshot(): KsuNativeSnapshot = KsuNativeSnapshot.UNAVAILABLE
 }
 
 /** native 侧只读快照（与 libsu/JNI 解耦，便于主机测试）。 */

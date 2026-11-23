@@ -1,33 +1,31 @@
 package dev.maplesu.manager.workmode
 
 /**
- * 双工作模式的唯一枚举。
+ * 唯一的工作模式。
+ *
+ * 上游 MapleSU 曾同时携带 Ultra（原 Lite）与 Normal（原 KSU）两套后端；本分支只发布
+ * Ultra，Normal 的枚举值、后端与切换链路已整体删除，所以这里只剩一个常量。
  *
  * [suffix] 同时是：prefs 后缀、离线仓目录名、控制面 wire 值。
  * 一经发布不得修改（磁盘目录名与 prefs 后缀，改了等于数据丢失）。
+ * 历史上 Ultra 使用 "A"，因此这里保持 "A" 不变。
  *
  * 核心枚举保持纯 Kotlin，便于主机检查。UI 层负责 `WorkMode -> string res` 映射，
- * 对应 `R.string.work_mode_lite` / `R.string.work_mode_ksu`。
+ * 对应 `R.string.work_mode_lite`。
  */
 enum class WorkMode(
-    /** "A" | "B"，用于 settings_A / modes/A / modes.json.current。 */
+    /** "A"，用于 settings_A / modes/A / modes.json.current。 */
     val suffix: String,
 ) {
-    /** MapleSU_Ultra（原 Lite，现状实现）。 */
-    LITE("A"),
+    /** MapleSU_Ultra（唯一受支持的工作模式）。 */
+    LITE("A");
 
-    /** MapleSU_Normal（原玩机兼容，KSU 分支）。 */
-    KSU("B");
-
-    val isLite: Boolean get() = this == LITE
-
-    val isKsu: Boolean get() = this == KSU
+    val isLite: Boolean get() = true
 
     companion object {
-        /** 只接受 "A"/"B"/"LITE"/"KSU"；其它（含 null、空串）返回 null，**禁止** fallback 到 LITE。 */
+        /** 只接受 "A"/"LITE"；其它（含历史值 "B"/"KSU"、null、空串）返回 null。 */
         fun fromWire(value: String?): WorkMode? = when (value?.trim()?.uppercase()) {
             "A", "LITE" -> LITE
-            "B", "KSU" -> KSU
             else -> null
         }
 

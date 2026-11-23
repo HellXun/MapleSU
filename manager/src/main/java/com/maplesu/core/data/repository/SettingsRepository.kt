@@ -1,15 +1,5 @@
 package com.maplesu.core.data.repository
 
-data class NormalSettingsRead(
-    val suCompatStatus: String?,
-    val suEnabled: Boolean?,
-    val kernelUmount: Boolean? = null,
-    val selinuxHide: Boolean? = null,
-    val sulog: Boolean? = null,
-    val adbRoot: Boolean? = null,
-    val shellSuAdbOnly: Boolean? = null,
-)
-
 interface SettingsRepository {
     var uiMode: String
     var homeLargeCard: Boolean
@@ -134,51 +124,4 @@ interface SettingsRepository {
     var flatHome: Boolean
 
     val intentToken: String
-
-    suspend fun readNormalSettings(includeExtras: Boolean): NormalSettingsRead = NormalSettingsRead(
-        suCompatStatus = runCatching { getSuCompatStatus() }.getOrNull(),
-        suEnabled = runCatching { isSuEnabled() }.getOrNull(),
-        kernelUmount = if (includeExtras) runCatching { isKernelUmountEnabled() }.getOrNull() else null,
-        selinuxHide = if (includeExtras) runCatching { isSelinuxHideEnabled() }.getOrNull() else null,
-        sulog = if (includeExtras) runCatching { getSulogValue()?.let { it != 0L } }.getOrNull() else null,
-        adbRoot = if (includeExtras) runCatching { getAdbRootValue()?.let { it != 0L } }.getOrNull() else null,
-        shellSuAdbOnly = if (includeExtras) runCatching { getShellSuAdbOnlyValue()?.let { it != 0L } }.getOrNull() else null,
-    )
-
-    suspend fun getSuCompatStatus(): String
-    suspend fun getSuCompatPersistValue(): Long?
-    fun isSuEnabled(): Boolean
-    fun setSuEnabled(enabled: Boolean): Boolean
-    fun setSuCompatModePref(mode: Int)
-    fun getSuCompatModePref(): Int
-
-    suspend fun getKernelUmountStatus(): String
-    fun isKernelUmountEnabled(): Boolean
-    fun setKernelUmountEnabled(enabled: Boolean): Boolean
-
-    suspend fun getSelinuxHideStatus(): String
-    fun isSelinuxHideEnabled(): Boolean
-    fun setSelinuxHideEnabled(enabled: Boolean): Int
-
-    suspend fun getSulogStatus(): String
-    suspend fun getSulogPersistValue(): Long?
-    suspend fun getSulogValue(): Long?
-    fun setSulogEnabled(enabled: Boolean): Boolean
-
-    suspend fun getAdbRootStatus(): String
-    suspend fun getAdbRootPersistValue(): Long?
-    suspend fun getAdbRootValue(): Long?
-    fun setAdbRootEnabled(enabled: Boolean): Boolean
-
-    suspend fun getShellSuAdbOnlyStatus(): String
-    suspend fun getShellSuAdbOnlyPersistValue(): Long?
-    suspend fun getShellSuAdbOnlyValue(): Long?
-    fun setShellSuAdbOnlyEnabled(enabled: Boolean): Boolean
-
-    fun isDefaultUmountModules(): Boolean
-    fun setDefaultUmountModules(enabled: Boolean): Boolean
-
-    fun isLkmMode(): Boolean
-
-    fun execKsudFeatureSave()
 }
