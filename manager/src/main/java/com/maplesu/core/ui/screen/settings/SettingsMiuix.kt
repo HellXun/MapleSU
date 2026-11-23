@@ -65,11 +65,9 @@ import com.maplesu.core.ui.theme.LocalEnableBlur
 import com.maplesu.core.ui.util.BlurredBar
 import com.maplesu.core.ui.util.miuixBarColor
 import com.maplesu.core.ui.util.rememberBlurBackdrop
-import dev.maplesu.manager.workmode.ui.KsuRowId
 import dev.maplesu.manager.workmode.ui.SettingsSection
 import dev.maplesu.manager.workmode.ui.SettingsStatusCopy
 import dev.maplesu.manager.workmode.ui.settingsStatusOf
-import dev.maplesu.manager.workmode.ui.visibleKsuRows
 import dev.maplesu.manager.workmode.ui.workModeNameRes
 import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.Card
@@ -268,19 +266,12 @@ fun SettingPagerMiuix(
                     }
                 }
 
-                // Normal（KSU）专属：传统 SU 命令支持 + 六项内核设置（行级再受能力位约束）。
-                val ksuRows = if (modePolicy.shows(SettingsSection.KSU_FEATURES)) {
-                    visibleKsuRows(uiState.capabilities)
-                        .filterNot { it == KsuRowId.SELINUX_HIDE && uiState.jailbreakSelinuxHide.visible }
-                } else {
-                    emptyList()
-                }
+                // Ultra-only：Normal（KSU）专属内核设置行已移除，仅保留 SU 兼容。
                 val showSuCompat = modePolicy.shows(SettingsSection.SU_COMPAT) && uiState.managerValid
-                if (showSuCompat || ksuRows.isNotEmpty()) {
+                if (showSuCompat) {
                     item(key = "ksu-features") {
                         SettingsCardMiuix(Modifier.animateItem(fadeInSpec = tween(120), placementSpec = tween(160), fadeOutSpec = null)) {
-                            if (showSuCompat) SuCompatRowMiuix(uiState, actions)
-                            ksuRows.forEach { row -> KsuSwitchRowMiuix(row, uiState, actions) }
+                            SuCompatRowMiuix(uiState, actions)
                         }
                     }
                 }
@@ -490,59 +481,6 @@ private fun SuCompatRowMiuix(uiState: SettingsUiState, actions: SettingsScreenAc
         selectedIndex = if (uiState.isSuEnabled) 0 else 1,
         onSelectedIndexChange = { actions.onSetSuCompatMode(if (it == 0) 0 else 2) },
     )
-}
-
-@Composable
-private fun KsuSwitchRowMiuix(row: KsuRowId, uiState: SettingsUiState, actions: SettingsScreenActions) {
-    when (row) {
-        KsuRowId.KERNEL_UMOUNT -> SwitchRowMiuix(
-            title = stringResource(R.string.settings_kernel_umount),
-            summary = stringResource(R.string.settings_kernel_umount_summary),
-            icon = Icons.Rounded.FolderOff,
-            checked = uiState.isKernelUmountEnabled,
-            onCheckedChange = actions.onSetKernelUmountEnabled,
-        )
-
-        KsuRowId.SELINUX_HIDE -> SwitchRowMiuix(
-            title = stringResource(R.string.settings_selinux_hide),
-            summary = stringResource(R.string.settings_selinux_hide_summary),
-            icon = Icons.Rounded.Shield,
-            checked = uiState.isSelinuxHideEnabled,
-            onCheckedChange = actions.onSetSelinuxHideEnabled,
-        )
-
-        KsuRowId.SULOG -> SwitchRowMiuix(
-            title = stringResource(R.string.settings_sulog),
-            summary = stringResource(R.string.settings_sulog_summary),
-            icon = Icons.Rounded.History,
-            checked = uiState.isSulogEnabled,
-            onCheckedChange = actions.onSetSulogEnabled,
-        )
-
-        KsuRowId.ADB_ROOT -> SwitchRowMiuix(
-            title = stringResource(R.string.settings_adb_root),
-            summary = stringResource(R.string.settings_adb_root_summary),
-            icon = Icons.Rounded.Adb,
-            checked = uiState.isAdbRootEnabled,
-            onCheckedChange = actions.onSetAdbRootEnabled,
-        )
-
-        KsuRowId.SHELL_SU_ADB_ONLY -> SwitchRowMiuix(
-            title = stringResource(R.string.settings_shell_su_adb_only),
-            summary = stringResource(R.string.settings_shell_su_adb_only_summary),
-            icon = Icons.Rounded.Terminal,
-            checked = uiState.isShellSuAdbOnlyEnabled,
-            onCheckedChange = actions.onSetShellSuAdbOnlyEnabled,
-        )
-
-        KsuRowId.UMOUNT_MODULES_DEFAULT -> SwitchRowMiuix(
-            title = stringResource(R.string.settings_umount_modules_default),
-            summary = stringResource(R.string.settings_umount_modules_default_summary),
-            icon = Icons.Rounded.Extension,
-            checked = uiState.isDefaultUmountModules,
-            onCheckedChange = actions.onSetDefaultUmountModules,
-        )
-    }
 }
 
 @Composable

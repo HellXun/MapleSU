@@ -459,12 +459,7 @@ object SuperuserControl {
             }
         }
         if (!scopeCurrent(scope)) return null
-        if (!migrated.containsKey(SuperuserMigration.SOURCE_KSU)) {
-            val packages = SuperuserMirrors.ksuAllowlistedPackages(context)
-            if (!packages.isNullOrEmpty()) {
-                sources += SuperuserLegacySource(SuperuserMigration.SOURCE_KSU, packages = packages)
-            }
-        }
+        // Ultra-only：Normal（KSU）授权表迁移源已移除。
         return sources.takeIf { scopeCurrent(scope) }
     }
 

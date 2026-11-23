@@ -71,11 +71,9 @@ import com.maplesu.core.ui.component.material.SnackBarHost
 import com.maplesu.core.ui.component.material.TopBarBackButton
 import com.maplesu.core.ui.component.material.expressiveTopAppBarColors
 import com.maplesu.core.ui.component.uninstalldialog.UninstallDialog
-import dev.maplesu.manager.workmode.ui.KsuRowId
 import dev.maplesu.manager.workmode.ui.SettingsSection
 import dev.maplesu.manager.workmode.ui.SettingsStatusCopy
 import dev.maplesu.manager.workmode.ui.settingsStatusOf
-import dev.maplesu.manager.workmode.ui.visibleKsuRows
 import dev.maplesu.manager.workmode.ui.workModeNameRes
 
 /** 分组之间的间距沿用设置主页原有写法。 */
@@ -236,22 +234,13 @@ fun SettingPagerMaterial(
                     }
                 }
 
-                // Normal（KSU）专属：传统 SU 命令支持 + 六项内核设置（行级再受能力位约束）。
-                val ksuRows = if (modePolicy.shows(SettingsSection.KSU_FEATURES)) {
-                    visibleKsuRows(uiState.capabilities)
-                        .filterNot { it == KsuRowId.SELINUX_HIDE && uiState.jailbreakSelinuxHide.visible }
-                } else {
-                    emptyList()
+                // Ultra-only：Normal（KSU）专属内核设置行已移除，仅保留 SU 兼容。
+                if (modePolicy.shows(SettingsSection.SU_COMPAT) && uiState.managerValid) {
+                    SegmentedColumn(
+                        modifier = GroupPadding,
+                        content = buildList { add { SuCompatRowMaterial(uiState, actions) } },
+                    )
                 }
-                SegmentedColumn(
-                    modifier = GroupPadding,
-                    content = buildList {
-                        if (modePolicy.shows(SettingsSection.SU_COMPAT) && uiState.managerValid) {
-                            add { SuCompatRowMaterial(uiState, actions) }
-                        }
-                        ksuRows.forEach { row -> add { KsuSwitchRowMaterial(row, uiState, actions) } }
-                    },
-                )
 
                 // 通用：检查模块更新 + 软重启 + WebView 调试（两模式都消费）。
                 SegmentedColumn(
@@ -473,59 +462,6 @@ private fun SuCompatRowMaterial(uiState: SettingsUiState, actions: SettingsScree
         selectedIndex = if (uiState.isSuEnabled) 0 else 1,
         onItemSelected = { actions.onSetSuCompatMode(if (it == 0) 0 else 2) },
     )
-}
-
-@Composable
-private fun KsuSwitchRowMaterial(row: KsuRowId, uiState: SettingsUiState, actions: SettingsScreenActions) {
-    when (row) {
-        KsuRowId.KERNEL_UMOUNT -> SegmentedSwitchItem(
-            icon = Icons.Filled.FolderOff,
-            title = stringResource(R.string.settings_kernel_umount),
-            summary = stringResource(R.string.settings_kernel_umount_summary),
-            checked = uiState.isKernelUmountEnabled,
-            onCheckedChange = actions.onSetKernelUmountEnabled,
-        )
-
-        KsuRowId.SELINUX_HIDE -> SegmentedSwitchItem(
-            icon = Icons.Filled.Shield,
-            title = stringResource(R.string.settings_selinux_hide),
-            summary = stringResource(R.string.settings_selinux_hide_summary),
-            checked = uiState.isSelinuxHideEnabled,
-            onCheckedChange = actions.onSetSelinuxHideEnabled,
-        )
-
-        KsuRowId.SULOG -> SegmentedSwitchItem(
-            icon = Icons.Filled.History,
-            title = stringResource(R.string.settings_sulog),
-            summary = stringResource(R.string.settings_sulog_summary),
-            checked = uiState.isSulogEnabled,
-            onCheckedChange = actions.onSetSulogEnabled,
-        )
-
-        KsuRowId.ADB_ROOT -> SegmentedSwitchItem(
-            icon = Icons.Filled.Adb,
-            title = stringResource(R.string.settings_adb_root),
-            summary = stringResource(R.string.settings_adb_root_summary),
-            checked = uiState.isAdbRootEnabled,
-            onCheckedChange = actions.onSetAdbRootEnabled,
-        )
-
-        KsuRowId.SHELL_SU_ADB_ONLY -> SegmentedSwitchItem(
-            icon = Icons.Filled.Terminal,
-            title = stringResource(R.string.settings_shell_su_adb_only),
-            summary = stringResource(R.string.settings_shell_su_adb_only_summary),
-            checked = uiState.isShellSuAdbOnlyEnabled,
-            onCheckedChange = actions.onSetShellSuAdbOnlyEnabled,
-        )
-
-        KsuRowId.UMOUNT_MODULES_DEFAULT -> SegmentedSwitchItem(
-            icon = Icons.Filled.Extension,
-            title = stringResource(R.string.settings_umount_modules_default),
-            summary = stringResource(R.string.settings_umount_modules_default_summary),
-            checked = uiState.isDefaultUmountModules,
-            onCheckedChange = actions.onSetDefaultUmountModules,
-        )
-    }
 }
 
 @Composable

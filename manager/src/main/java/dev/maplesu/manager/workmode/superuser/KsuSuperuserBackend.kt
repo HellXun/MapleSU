@@ -256,19 +256,14 @@ class KsuAllowlistMirror(
 object SuperuserMirrors {
     @JvmStatic
     fun current(context: Context): dev.maplesu.manager.runtime.authorization.SuperuserMirror {
-        if (UltraAuthorization.isActive(context) &&
+        // Ultra-only：Normal（KSU）允许列表镜像已移除，只保留 Ultra 授权镜像。
+        val ultraActive = UltraAuthorization.isActive(context) &&
             (HookRootExecutor.production(context).available() || UltraSdkSession.current(context) != null ||
                 dev.maplesu.manager.runtime.ultra.UltraEnvironmentProbe.currentSnapshot(context).let {
                     it.managerOwnerIdentity != null && it.kernelRootVerified
-                })) {
-            return ultraMirror(context, null)
-        }
-        val adapter = runCatching { KsuBackends.superuser() }.getOrNull()
-            ?: return dev.maplesu.manager.runtime.authorization.NoSuperuserMirror
-        if (!runCatching { adapter.available() }.getOrDefault(false)) {
-            return dev.maplesu.manager.runtime.authorization.NoSuperuserMirror
-        }
-        return KsuAllowlistMirror(adapter, AndroidKsuIdentitySource(context))
+                })
+        return if (ultraActive) ultraMirror(context, null)
+        else dev.maplesu.manager.runtime.authorization.NoSuperuserMirror
     }
 
     internal fun forSdkScope(context: Context, scope: UltraAuthorization.Scope):
@@ -335,23 +330,5 @@ object SuperuserMirrors {
                 if (activeScope == null) dev.maplesu.manager.runtime.ultra.UltraAuthorizationAttempt.local("SU_AUTH_SCOPE_CHANGED")
                 else UltraAuthorization.setGranted(context, packageName, allowed, activeScope)
         }, setOf(context.packageName, "android", "com.android.shell"))
-    }
-
-    /**
-     * The packages the kernel allowlist currently admits, for the one-shot migration
-     * (design §3.1 S4). `null` means "the KSU backend is not available here", which the
-     * caller must not record as "migrated": the source may still appear later.
-     */
-    @JvmStatic
-    fun ksuAllowlistedPackages(context: Context): Set<String>? {
-        val adapter = runCatching { KsuBackends.superuser() }.getOrNull() ?: return null
-        if (!runCatching { adapter.available() }.getOrDefault(false)) return null
-        val identities = AndroidKsuIdentitySource(context)
-        return runCatching {
-            identities.installedApplications()
-                .filter { app -> adapter.getProfile(app.packageName, app.uid)?.allowSu == true }
-                .map { app -> app.packageName }
-                .toSet()
-        }.getOrNull()
     }
 }
