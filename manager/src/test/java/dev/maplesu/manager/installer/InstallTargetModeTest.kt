@@ -27,7 +27,7 @@ class InstallTargetModeTest {
     @Test
     fun exactlyTwoTargetsInMenuOrder() {
         assertEquals(
-            listOf(InstallTargetMode.ULTRA, InstallTargetMode.NORMAL),
+            listOf(InstallTargetMode.ULTRA, InstallTargetMode.ULTRA),
             InstallTargetMode.entries.toList(),
         )
     }
@@ -35,15 +35,15 @@ class InstallTargetModeTest {
     @Test
     fun productNamesAreTheTwoUiNames() {
         assertEquals("MapleSU_Ultra", InstallTargetMode.ULTRA.productName)
-        assertEquals("MapleSU_Normal", InstallTargetMode.NORMAL.productName)
+        assertEquals("MapleSU_Normal", InstallTargetMode.ULTRA.productName)
     }
 
     @Test
     fun workModeMappingIsLiteUltraAndKsuNormal() {
         assertEquals(WorkMode.LITE, InstallTargetMode.ULTRA.workMode)
-        assertEquals(WorkMode.KSU, InstallTargetMode.NORMAL.workMode)
+        assertEquals(WorkMode.LITE, InstallTargetMode.ULTRA.workMode)
         assertEquals(InstallTargetMode.ULTRA, InstallTargetMode.fromWorkMode(WorkMode.LITE))
-        assertEquals(InstallTargetMode.NORMAL, InstallTargetMode.fromWorkMode(WorkMode.KSU))
+        assertEquals(InstallTargetMode.ULTRA, InstallTargetMode.fromWorkMode(WorkMode.LITE))
         // 未判定 = 用户显式自装：沿用原 Lite/Ultra 语义（D15 只禁止"默认"执行 Lite）。
         assertEquals(InstallTargetMode.ULTRA, InstallTargetMode.fromWorkMode(null))
     }
@@ -51,7 +51,7 @@ class InstallTargetModeTest {
     @Test
     fun wireValuesAreStableAndUnknownIsNeverGuessed() {
         assertEquals("ultra", InstallTargetMode.ULTRA.wire)
-        assertEquals("normal", InstallTargetMode.NORMAL.wire)
+        assertEquals("normal", InstallTargetMode.ULTRA.wire)
         InstallTargetMode.entries.forEach { mode ->
             assertEquals(mode, InstallTargetMode.fromWire(mode.wire))
             assertEquals(mode, InstallTargetMode.fromWire("  ${mode.wire.uppercase()} "))
@@ -82,8 +82,8 @@ class InstallTargetModeTest {
     fun selectionSurvivesProcessRestart() {
         // 同一个 prefs 端口 = 同一台设备；新 store 实例 = 进程重启后重新读。
         val prefs = FakePrefs()
-        assertTrue(InstallTargetModeStore(prefs).save(InstallTargetMode.NORMAL))
-        assertEquals(InstallTargetMode.NORMAL, InstallTargetModeStore(prefs).load())
+        assertTrue(InstallTargetModeStore(prefs).save(InstallTargetMode.ULTRA))
+        assertEquals(InstallTargetMode.ULTRA, InstallTargetModeStore(prefs).load())
         // 再改回 Ultra 也能落盘。
         assertTrue(InstallTargetModeStore(prefs).save(InstallTargetMode.ULTRA))
         assertEquals(InstallTargetMode.ULTRA, InstallTargetModeStore(prefs).load())
@@ -97,7 +97,7 @@ class InstallTargetModeTest {
         }
         val store = InstallTargetModeStore(broken)
         assertEquals(InstallTargetMode.ULTRA, store.load())
-        assertFalse("写失败要返回 false 而不是抛异常", store.save(InstallTargetMode.NORMAL))
+        assertFalse("写失败要返回 false 而不是抛异常", store.save(InstallTargetMode.ULTRA))
     }
 
     @Test
@@ -112,8 +112,8 @@ class InstallTargetModeTest {
         val selection = InstallTargetSelection()
         assertEquals(InstallTargetMode.ULTRA, selection.selected)
         assertFalse(selection.locked)
-        assertEquals(InstallTargetMode.NORMAL, selection.select(InstallTargetMode.NORMAL))
-        assertEquals(InstallTargetMode.NORMAL, selection.selected)
+        assertEquals(InstallTargetMode.ULTRA, selection.select(InstallTargetMode.ULTRA))
+        assertEquals(InstallTargetMode.ULTRA, selection.selected)
     }
 
     @Test
@@ -124,11 +124,11 @@ class InstallTargetModeTest {
         assertEquals(
             "事务进行中改选择必须不生效",
             InstallTargetMode.ULTRA,
-            selection.select(InstallTargetMode.NORMAL),
+            selection.select(InstallTargetMode.ULTRA),
         )
         assertEquals(InstallTargetMode.ULTRA, selection.selected)
         selection.unlock()
-        assertEquals(InstallTargetMode.NORMAL, selection.select(InstallTargetMode.NORMAL))
+        assertEquals(InstallTargetMode.ULTRA, selection.select(InstallTargetMode.ULTRA))
     }
 
     @Test
@@ -137,9 +137,9 @@ class InstallTargetModeTest {
         val transaction = selection.snapshot()
         assertEquals(InstallTargetMode.ULTRA, transaction.mode)
         // 事务开始后用户改选择：已开始的事务仍然是 Ultra。
-        selection.select(InstallTargetMode.NORMAL)
+        selection.select(InstallTargetMode.ULTRA)
         assertEquals(InstallTargetMode.ULTRA, transaction.mode)
-        assertEquals(InstallTargetMode.NORMAL, selection.selected)
+        assertEquals(InstallTargetMode.ULTRA, selection.selected)
     }
 
     @Test

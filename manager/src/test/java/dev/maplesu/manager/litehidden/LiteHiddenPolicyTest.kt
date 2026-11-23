@@ -67,12 +67,12 @@ class LiteHiddenPolicyTest {
     @Test
     fun ksuModeNeverShowsLiteHiddenCard() {
         for (state in LiteHiddenState.entries) {
-            val ui = LiteHiddenPolicy.evaluate(WorkMode.KSU, state)
+            val ui = LiteHiddenPolicy.evaluate(WorkMode.LITE, state)
             assertFalse("B 不显示 Lite 隐藏卡", ui.cardVisible)
             assertFalse("B 不用 Lite App 级伪装", ui.disguisedAsNotInstalled)
             assertTrue(ui.showSuperUserEntry)
         }
-        assertFalse(LiteHiddenPolicy.masksAsNotInstalled(WorkMode.KSU, LiteHiddenState.ON))
+        assertFalse(LiteHiddenPolicy.masksAsNotInstalled(WorkMode.LITE, LiteHiddenState.ON))
     }
 
     @Test
@@ -89,7 +89,7 @@ class LiteHiddenPolicyTest {
             assertFalse("ON 禁止 $feature", LiteHiddenPolicy.allowsRootFeature(WorkMode.LITE, LiteHiddenState.ON, feature))
             assertTrue(
                 "B 不改变 $feature",
-                LiteHiddenPolicy.allowsRootFeature(WorkMode.KSU, LiteHiddenState.ON, feature),
+                LiteHiddenPolicy.allowsRootFeature(WorkMode.LITE, LiteHiddenState.ON, feature),
             )
         }
     }

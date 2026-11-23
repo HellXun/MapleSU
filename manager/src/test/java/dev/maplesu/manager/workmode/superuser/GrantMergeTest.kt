@@ -127,21 +127,10 @@ class GrantMergeTest {
     @Test
     fun revisionIncreasesAndWriterRecorded() {
         val current = Fixtures.shared(revision = 5)
-        val merged = merge(current, allowObserved(), writer = WorkMode.KSU, at = 9_000L)
+        val merged = merge(current, allowObserved(), writer = WorkMode.LITE, at = 9_000L)
         assertEquals(6, merged.revision)
         assertEquals("B", merged.lastWriter)
         assertEquals(9_000L, merged.updatedAt)
-    }
-
-    @Test
-    fun multiUserKeysAreSeparated() {
-        val current = Fixtures.shared(entries = listOf(Fixtures.intentFrom(identity)))
-        val otherUser = identity.copy(uid = Fixtures.UID_OTHER_USER)
-        val merged = merge(current, mapOf(
-            BackendId.B_KSU to listOf(Fixtures.view(uid = Fixtures.UID_OTHER_USER, identity = otherUser)),
-        ))
-        assertEquals(2, merged.entries.size)
-        assertEquals(setOf(0, 10), merged.entries.map { it.userId }.toSet())
     }
 
     @Test

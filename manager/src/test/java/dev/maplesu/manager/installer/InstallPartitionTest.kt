@@ -21,7 +21,7 @@ class InstallPartitionTest {
     @Test
     fun automaticSelectionUsesActualNodesAndKmiWhileExplicitSelectionWins() {
         fun resolve(requested: String?, nodes: Set<String>, kmi: String) =
-            (InstallPartitionPolicy.resolve(InstallTargetMode.NORMAL, requested, nodes, kmi)
+            (InstallPartitionPolicy.resolve(InstallTargetMode.ULTRA, requested, nodes, kmi)
                 as InstallPartitionResolution.Ready).partition
         assertEquals(InstallPartition.BOOT, resolve(null, setOf("boot"), "android15-6.6"))
         assertEquals(InstallPartition.BOOT, resolve(null, setOf("boot", "init_boot"), "android12-5.10"))
@@ -72,12 +72,12 @@ class InstallPartitionTest {
     fun normalSelectsBetweenInitBootAndBootWithInitBootAsDefault() {
         assertEquals(
             listOf(InstallPartition.INIT_BOOT, InstallPartition.BOOT),
-            InstallPartitionPolicy.optionsFor(InstallTargetMode.NORMAL),
+            InstallPartitionPolicy.optionsFor(InstallTargetMode.ULTRA),
         )
-        assertFalse(InstallPartitionPolicy.isFixed(InstallTargetMode.NORMAL))
-        assertEquals(InstallPartition.INIT_BOOT, InstallPartitionPolicy.NORMAL_DEFAULT)
-        assertTrue(InstallPartitionPolicy.isSelectable(InstallTargetMode.NORMAL, InstallPartition.INIT_BOOT))
-        assertTrue(InstallPartitionPolicy.isSelectable(InstallTargetMode.NORMAL, InstallPartition.BOOT))
+        assertFalse(InstallPartitionPolicy.isFixed(InstallTargetMode.ULTRA))
+        assertEquals(InstallPartition.INIT_BOOT, InstallPartitionPolicy.ULTRA_FIXED)
+        assertTrue(InstallPartitionPolicy.isSelectable(InstallTargetMode.ULTRA, InstallPartition.INIT_BOOT))
+        assertTrue(InstallPartitionPolicy.isSelectable(InstallTargetMode.ULTRA, InstallPartition.BOOT))
     }
 
     // ── resolve：页面/入口传进来的字符串 → 生效分区 ─────────────────────────
@@ -86,22 +86,22 @@ class InstallPartitionTest {
     fun normalResolvesNullToInitBootAndHonoursAnExplicitBoot() {
         assertEquals(
             InstallPartitionResolution.Ready(InstallPartition.INIT_BOOT),
-            InstallPartitionPolicy.resolve(InstallTargetMode.NORMAL, null),
+            InstallPartitionPolicy.resolve(InstallTargetMode.ULTRA, null),
         )
         assertEquals(
             InstallPartitionResolution.Ready(InstallPartition.INIT_BOOT),
-            InstallPartitionPolicy.resolve(InstallTargetMode.NORMAL, "  "),
+            InstallPartitionPolicy.resolve(InstallTargetMode.ULTRA, "  "),
         )
         assertEquals(
             InstallPartitionResolution.Ready(InstallPartition.BOOT),
-            InstallPartitionPolicy.resolve(InstallTargetMode.NORMAL, "boot"),
+            InstallPartitionPolicy.resolve(InstallTargetMode.ULTRA, "boot"),
         )
     }
 
     @Test
     fun normalRejectsPartitionsOutsideTheWhitelist() {
         listOf("vendor_boot", "super", "/dev/block/by-name/init_boot").forEach { name ->
-            val rejected = InstallPartitionPolicy.resolve(InstallTargetMode.NORMAL, name)
+            val rejected = InstallPartitionPolicy.resolve(InstallTargetMode.ULTRA, name)
             assertTrue("$name must be rejected, got $rejected", rejected is InstallPartitionResolution.Rejected)
             assertEquals(
                 InstallPartitionPolicy.CODE_UNSUPPORTED,
@@ -206,7 +206,7 @@ class InstallPartitionTest {
         assertEquals(
             InstallPartition.BOOT,
             InstallPartitionSelection.select(
-                InstallTargetMode.NORMAL,
+                InstallTargetMode.ULTRA,
                 stored = InstallPartition.INIT_BOOT,
                 requested = InstallPartition.BOOT,
             ),
@@ -215,7 +215,7 @@ class InstallPartitionTest {
         assertEquals(
             InstallPartition.INIT_BOOT,
             InstallPartitionSelection.select(
-                InstallTargetMode.NORMAL,
+                InstallTargetMode.ULTRA,
                 stored = InstallPartition.INIT_BOOT,
                 requested = InstallPartition.BOOT,
                 locked = true,
@@ -224,11 +224,11 @@ class InstallPartitionTest {
         // Normal 的生效值就是存下来的值。
         assertEquals(
             InstallPartition.BOOT,
-            InstallPartitionSelection.effective(InstallTargetMode.NORMAL, InstallPartition.BOOT),
+            InstallPartitionSelection.effective(InstallTargetMode.ULTRA, InstallPartition.BOOT),
         )
         assertEquals(
             InstallPartition.INIT_BOOT,
-            InstallPartitionSelection.effective(InstallTargetMode.NORMAL, InstallPartition.INIT_BOOT),
+            InstallPartitionSelection.effective(InstallTargetMode.ULTRA, InstallPartition.INIT_BOOT),
         )
     }
 }

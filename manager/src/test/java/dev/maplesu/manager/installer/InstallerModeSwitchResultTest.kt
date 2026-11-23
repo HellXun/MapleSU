@@ -18,7 +18,7 @@ class InstallerModeSwitchResultTest {
     @Test fun noInitBootRequiresOriginalBootInsteadOfTheNormalPatchedPartition() {
         assertTrue(SwitchOutcome.ImagesRequired(WorkMode.LITE, false).requiresBoot)
         assertFalse(SwitchOutcome.ImagesRequired(WorkMode.LITE, true).requiresBoot)
-        assertTrue(SwitchOutcome.ImagesRequired(WorkMode.KSU, false).requiresBoot)
+        assertTrue(SwitchOutcome.ImagesRequired(WorkMode.LITE, false).requiresBoot)
     }
     @Test fun onlyCompletedTransactionReportsWritten() {
         val result = installerModeSwitchResult(SwitchOutcome.AwaitingReboot("test", null))

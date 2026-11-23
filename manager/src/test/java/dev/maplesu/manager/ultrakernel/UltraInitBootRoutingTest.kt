@@ -45,7 +45,7 @@ class UltraInitBootRoutingTest {
 
     @Test fun sameCarrierPlansStayMinimalAndUnknownCarrierCannotInventInitBoot() {
         assertEquals(listOf("init_boot"), ModeSwitchPreflight.writeOrder(
-            WorkMode.KSU, "init_boot", "init_boot", setOf("boot", "init_boot")))
+            WorkMode.LITE, "init_boot", "init_boot", setOf("boot", "init_boot")))
         assertEquals(listOf("boot"), ModeSwitchPreflight.writeOrder(
             WorkMode.LITE, "boot", "", setOf("boot")))
         assertEquals(listOf("init_boot", "boot"), ModeSwitchPreflight.writeOrder(

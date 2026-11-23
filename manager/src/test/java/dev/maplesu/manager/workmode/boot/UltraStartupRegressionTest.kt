@@ -241,7 +241,7 @@ class UltraStartupRegressionTest {
 
         var paired = false
         val pairing = UltraAutoPair.complete(observation, current = { true }, alreadyPaired = { false },
-            persist = { paired = true }, maintain = {})
+            persist = { paired = true }, verifyManagerSu = { true }, maintain = {})
         assertTrue(pairing.paired)
         assertTrue(paired)
         assertEquals(helper, pairing.state)

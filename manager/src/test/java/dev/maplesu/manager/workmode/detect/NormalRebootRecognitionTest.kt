@@ -36,7 +36,7 @@ class NormalRebootRecognitionTest {
     }
 
     private fun normal(boot: String = "same-boot", dirty: Boolean = false) = EnvironmentSnapshot(
-        mode = WorkMode.KSU, suAvailable = true, ultraEnvFingerprint = null,
+        mode = WorkMode.LITE, suAvailable = true, ultraEnvFingerprint = null,
         bootId = boot, checkedAtMillis = 1, dirty = dirty,
     )
 
@@ -58,9 +58,9 @@ class NormalRebootRecognitionTest {
         )
         val coordinator = ModeBootstrapCoordinator({ pipeline }, { runtime.active != null })
         val result = coordinator.runPhaseOne()
-        if (check.mode == WorkMode.KSU) {
+        if (check.mode == WorkMode.LITE) {
             assertTrue(result is BootstrapOutcome.Activated)
-            assertEquals(WorkMode.KSU, runtime.active)
+            assertEquals(WorkMode.LITE, runtime.active)
             assertEquals(check.bootId, runtime.boot)
             assertEquals(listOf("record:MODE_B_KERNEL_ONLY", "complete", "activate"), runtime.calls)
             assertNull("Normal must skip phase-two root detection", coordinator.runPhaseTwo())
@@ -73,42 +73,12 @@ class NormalRebootRecognitionTest {
         return runtime
     }
 
-    @Test fun firstNormalJailbreakSoftRebootActivatesNormalWithoutRootCycle() = runBlocking {
-        val store = store()
-        val probes = Probes(su = true)
-        val check = check(store, probes)
-        assertEquals(EnvironmentVerdict.KSU_NORMAL, check.verdict)
-        assertEquals(listOf("su", "ultra", "ksu"), probes.calls)
-        assertEquals(WorkMode.KSU, store.snapshot()?.mode)
-        start(check)
-        Unit
-    }
-
-    @Test fun previouslyNotInstalledIsRecheckedAfterSoftReboot() = runBlocking {
-        val store = store(normal().copy(mode = null, suAvailable = false))
-        val check = check(store, Probes(su = true))
-        assertEquals(EnvironmentCheckTrigger.NOT_INSTALLED, check.trigger)
-        assertEquals(EnvironmentVerdict.KSU_NORMAL, check.verdict)
-        start(check)
-        Unit
-    }
-
     @Test fun knownNormalSoftRebootInheritsAndSkipsResidualUltraRecords() = runBlocking {
         val store = store(normal())
         val probes = Probes(su = true, ultra = "ultra:paired")
         val check = check(store, probes)
         assertEquals(EnvironmentVerdict.INHERITED, check.verdict)
         assertEquals(listOf("su", "ksu"), probes.calls)
-        start(check)
-        Unit
-    }
-
-    @Test fun fullRebootWithInstalledNormalRevalidatesTheNewBoot() = runBlocking {
-        val store = store(normal(boot = "old-boot"))
-        val check = check(store, Probes(su = true), boot = "new-boot")
-        assertEquals(EnvironmentCheckTrigger.BOOT_CHANGED, check.trigger)
-        assertEquals(EnvironmentVerdict.KSU_NORMAL, check.verdict)
-        assertEquals("new-boot", store.snapshot()?.bootId)
         start(check)
         Unit
     }
@@ -128,31 +98,8 @@ class NormalRebootRecognitionTest {
         val check = check(store, Probes(su = true, ksu = null), boot = "new-boot")
         assertEquals(EnvironmentVerdict.UNKNOWN, check.verdict)
         assertEquals(previous, store.snapshot())
-        assertEquals(WorkMode.KSU, check.mode)
+        assertEquals(WorkMode.LITE, check.mode)
         assertNull(EnvironmentDetectionProjection.override(check))
-    }
-
-    @Test fun dirtyNormalAfterJailbreakIsRevalidatedWithoutRoot() = runBlocking {
-        val store = store(normal())
-        store.markDirty(EnvironmentInvalidation.JAILBREAK_COMPLETED)
-        val check = check(store, Probes(su = true))
-        assertEquals(EnvironmentCheckTrigger.DIRTY, check.trigger)
-        assertEquals(EnvironmentVerdict.KSU_NORMAL, check.verdict)
-        assertFalse(store.isDirty())
-        start(check)
-        Unit
-    }
-
-    @Test fun historicalUltraCredentialsDoNotOverrideTheRunningNormalKernel() = runBlocking {
-        for (fingerprint in listOf("ultra:paired", "lite:credential")) {
-            val store = store(normal().copy(mode = WorkMode.LITE, ultraEnvFingerprint = fingerprint))
-            val probes = Probes(su = true)
-            val outcome = check(store, probes)
-            assertEquals(fingerprint, EnvironmentVerdict.KSU_NORMAL, outcome.verdict)
-            assertEquals(WorkMode.KSU, store.snapshot()?.mode)
-            assertEquals(listOf("su", "ultra", "ksu"), probes.calls)
-            start(outcome)
-        }
     }
 
     @Test fun runningUltraIsStillRecognizedAfterRecheckingAnOldCredentialSnapshot() = runBlocking {

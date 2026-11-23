@@ -115,7 +115,7 @@ class ThemePresentationDeviceTest(private val initialSkin: UiMode, private val d
         openAboutDialog(showModes = true)
         showAboutLine(modeHeading(WorkMode.LITE))
         ABOUT_ULTRA_POINTS.forEach { showAboutLine(text(it)) }
-        showAboutLine(modeHeading(WorkMode.KSU))
+        showAboutLine(modeHeading(WorkMode.LITE))
         showAboutLine(text(R.string.about_maple_normal))
         showAboutLine(modeHeading(WorkMode.LITE))
         capture("about-mode-introductions")
@@ -808,10 +808,8 @@ class ThemePresentationDeviceTest(private val initialSkin: UiMode, private val d
                                 Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())) {
                                     AppearanceSettingsBody(SettingsUiState(uiMode=skin.value.value),SettingsScreenActions(
                                         onSetCheckUpdate={},onSetCheckModuleUpdate={},onOpenTheme={},onOpenAppearance={},
-                                        onOpenImages={},onSetUiModeIndex={ skin.value=UiMode.entries[it] },onOpenProfileTemplate={},
-                                        onSetSuCompatMode={},onSetKernelUmountEnabled={},onSetSelinuxHideEnabled={},onSetSulogEnabled={},
-                                        onSetAdbRootEnabled={},onSetShellSuAdbOnlyEnabled={},onSetDefaultUmountModules={},
-                                        onSetEnableWebDebugging={},onSetAutoJailbreak={},onSetUseSoftReboot={},onOpenAbout={}))
+                                        onOpenImages={},onSetUiModeIndex={ skin.value=UiMode.entries[it] },
+                                        onSetEnableWebDebugging={},onSetUseSoftReboot={},onOpenAbout={}))
                                 }
                             }
                             "layout" -> ThemeLayoutScreen()

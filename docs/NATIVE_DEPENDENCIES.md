@@ -7,11 +7,11 @@ The complete Manager build uses the native inputs retained in this repository. T
 | Component | Location | Responsibility |
 | --- | --- | --- |
 | Application client SDK | `client/`, `consumer/` | Binder sessions, streams, cancellation and exit status |
-| Manager | `manager/` | Caller authorization, mode selection, installation and module orchestration |
+| Manager | `manager/` | Caller authorization, backend detection, installation and module orchestration |
 | Ultra bridge | `manager/src/main/java/dev/maplesu/manager/runtime/ultra/bridge/`, `runtime/ultra/bridge/` | Native SDK calls, request context and structured results |
 | Ultra runtime | `runtime/src/`, `runtime/ultra/` | SU sessions, authorization transactions, environment and module lifecycle |
 | Image and installation | `image-core/`, `installer-core/`, `patch-engine/` | Image containers, patch plans, write transactions and recovery |
-| Normal backend | `third_party/kernelsu/` | KernelSU adaptation, userspace tools and kernel contract |
+| In-kernel manager ABI | `third_party/ksu-uapi/` | The supercall and app-profile UAPI headers the policy loader compiles against |
 
 The application AAR and Ultra native module ABI have separate versioning. Native callbacks, symbols, descriptors and storage layouts retain their established ABI. MapleSU errors use `MAPLESU_*` identifiers; compatibility parsers preserve numeric results and success conditions.
 
@@ -27,7 +27,7 @@ The application AAR and Ultra native module ABI have separate versioning. Native
 | Kernel images and symbols | `native-inputs/kernels/` | Provider contracts and retained-input hashes |
 | Policy payloads, BTF and configuration | `native-inputs/policy/` | Bundle manifest and compatibility contracts |
 | SDK maintenance baseline and entry | `runtime/maplesu-sdk/maintenance/` | Archive member comparison and paired entry identity |
-| Normal tools and Ultra kernel inputs | `third_party/`, `jailbreak-providers/root-loader` | Component source and build manifests |
+| Ultra kernel inputs | `third_party/`, `jailbreak-providers/root-loader` | Component source and build manifests |
 | SELinux / libsepol | `.deps/selinux/` | `module-policy/upstream/selinux-source.json` |
 
 `release/native-inputs.json` records the files, sizes and SHA-256 values required by the complete source export. The export checker verifies those bytes in the actual archive, including inputs that have binary extensions. Build caches, previous backend generations and research records are excluded.
@@ -76,4 +76,4 @@ python -m unittest discover -s tools/tests -p "test_sdk_distribution.py" -v
 
 The SDK distribution check compares the actual 260 archive members, source hashes, embedded helper, helper slot, backend filename/build ID and generated policy bundle. `manager/build.gradle.kts` and native CMake consume the same release identity. The application AAR retains its independent Binder API versioning.
 
-Module catalog updates follow [module repository maintenance](MODULE_REPOSITORY.md). Normal backend source and production artifacts remain managed under `third_party/kernelsu/`.
+Module catalog updates follow [module repository maintenance](MODULE_REPOSITORY.md). The two UAPI headers under `third_party/ksu-uapi/` keep their recorded snapshot and license; everything else that used to sit beside them is gone.

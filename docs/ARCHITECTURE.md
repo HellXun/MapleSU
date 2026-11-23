@@ -1,6 +1,6 @@
 # Architecture
 
-MapleSU is an Android root manager with two work modes. **Normal** builds on KernelSU and its module ecosystem. **Ultra** prepares a kernel patch for the device's own kernel and grants SU through a dedicated runtime. The Manager separates UI, mode detection and routing, image preparation, installation transactions, root sessions and mode backends. Material and Miuix share one orchestration layer, and backend probes and operation results decide which capabilities are available.
+MapleSU is an Android root manager with a single work mode. **Ultra** prepares a kernel patch for the device's own kernel and grants SU through a dedicated runtime. The Manager separates UI, image preparation, installation transactions, root sessions and the Ultra backend. Material and Miuix share one orchestration layer, and backend probes and operation results decide which capabilities are available.
 
 This page is the map. The guides in the [documentation index](README.md) go deeper. `python tools/check_architecture.py` checks the rules stated here, so the map and the code cannot drift apart unnoticed.
 
@@ -9,10 +9,8 @@ This page is the map. The guides in the [documentation index](README.md) go deep
 ```mermaid
 flowchart TD
     UI["Manager · Material / Miuix"] --> Modes["Mode detection and routing"]
-    Modes --> Normal["Normal · KernelSU / ksud"]
     Modes --> Ultra["Ultra · runtime adapters"]
     Ultra --> Native["Lite / Pro native inputs"]
-    Ultra --> Lease["Provider-backed temporary root"]
     UI --> Images["image-core · image preparation"]
     Images --> Install["installer-core · write and recovery transactions"]
     UI --> Modules["Mode-specific modules and WebUI"]
@@ -76,7 +74,7 @@ flowchart TD
 | `pinned-scripts` | The scripts that `runtime/upstream-pro/SDK-RELEASE.json` and the delivery and maintenance records under `runtime/upstream-pro/maintenance/` pin still exist and match their recorded digests; the two repair scripts repointed at the relocated 505 baseline match the digests listed in the checker until the SDK records re-pin them. Skipped where the SDK record is absent |
 | `portable-paths` | No first-party file hard-codes a maintainer's workspace, user profile, pinned JDK or Python directory, or device serial; tools are found through the environment variables in the [build guide](BUILD.md#locating-tools). Retained inputs, receipts and pinned upstream trees keep the paths they were recorded with |
 
-The Normal backend has its own machine-checked boundary: `manager/src/ksu/java` holds the KernelSU JNI backend, and `manager/src/test/java/dev/maplesu/manager/ksu/KsuSourceIsolationTest.kt` checks which files may sit beside it and which imports may reach it.
+The Ultra backend keeps a machine-checked boundary of its own: `native-boundary` allows a native library load only at the recorded sites, and the SDK is reached through `runtime/pro/bridge/NativeBridge.java`.
 
 ## The Manager
 
@@ -87,7 +85,6 @@ The Normal backend has its own machine-checked boundary: `manager/src/ksu/java` 
 | Root | Content |
 | --- | --- |
 | `manager/src/main/java` | The two Kotlin namespaces described below, plus the Java entry points for native code |
-| `manager/src/ksu/java` | The Normal backend: KernelSU JNI facade, root executor and module operations |
 | `third_party/t3-sdk/src/main/java` | The pinned t3 side-channel transport used by Ultra |
 
 ### Two Kotlin namespaces
@@ -108,16 +105,15 @@ Imports run in both directions today, so treat the split as origin, not as layer
 | `prokernel/` | Ultra kernel preparation | `prokernel/ProKernelFlow.kt`, `prokernel/KernelSeries.kt` |
 | `patching/` | The Lite boot patcher | `patching/LiteBootPatcher.kt` |
 | `liteweb/` | Lite web manager: an HTTP admin served by a root service or a standalone daemon | `liteweb/LiteWebAdminController.kt` |
-| `recovery/` | Boot-time recovery hooks shared by Pro and KSU modules | `recovery/BootHookModule.kt` |
+| `recovery/` | Boot-time recovery hooks for the boot-installed Ultra module | `recovery/BootHookModule.kt` |
 | `market/` | Signed-catalog client for the module market | `market/MapleMarketRepository.kt` |
-| `ksu/` | Glue between the app and the Normal backend in `manager/src/ksu/java` | `ksu/KsuRootChannel.kt` |
 
 The smaller packages (`soter/`, `litehidden/`, `parasite/`, `pro/`) are described by their own sources.
 
 ### Where new code goes
 
 - **Domain logic and orchestration** goes in `dev.maplesu.manager`. If it needs no Android API and no Manager state, put it in `image-core` or `installer-core`, where `python tools/check_host.py` can test it on a bare JDK.
-- **Native calls** extend an existing site: `manager/src/ksu/java` for Normal, `runtime/pro/bridge/NativeBridge.java` for the Ultra SDK, and the runtime JNI for SU execution. Do not add a library loader elsewhere; `native-boundary` fails if you do.
+- **Native calls** extend an existing site: `runtime/pro/bridge/NativeBridge.java` for the Ultra SDK, and the runtime JNI for SU execution. Do not add a library loader elsewhere; `native-boundary` fails if you do.
 - **App-facing API** goes in `client/`. Mirror any AIDL change in `manager/src/main/aidl`; `aidl-parity` fails otherwise.
 - **Screens** follow the screen they extend in `com.sevenk.core.ui`, or the work-mode screens in `workmode/`. Add Material and Miuix variants together, with English default strings and Simplified Chinese strings.
 - **Third-party code** never gets copied into first-party packages. Add a pinned input with a record under `third_party/` and reach it through an existing adapter.
@@ -128,17 +124,11 @@ The smaller packages (`soter/`, `litehidden/`, `parasite/`, `pro/`) are describe
 
 ### Modes and runtime readiness
 
-There are two product modes: **Normal** and **Ultra**. The internal `WorkMode.KSU` and `WorkMode.LITE` names are stable storage and protocol values. Lite and Pro identify Ultra backend variants, not additional product modes.
+There is one product mode: **Ultra**. The internal `WorkMode.LITE` value, with wire tag `A`, is a stable storage and protocol value kept from the two-mode era, so existing preferences, the offline repository directory and the control-plane contract keep resolving. Lite and Pro identify Ultra backend variants, not additional product modes.
 
 `workmode/detect/DetectionRules.kt` combines kernel responses, Manager ownership, runtime handshakes, current-boot evidence and persisted state. Mode classification, backend readiness and usable root sessions are separate results. Module and execution routers require an identified, available backend before dispatching work.
 
-Mode settings use separate stores. A switch runs through preflight, snapshots, candidate preparation, journaled installation and post-boot verification. The switch controller retains an operation identity and recovery state across interruptions. Selecting a mode in the UI is only the beginning of that process.
-
-### Normal
-
-Normal integrates the KernelSU kernel implementation, its superuser interfaces and the `ksud` module lifecycle. `workmode/backend/KsuBackendRegistry.kt` connects the mode to narrow execution, module and settings interfaces, and the UI consumes those interfaces.
-
-The installer selects a packaged LKM by KMI and prepares the boot-image ramdisk through the KernelSU installation path. Availability depends on the actual kernel configuration, Manager ownership and the packaged artifact. KernelSU sources and MapleSU's integration patches are recorded under `third_party/kernelsu/`.
+An installation runs through preflight, snapshots, candidate preparation, journaled installation and post-boot verification. The installer retains an operation identity and recovery state across interruptions.
 
 ### Ultra: kernel preparation
 
@@ -185,13 +175,12 @@ The subsystem reports requested settings alongside the active backend state. Mou
 
 | Module path | Execution model | Compatibility boundary |
 | --- | --- | --- |
-| Normal KSU modules | KernelSU and `ksud` lifecycle | Kernel and module-specific requirements |
 | Ultra KSU-style scripts | MapleSU's adapted script runner with ordered lifecycle hooks | Module scripts, properties, mounts and optional policy rules |
 | Ultra native modules | Native descriptors and lifecycle calls through the compatible Pro SDK backend | Module ABI, SDK version, kernel interfaces and action-specific compatibility records |
 
 Ultra supports the native module ABI documented in the retained SDK. That module ABI differs from the application Binder SDK and from Linux `.ko` modules. `modules/compat/ProModuleCompatibilityRegistry.kt` applies module, backend and kernel compatibility records before native lifecycle operations.
 
-WebUI routing follows the module path: KSU asset webroots, the Ultra script proxy and SDK-started native-module HTTP callbacks have separate lifecycle and readiness checks. Development instructions are in the [module guide](MODULES.md), the [Ultra native module guide](ULTRA_MODULES.md) and the [compatibility guide](MODULE_COMPATIBILITY.md).
+WebUI routing follows the module path: the Ultra script proxy and SDK-started native-module HTTP callbacks have separate lifecycle and readiness checks. Development instructions are in the [module guide](MODULES.md), the [Ultra native module guide](ULTRA_MODULES.md) and the [compatibility guide](MODULE_COMPATIBILITY.md).
 
 ### Application root sessions
 
@@ -222,10 +211,10 @@ MapleSU's source falls into three kinds, recorded separately so the status of an
 | Kind | What it is | Where it is recorded |
 | --- | --- | --- |
 | Written by MapleSU | Code with no upstream source recorded: the `dev.maplesu.*` packages, `image-core/`, `installer-core/`, `client/`, `consumer/`, the Ultra adapters and the tools | File headers and the repository history |
-| Derived from a pinned upstream | Files that start from an upstream release and change in place: the 7kimisu manager base, and KernelSU with MapleSU's patch series | `third_party/7kimisu/source-manifest.json`, `third_party/kernelsu/manifest.json`; the original notices stay in the files |
+| Derived from a pinned upstream | Files that start from an upstream release and change in place: the 7kimisu manager base | `third_party/7kimisu/source-manifest.json`; the original notices stay in the files |
 | Pinned third-party input | Code and binaries MapleSU builds against and does not claim: backend inputs, vendored libraries and sources | `third_party/DEPENDENCIES.md` and each input's manifest |
 
-For the Manager, the comparison with the pinned 7kimisu snapshot is reproducible: `python tools/check_architecture.py --report` hashes every Kotlin and Java file in `manager/src/main/java` and `manager/src/ksu/java` against the manifest. At the time of writing:
+For the Manager, the comparison with the pinned 7kimisu snapshot is reproducible: `python tools/check_architecture.py --report` hashes every Kotlin and Java file in `manager/src/main/java` against the manifest. At the time of writing:
 
 | Manager sources compared with the snapshot | Files | Lines | Share |
 | --- | --- | --- | --- |
@@ -243,7 +232,7 @@ The [dependency inventory](../third_party/DEPENDENCIES.md) is the single list of
 
 ### Backend inputs and maintenance
 
-Normal uses pinned KernelSU sources and recorded patches. Ultra combines the retained patch core and native SDK with MapleSU authorization transactions, runtime adapters, policy backend and module workflows. Component origins are recorded in [Credits](../CREDITS.md).
+Ultra combines the retained patch core and native SDK with MapleSU authorization transactions, runtime adapters, policy backend and module workflows. The in-kernel manager ABI that `module-policy/` speaks is recorded as a two-header input under `third_party/ksu-uapi/`. Component origins are recorded in [Credits](../CREDITS.md).
 
 Backend updates must pin the source or prebuilt input, verify its provenance and distribution conditions, rebuild paired components where required, and validate authorization, environment setup, modules and recovery together. Candidate CMake targets marked `EXCLUDE_FROM_ALL` stay distinct from the packaged backend selected by its manifest. A source change alone does not show that the packaged backend was rebuilt.
 

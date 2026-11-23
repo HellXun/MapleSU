@@ -19,8 +19,8 @@ class RootSourcePolicyTest {
     fun ksuModeIsSelectedEvenWithoutKernelProof() {
         // 2026-11-01: the in-service proof (a hardcoded version=0 stub) no longer refuses the KSU
         // source; the session degrades to another transport instead of blocking the write.
-        assertEquals(RootSource.KSU_NATIVE, RootSourcePolicy.sourceFor(WorkMode.KSU, true))
-        assertEquals(RootSource.KSU_NATIVE, RootSourcePolicy.sourceFor(WorkMode.KSU, false))
+        assertEquals(RootSource.KSU_NATIVE, RootSourcePolicy.sourceFor(WorkMode.LITE, true))
+        assertEquals(RootSource.KSU_NATIVE, RootSourcePolicy.sourceFor(WorkMode.LITE, false))
     }
 
     @Test

@@ -1,6 +1,6 @@
 # 模块与 WebUI 指南
 
-MapleSU 按工作模式与包内身份选择模块后端。Normal 使用 KernelSU 生命周期，MapleSU_Ultra 提供脚本模块后端与原生 SDK；市场独立维护安装包、版本和源码。
+MapleSU 按包内身份选择模块后端。MapleSU_Ultra 提供脚本模块后端与原生 SDK；市场独立维护安装包、版本和源码。
 
 | 开发目标 | 格式与入口 | 指南 |
 | --- | --- | --- |
@@ -37,13 +37,13 @@ author=Example contributors
 description=MapleSU module example.
 ```
 
-脚本 ID 以英文字母开头，后续使用字母、数字、点、下划线或连字符，至少两个字符。更新保持 ID，递增有符号 32 位整数 `versionCode`。Normal 将安装交给 `ksud`；MapleSU_Ultra 由脚本后端处理，挂载、策略、属性和注入依赖按对应后端接口接入。
+脚本 ID 以英文字母开头，后续使用字母、数字、点、下划线或连字符，至少两个字符。更新保持 ID，递增有符号 32 位整数 `versionCode`。安装由 MapleSU_Ultra 的脚本后端处理，挂载、策略、属性和注入依赖按对应后端接口接入。
 
 ## 原生模块与既有模块
 
 MapleSU_Ultra 通过有效 ELF 导出与完整描述确定原生模块身份。已有 SKRoot(Pro) 模块保留原始包和 ID，安装、状态、卸载与 WebUI 继续走原生后端。新模块使用 `MAPLESU_MODULE_*` 宏和 `maplesu_module_main`，CMake 工程、SDK 调用及 ZIP 布局见[原生指南](ULTRA_MODULES.md)。
 
-旧原生包同时带有根级 `module.prop` 时，Ultra 识别器以有效原生描述为准；Normal 的独立 KernelSU 预检将包内原生文件作为脚本载荷。多个有效原生模块入口返回 `AMBIGUOUS_MODULE_TYPE`。
+旧原生包同时带有根级 `module.prop` 时，Ultra 识别器以有效原生描述为准，包内原生文件作为脚本载荷。多个有效原生模块入口返回 `AMBIGUOUS_MODULE_TYPE`。
 
 ## 安装前检查
 

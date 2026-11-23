@@ -97,8 +97,8 @@ def main():
     derive()
     if args.prepare_only:
         return
-    if not (ROOT / "third_party/kernelsu/applied/uapi/supercall.h").is_file():
-        raise SystemExit("Run python third_party/kernelsu/scripts/apply_patches.py to prepare the Normal UAPI before building")
+    if not (ROOT / "third_party/ksu-uapi/uapi/supercall.h").is_file():
+        raise SystemExit("Missing third_party/ksu-uapi/uapi/supercall.h (KernelSU UAPI snapshot)")
     hook = args.hook_bundles.resolve()
     identity = None
     if not args.without_hook:

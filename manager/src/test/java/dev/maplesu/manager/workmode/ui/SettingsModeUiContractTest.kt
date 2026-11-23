@@ -106,7 +106,7 @@ class SettingsModeUiContractTest {
         // 旧缺陷：Ultra 下调 Stealth.isEnabled()（LITE 恒 false），Normal 下构造 Ultra 面板。
         assertFalse("设置 VM 不得再直接调用 Stealth.isEnabled()", text.contains("Stealth.isEnabled()"))
         assertFalse("设置 VM 不应触碰 Ultra 环境探测", text.contains("UltraEnvironmentProbe"))
-        assertTrue(text.contains("val readBoot = if (policy.mode == dev.maplesu.manager.workmode.WorkMode.KSU)"))
+        assertTrue(text.contains("val readBoot = if (policy.mode == dev.maplesu.manager.workmode.WorkMode.LITE)"))
         assertTrue(text.contains("UltraEnvironmentAutoSetup.currentBootId() else null"))
         assertFalse("设置 VM 不得无条件读 Model 六项", text.contains("if (capabilities.supportsKernelUmount) {"))
     }

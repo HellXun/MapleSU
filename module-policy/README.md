@@ -6,11 +6,10 @@ Build from the workspace root with a real Python interpreter:
 
 ```
 python tools/build_module_policy.py --prepare-only
-python third_party/kernelsu/scripts/apply_patches.py
 python tools/build_module_policy.py --offline
 ```
 
-The preparation step fetches SELinux at commit `be1b39a657fee7faacfae548b75cb53302043a01` into `.deps/selinux/` and verifies its clean tree. Applying the retained KSU patch series generates the UAPI 7 headers; use `apply_patches.py --check-only` when the generated tree already exists. The offline step builds ARM64 API 26 with static libc++. Set `ANDROID_HOME` or pass `--ndk` and `--cmake`; an existing pinned checkout can be selected with `--selinux-source`. Original Magisk v30.7 sources and license remain in `upstream/magisk`; `upstream/magisk-adapter.patch` records the mechanical Rust-bridge removal and strict return adaptations. `derived` is regenerated on each build. The linked libsepol LGPL sources and license remain separately available; build outputs retain the static archive and objects for relinking.
+The preparation step fetches SELinux at commit `be1b39a657fee7faacfae548b75cb53302043a01` into `.deps/selinux/` and verifies its clean tree. The UAPI 7 headers it compiles against are the two files under `third_party/ksu-uapi/uapi/`, added to the include path by `CMakeLists.txt`. The offline step builds ARM64 API 26 with static libc++. Set `ANDROID_HOME` or pass `--ndk` and `--cmake`; an existing pinned checkout can be selected with `--selinux-source`. Original Magisk v30.7 sources and license remain in `upstream/magisk`; `upstream/magisk-adapter.patch` records the mechanical Rust-bridge removal and strict return adaptations. `derived` is regenerated on each build. The linked libsepol LGPL sources and license remain separately available; build outputs retain the static archive and objects for relinking.
 
 Internal CLI:
 

@@ -33,7 +33,7 @@ class HomeEnvironmentInheritanceDisplayTest {
         assertFalse(safe.showEnvironmentStatusCard)
         assertFalse(safe.isRootAvailable)
         assertFalse(safe.copy(isSafeMode = false).showSafeModeBanner)
-        assertFalse(safe.copy(environmentMode = WorkMode.KSU).showSafeModeBanner)
+        assertFalse(safe.copy(environmentMode = WorkMode.LITE).showSafeModeBanner)
         assertFalse(safe.withHiddenFacts(HomeHiddenFacts(true, false)).showSafeModeBanner)
         assertFalse(safe.withHiddenFacts(HomeHiddenFacts(false, true)).showSafeModeBanner)
     }

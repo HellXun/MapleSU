@@ -40,7 +40,7 @@ class UltraDirectInstallPreflightAndroidTest {
                 restoreOriginal = InstrumentationRegistry.getArguments().getString("restoreMigrationOriginals") == "true",
                 selectedManager = null, conflictAccepted = true,
                 onPrepared = { assertEquals("PREPARED", it.getString("state")) },
-                produce = { source ->
+                produce = { source, _ ->
                     if (InstrumentationRegistry.getArguments().getString("restoreMigrationOriginals") != "true") {
                         assertEquals(before.partitions.getValue("boot").sha256, UltraKernelSpec.sha256(source))
                     }

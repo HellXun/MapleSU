@@ -207,7 +207,7 @@ class LiteParasiteSdkPortTest {
         }
         val unavailable = UnavailableParasiteSdkPort(UltraAvailability.RUNNING)
         assertSame(lite, selectProductionParasitePort(WorkMode.LITE, { lite }, { unavailable }))
-        assertSame(unavailable, selectProductionParasitePort(WorkMode.KSU, { lite }, { unavailable }))
+        assertSame(unavailable, selectProductionParasitePort(WorkMode.LITE, { lite }, { unavailable }))
         assertSame(unavailable, selectProductionParasitePort(null, { lite }, { unavailable }))
         // 未判定/ KSU 不默认 LITE，且给出 ULTRA_UNAVAILABLE（不是编造的 LITE 失败）。
         assertEquals(

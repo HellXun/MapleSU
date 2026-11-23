@@ -147,10 +147,10 @@ class UltraSafeModeObservationTest {
 
     @Test fun ultraChangesNeverOverwriteIndependentKsuSafety() {
         for (safeMode in listOf(false, true)) {
-            val ksuHome = home().copy(environmentMode = WorkMode.KSU, isSafeMode = safeMode)
+            val ksuHome = home().copy(environmentMode = WorkMode.LITE, isSafeMode = safeMode)
             val ksuModules = ModuleUiState(isSafeMode = safeMode)
-            assertEquals(ksuHome, ksuHome.withUltraSafety(!safeMode, WorkMode.KSU))
-            assertEquals(ksuModules, ksuModules.withUltraSafety(!safeMode, WorkMode.KSU))
+            assertEquals(ksuHome, ksuHome.withUltraSafety(!safeMode, WorkMode.LITE))
+            assertEquals(ksuModules, ksuModules.withUltraSafety(!safeMode, WorkMode.LITE))
         }
     }
 

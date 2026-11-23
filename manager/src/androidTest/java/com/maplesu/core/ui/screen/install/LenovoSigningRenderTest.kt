@@ -48,7 +48,7 @@ class LenovoSigningRenderTest(private val skin: UiMode, private val dark: Boolea
     @get:Rule val compose = createComposeRule()
     private val selected = InstallMethod.SelectFile(summary = "boot.img", uri = Uri.parse("content://fixture/boot.img"))
     private val ui = mutableStateOf(InstallUiState(installMethod = selected, installMethodOptions = listOf(selected),
-        targetMode = InstallTargetMode.NORMAL, partition = InstallPartition.BOOT))
+        targetMode = InstallTargetMode.ULTRA, partition = InstallPartition.BOOT))
     private val dialog = mutableStateOf(false)
     private val draft = mutableStateOf(false)
     private lateinit var appearance: SharedPreferences

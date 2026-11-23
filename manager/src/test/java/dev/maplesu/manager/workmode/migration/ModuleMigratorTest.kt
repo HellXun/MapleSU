@@ -136,7 +136,7 @@ class ModuleMigratorTest {
         val dir = moduleDir()
         val result = migrator().migrate(
             listOf(candidate(dir, origin = ModuleOrigin.KSU)),
-            WorkMode.KSU,
+            WorkMode.LITE,
         )
         assertEquals(ModuleDecision.RESTORE_DIRECT, result.items.single().decision)
     }
@@ -146,7 +146,7 @@ class ModuleMigratorTest {
         val dir = moduleDir()
         val result = migrator().migrate(
             listOf(candidate(dir, origin = ModuleOrigin.MAGISK)),
-            WorkMode.KSU,
+            WorkMode.LITE,
         )
         val item = result.items.single()
         assertEquals(ModuleDecision.IMPORT_DISABLED, item.decision)

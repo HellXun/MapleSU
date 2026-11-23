@@ -136,7 +136,7 @@ class UltraStartupIdentityRecoveryTest {
     }
 
     @Test fun explicitOwnershipAndActiveTransactionsStopBeforeAnyRecoveryRead() {
-        for (input in listOf(absent.copy(activeMode = WorkMode.KSU), absent.copy(suspended = true),
+        for (input in listOf(absent.copy(activeMode = WorkMode.LITE), absent.copy(suspended = true),
             absent.copy(quiescing = true), absent.copy(switchPending = true),
             absent.copy(conflictingRoot = true), absent.copy(ksuResponded = true))) {
             val result = UltraStartupWarmup.run(input,

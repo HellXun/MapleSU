@@ -6,30 +6,18 @@ import org.junit.Test
 
 class PairedStartupPolicyTest {
     @Test
-    fun verifiedExistingIdentityCanStartAfterFirstFrame() {
-        assertTrue(PairedStartupPolicy.shouldExpedite(false, true, 48, false))
-    }
-
-    @Test
-    fun newIdentityRetainsTheDelayedPath() {
-        assertFalse(PairedStartupPolicy.shouldExpedite(false, false, 48, false))
-    }
-
-    @Test
-    fun missingOrMalformedKeyDoesNotUsePairingHint() {
-        for (length in listOf(null, 0, 47, 49)) {
-            assertFalse(PairedStartupPolicy.shouldExpedite(false, true, length, false))
-        }
+    fun unresolvedModeIsExpedited() {
+        assertTrue(PairedStartupPolicy.shouldExpedite(modeResolved = false, suspended = false))
     }
 
     @Test
     fun suspendedEnvironmentDoesNotResumeImplicitly() {
-        assertFalse(PairedStartupPolicy.shouldExpedite(false, true, 48, true))
+        assertFalse(PairedStartupPolicy.shouldExpedite(modeResolved = false, suspended = true))
     }
 
     @Test
     fun resolvedModeDoesNotNeedAnotherDetection() {
-        assertFalse(PairedStartupPolicy.shouldExpedite(true, true, 48, false))
+        assertFalse(PairedStartupPolicy.shouldExpedite(modeResolved = true, suspended = false))
     }
 
     @Test

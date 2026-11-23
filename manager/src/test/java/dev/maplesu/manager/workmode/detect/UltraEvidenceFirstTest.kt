@@ -32,22 +32,6 @@ class UltraEvidenceFirstTest {
         }
     }
 
-    @Test fun absentCurrentEvidenceRetainsCredentialRecoveryAndNormalFallback() {
-        val calls = mutableListOf<String>()
-        val probes = object : EnvironmentProbes {
-            override fun currentUltraFingerprint(): String? { calls += "current"; return null }
-            override fun suPresent(): Boolean { calls += "su"; return false }
-            override fun ultraFingerprint(): String? { calls += "recovery"; return null }
-            override fun ksuNormal(): Boolean { calls += "normal"; return true }
-        }
-        val store = EnvironmentStateStore(InMemoryEnvironmentStatePersistence())
-        val outcome = EnvironmentResolver(probes, store).resolve(boot)
-
-        assertEquals(EnvironmentVerdict.KSU_NORMAL, outcome.verdict)
-        assertEquals(listOf("current", "su", "recovery", "normal"), calls)
-        assertFalse(store.snapshot()!!.suAvailable)
-    }
-
     @Test fun unreadableCurrentChannelDoesNotEraseTheRecoveryFallback() {
         val probes = object : EnvironmentProbes {
             override fun currentUltraFingerprint(): String? = error("read failed")

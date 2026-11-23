@@ -1,19 +1,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application>
-        <activity android:name="dev.maplesu.manager.runtime.SuLifecycleProbeActivity"
-            android:exported="true" android:launchMode="singleTop" />
-        <activity android:name="dev.maplesu.manager.runtime.HookSuPeerActivity"
-            android:exported="true" android:process=":hook_peer" />
         <!-- Test APK only: supplies a real Binder caller with a different Linux UID. -->
         <service android:name="dev.maplesu.manager.runtime.IdentityProbeService"
             android:exported="true" android:process=":identity_probe" />
-        <service android:name="dev.maplesu.manager.runtime.SuLifecycleProbeService"
-            android:exported="true" android:process=":su_lifecycle_probe" />
         <activity android:name="dev.maplesu.manager.runtime.BinderAdmissionPeerActivity"
             android:exported="true" android:launchMode="singleTop" android:process=":binder_admission_peer" />
         <service android:name="dev.maplesu.manager.runtime.BinderAdmissionPeerService"
             android:exported="true" android:process=":binder_admission_peer" />
-        <service android:name="dev.maplesu.manager.runtime.ProductionRootPeerService"
-            android:exported="true" android:process=":production_root_peer" />
     </application>
 </manifest>

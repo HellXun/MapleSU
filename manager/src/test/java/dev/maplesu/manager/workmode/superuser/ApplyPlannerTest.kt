@@ -35,24 +35,6 @@ class ApplyPlannerTest {
     }
 
     @Test
-    fun revokesComeBeforeGrantsInDesiredOrder() {
-        val tomb = Fixtures.tomb(uid = Fixtures.UID + 10, packageName = Fixtures.OTHER,
-            revokedAt = 2_000L, rev = 2)
-        val shared = Fixtures.shared(
-            entries = listOf(Fixtures.intentFrom(identity)),
-            tombs = listOf(tomb),
-        )
-        val planned = plan(shared, BackendId.B_KSU, mapOf(
-            Fixtures.UID to listOf(Fixtures.APP),
-            Fixtures.UID + 10 to listOf(Fixtures.OTHER),
-        ))
-        assertEquals(1, planned.revokes.size)
-        assertEquals(1, planned.grants.size)
-        assertFalse(planned.desired.first().allow)
-        assertTrue(planned.desired.last().allow)
-    }
-
-    @Test
     fun tombstoneBelowWatermarkReplaysRevoke() {
         val entry = Fixtures.intentFrom(identity).copy(
             decidedAt = 1_000L,
@@ -83,17 +65,6 @@ class ApplyPlannerTest {
     }
 
     @Test
-    fun rotatedSoftIsNotAutoGrantedOnLiteBackends() {
-        val entry = Fixtures.intentFrom(identity).copy(degraded = listOf(GrantMerge.ROTATED_MARKER))
-        val shared = Fixtures.shared(entries = listOf(entry))
-        assertEquals(1, plan(shared, BackendId.A_DIRECT).skippedIdentityStale)
-        assertEquals(1, plan(shared, BackendId.A_ULTRA, mapOf(Fixtures.UID to listOf(Fixtures.APP))).skippedIdentityStale)
-        // B_KSU 可按当前包/uid 兑现，不因 A 侧待确认而拒绝。
-        val bKsu = plan(shared, BackendId.B_KSU)
-        assertEquals(1, bKsu.grants.size)
-    }
-
-    @Test
     fun aUltraAllOrNoneIsRecordedInDegraded() {
         val shared = Fixtures.shared(entries = listOf(Fixtures.intentFrom(identity)))
         val planned = plan(shared, BackendId.A_ULTRA, mapOf(Fixtures.UID to listOf(Fixtures.APP, Fixtures.OTHER)))
@@ -101,18 +72,6 @@ class ApplyPlannerTest {
         assertEquals(2, planned.revokes.size)
         assertTrue(planned.grants.isEmpty())
         assertEquals(setOf(Fixtures.APP, Fixtures.OTHER), planned.revokes.map { it.packageName }.toSet())
-    }
-
-    @Test
-    fun protectedIdentitiesNeverPlanned() {
-        val root = Fixtures.intent(uid = 0, userId = 0, packageName = "root", decision = GrantIntent.DENY)
-        val manager = Fixtures.intent(
-            uid = 10_100, userId = 0, packageName = Fixtures.MANAGER, decision = GrantIntent.DENY,
-        )
-        val shared = Fixtures.shared(entries = listOf(root, manager))
-        val planned = plan(shared, BackendId.B_KSU)
-        assertTrue(planned.revokes.isEmpty())
-        assertTrue(planned.grants.isEmpty())
     }
 
     @Test

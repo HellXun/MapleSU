@@ -50,7 +50,7 @@ class HomeActivationRefreshTest {
         assertFalse(refreshed.isRootAvailable)
         assertNull(refreshed.rootReadiness)
         assertEquals(HomeEnvironmentFailure.FAILED, refreshed.environmentFailure)
-        for (mode in listOf(null, WorkMode.KSU)) {
+        for (mode in listOf(null, WorkMode.LITE)) {
             val changed = previous.afterEnvironmentProbeFailure(state(mode))
             assertFalse(changed.isRootAvailable)
             assertNull(changed.rootReadiness)

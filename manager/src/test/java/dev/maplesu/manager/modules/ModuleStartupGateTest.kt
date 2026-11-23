@@ -98,7 +98,7 @@ class ModuleStartupGateTest {
         assertNotEquals(R.string.module_load_failed, pending.emptyStateMessage)
 
         // 2) 激活 + 接线完成：一次性事件 ⇒ 允许自动重取一次。
-        harness.facts = ModuleRuntimeFacts(mode = WorkMode.KSU, ksuBackendWired = true)
+        harness.facts = ModuleRuntimeFacts(mode = WorkMode.LITE, ksuBackendWired = true)
         assertTrue(harness.environmentReady())
         assertEquals(1, harness.fetches)
         assertEquals(1, harness.automaticRefetches)
@@ -119,7 +119,7 @@ class ModuleStartupGateTest {
     fun unavailableBackendIsANamedTerminalErrorNeverAnEmptyListAndNeverPending() {
         // 环境已就绪（模式已判定、端口已接线），但端口自己不可用（ksud 缺失等）：
         // 这是**终态**的具名失败，必须可见。
-        val harness = Harness(ModuleRuntimeFacts(mode = WorkMode.KSU, ksuBackendWired = true))
+        val harness = Harness(ModuleRuntimeFacts(mode = WorkMode.LITE, ksuBackendWired = true))
         assertFalse(harness.requestLoad())
         assertEquals(1, harness.fetches)
 
@@ -144,7 +144,7 @@ class ModuleStartupGateTest {
     fun terminalSuccessNeverRearmsTheAutomaticRefetch() {
         val harness = Harness(ModuleRuntimeFacts(mode = null, ksuBackendWired = false))
         assertTrue(harness.requestLoad())
-        harness.facts = ModuleRuntimeFacts(mode = WorkMode.KSU, ksuBackendWired = true)
+        harness.facts = ModuleRuntimeFacts(mode = WorkMode.LITE, ksuBackendWired = true)
         assertTrue(harness.environmentReady())
         harness.publish(Result.success(listOf(fixture)))
         assertEquals(1, harness.fetches)
@@ -165,7 +165,7 @@ class ModuleStartupGateTest {
     @Test
     fun theKsuWiringRaceStaysPendingAndNeverFetchesOnce() {
         // D4 的精确窗口：已判定 KSU，但 Activated 观察者还没把端口接上。
-        val harness = Harness(ModuleRuntimeFacts(mode = WorkMode.KSU, ksuBackendWired = false))
+        val harness = Harness(ModuleRuntimeFacts(mode = WorkMode.LITE, ksuBackendWired = false))
         assertTrue(harness.requestLoad())
 
         assertEquals("先取再把 Unavailable 当失败，正是 D4 的根因", 0, harness.fetches)

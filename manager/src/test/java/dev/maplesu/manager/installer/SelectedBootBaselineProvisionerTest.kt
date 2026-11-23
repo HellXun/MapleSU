@@ -19,7 +19,7 @@ class SelectedBootBaselineProvisionerTest {
     @Test fun normalUsesOnlyTheSelectedBootAndNeverCapturesTheUltraBoot() {
         val h = Harness()
         val selected = h.file("selected.img", boot().apply { this[4096] = 42 })
-        val ready = h.provision(WorkMode.KSU, ModeSwitchImages(boot = selected))
+        val ready = h.provision(WorkMode.LITE, ModeSwitchImages(boot = selected))
         assertTrue("$ready", ready is BaselineProvisionOutcome.Ready)
         assertEquals(emptyList<String>(), h.captures)
         assertEquals(setOf("boot"), h.bridge.entries.single().imageSha256.keys)
@@ -47,7 +47,7 @@ class SelectedBootBaselineProvisionerTest {
             ByteBuffer.wrap(this).order(ByteOrder.LITTLE_ENDIAN).putInt(8, 1)
         }
         val selected = h.file("compact.img", bytes)
-        val ready = h.provision(WorkMode.KSU, ModeSwitchImages(boot = selected))
+        val ready = h.provision(WorkMode.LITE, ModeSwitchImages(boot = selected))
         assertTrue("$ready", ready is BaselineProvisionOutcome.Ready)
         val entry = h.bridge.entries.single()
         assertEquals(8192L, entry.imageSize["boot"])
@@ -88,7 +88,7 @@ class SelectedBootBaselineProvisionerTest {
 
     @Test fun missingRequiredFileDoesNotPublishOrReadPartitions() {
         val h = Harness()
-        assertTrue(h.provision(WorkMode.KSU, ModeSwitchImages()) is BaselineProvisionOutcome.Failed)
+        assertTrue(h.provision(WorkMode.LITE, ModeSwitchImages()) is BaselineProvisionOutcome.Failed)
         assertTrue(h.provision(WorkMode.LITE, ModeSwitchImages()) is BaselineProvisionOutcome.Failed)
         assertTrue(h.captures.isEmpty())
         assertTrue(h.bridge.entries.isEmpty())

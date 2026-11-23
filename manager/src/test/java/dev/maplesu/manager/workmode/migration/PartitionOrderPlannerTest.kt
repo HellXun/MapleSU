@@ -51,7 +51,7 @@ class PartitionOrderPlannerTest {
             clean = mapOf("init_boot" to Fixtures.image("clean-init", initBootSize, "clean-init")),
             patched = setOf("init_boot"),
             family = Family.KSU_UPSTREAM,
-            target = WorkMode.KSU,
+            target = WorkMode.LITE,
         )
         val plan = PartitionOrderPlanner.compose(input)
         assertEquals(1, plan.entries.count { it.name == "init_boot" })
@@ -85,7 +85,7 @@ class PartitionOrderPlannerTest {
             clean = emptyMap(),
             patched = setOf("init_boot"),
             family = Family.KSU_UPSTREAM,
-            target = WorkMode.KSU,
+            target = WorkMode.LITE,
         )
         val failure = assertThrows(MigrationFailure::class.java) { PartitionOrderPlanner.compose(input) }
         assertEquals(MigrationCodes.CLEAN_IMAGE_UNAVAILABLE, failure.code)
@@ -112,7 +112,7 @@ class PartitionOrderPlannerTest {
             pre = pre(),
             patched = setOf("init_boot"),
             family = Family.UNKNOWN,
-            target = WorkMode.KSU,
+            target = WorkMode.LITE,
         )
         val plan = PartitionOrderPlanner.compose(input)
         val entry = plan.partition("init_boot")
@@ -217,7 +217,7 @@ class PartitionOrderPlannerTest {
                 clean = mapOf("init_boot" to Fixtures.image("clean-init", 8192, "clean-init")),
                 patched = setOf("init_boot"),
                 family = Family.KSU_UPSTREAM,
-                target = WorkMode.KSU,
+                target = WorkMode.LITE,
             ),
         )
         assertTrue(MigrationHashes.isHash(CandidateImages.validateTail(plan, "init_boot", file)))

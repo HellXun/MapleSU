@@ -93,22 +93,22 @@ class RootScriptInstallConfigMoverTest {
                     RootScriptResult(code == 0, code, output)
                 }, manifestFile = File(root, "manifest.json"),
             )
-            val outbound = instance.moveOut(switchId, WorkMode.LITE, WorkMode.KSU)
+            val outbound = instance.moveOut(switchId, WorkMode.LITE, WorkMode.LITE)
             assertTrue(outbound.toString(), outbound.ok)
-            val inbound = instance.moveIn(switchId, WorkMode.LITE, WorkMode.KSU)
+            val inbound = instance.moveIn(switchId, WorkMode.LITE, WorkMode.LITE)
             assertTrue(inbound.toString(), inbound.ok)
-            val materialized = instance.materialize(switchId, WorkMode.LITE, WorkMode.KSU)
+            val materialized = instance.materialize(switchId, WorkMode.LITE, WorkMode.LITE)
             assertTrue(materialized.toString(), materialized.ok)
             fixture("/data/adb/ksu/bin/busybox").apply { parentFile!!.mkdirs(); writeText("normal") }
             if (!partial) fixture("/data/adb/ksud").writeText("normal-daemon")
-            val outcome = instance.rollback(switchId, WorkMode.LITE, WorkMode.KSU,
+            val outcome = instance.rollback(switchId, WorkMode.LITE, WorkMode.LITE,
                 setOf(InstallMovePhase.OUT, InstallMovePhase.IN))
             assertTrue(outcome.detail, outcome.ok)
             assertTrue(fixture("/data/adb/ksu").isDirectory)
             assertEquals(emptyList<String>(), fixture("/data/adb/ksu").listFiles().orEmpty().map { it.name })
             assertEquals("ultra", fixture("/data/adb/maplesu/source-state").readText())
             assertFalse(fixture("/data/adb/ksud").exists())
-            assertEquals("normal", fixture(MoveSet.storePathFor(WorkMode.KSU,
+            assertEquals("normal", fixture(MoveSet.storePathFor(WorkMode.LITE,
                 "/data/adb/ksu") + "/bin/busybox").readText())
         }
     }
@@ -116,7 +116,7 @@ class RootScriptInstallConfigMoverTest {
     @Test
     fun moveOutFollowsMoveSetOutboundOrderWithRename() {
         val (instance, scripts) = mover({ ok(it) })
-        val outcome = instance.moveOut(switchId, WorkMode.LITE, WorkMode.KSU)
+        val outcome = instance.moveOut(switchId, WorkMode.LITE, WorkMode.LITE)
         assertTrue(outcome.ok)
         val expected = MoveSet.outboundOrder(MoveSet.LITE_MOVE_SET)
         assertEquals(expected.size, scripts.size)
@@ -138,20 +138,9 @@ class RootScriptInstallConfigMoverTest {
     }
 
     @Test
-    fun moveInFollowsInboundOrderAndUsesStoreToLiveDirection() {
-        val (instance, scripts) = mover({ ok(it) })
-        assertTrue(instance.moveIn(switchId, WorkMode.LITE, WorkMode.KSU).ok)
-        val expected = MoveSet.inboundOrder(MoveSet.KSU_MOVE_SET)
-        assertEquals(expected.map { it.livePath }, scripts.map { pathOf(it) })
-        // 入仓方向：L=store、S=live。
-        val metadata = scripts.first { pathOf(it) == "/metadata/ksu" }
-        assertTrue(metadata.contains(MoveSet.storePathFor(WorkMode.KSU, "/metadata/ksu")))
-    }
-
-    @Test
     fun crossMountEntriesUseCopySyncThenDeleteSource() {
         val (instance, scripts) = mover({ ok(it) })
-        assertTrue(instance.moveIn(switchId, WorkMode.LITE, WorkMode.KSU).ok)
+        assertTrue(instance.moveIn(switchId, WorkMode.LITE, WorkMode.LITE).ok)
         val metadata = scripts.filter { pathOf(it).startsWith("/metadata/") }
         assertTrue("/metadata entries must exist in the KSU move set", metadata.isNotEmpty())
         metadata.forEach { script ->
@@ -165,7 +154,7 @@ class RootScriptInstallConfigMoverTest {
     @Test
     fun absentSourceIsSkippedNotFailed() {
         val (instance, scripts) = mover({ RootScriptResult(true, 0, "SKIPPED") })
-        assertTrue(instance.moveOut(switchId, WorkMode.LITE, WorkMode.KSU).ok)
+        assertTrue(instance.moveOut(switchId, WorkMode.LITE, WorkMode.LITE).ok)
         assertEquals(MoveSet.outboundOrder(MoveSet.LITE_MOVE_SET).size, scripts.size)
         assertTrue(log.any { it.contains("skipped=") })
     }
@@ -173,7 +162,7 @@ class RootScriptInstallConfigMoverTest {
     @Test
     fun firstFailureStopsAndMapsToStableMoveCode() {
         val (instance, scripts) = mover({ RootScriptResult(false, 41, "DEST_EXISTS") })
-        val outcome = instance.moveOut(switchId, WorkMode.LITE, WorkMode.KSU)
+        val outcome = instance.moveOut(switchId, WorkMode.LITE, WorkMode.LITE)
         assertFalse(outcome.ok)
         assertEquals(MoveSet.Errors.DEST_EXISTS, outcome.code)
         assertEquals(1, scripts.size)
@@ -182,7 +171,7 @@ class RootScriptInstallConfigMoverTest {
     @Test
     fun exitZeroWithoutMarkerIsNotSuccess() {
         val (instance, _) = mover({ RootScriptResult(true, 0, "") })
-        val outcome = instance.moveOut(switchId, WorkMode.LITE, WorkMode.KSU)
+        val outcome = instance.moveOut(switchId, WorkMode.LITE, WorkMode.LITE)
         assertFalse("no marker must never be treated as success", outcome.ok)
         assertEquals(MoveSet.Errors.VERIFY_FAILED, outcome.code)
     }
@@ -191,9 +180,9 @@ class RootScriptInstallConfigMoverTest {
     fun transportUncertaintySurvivesMoveAndRollbackPhases() {
         val uncertain = "MODE_SWITCH_ROOT_OPERATION_UNCERTAIN"
         val operations: List<(RootScriptInstallConfigMover) -> InstallMoveOutcome> = listOf(
-            { it.moveOut(switchId, WorkMode.LITE, WorkMode.KSU) },
-            { it.moveIn(switchId, WorkMode.LITE, WorkMode.KSU) },
-            { it.rollback(switchId, WorkMode.LITE, WorkMode.KSU, setOf(InstallMovePhase.OUT)) },
+            { it.moveOut(switchId, WorkMode.LITE, WorkMode.LITE) },
+            { it.moveIn(switchId, WorkMode.LITE, WorkMode.LITE) },
+            { it.rollback(switchId, WorkMode.LITE, WorkMode.LITE, setOf(InstallMovePhase.OUT)) },
         )
         operations.forEach { operation ->
             val (instance, scripts) = mover({ RootScriptResult(false, -1, "RENAME_FAILED", uncertain) })
@@ -208,7 +197,7 @@ class RootScriptInstallConfigMoverTest {
     fun materializePreservesUncertaintyBeforeInterpretingSuccessMarker() {
         val uncertain = "MODE_SWITCH_ROOT_OPERATION_UNCERTAIN"
         val (instance, scripts) = mover({ RootScriptResult(true, 0, "OK", uncertain) })
-        val outcome = instance.materialize(switchId, WorkMode.LITE, WorkMode.KSU)
+        val outcome = instance.materialize(switchId, WorkMode.LITE, WorkMode.LITE)
         assertFalse(outcome.ok)
         assertEquals(uncertain, outcome.code)
         assertEquals(1, scripts.size)
@@ -218,39 +207,16 @@ class RootScriptInstallConfigMoverTest {
     fun uncertaintyInLegacyOutputIsPreservedAndEvidenceIsRedacted() {
         val uncertain = "MODE_SWITCH_ROOT_OPERATION_UNCERTAIN"
         val (instance, _) = mover({ RootScriptResult(false, -1, "$uncertain /data/0123456789abcdef/state") })
-        val outcome = instance.moveOut(switchId, WorkMode.LITE, WorkMode.KSU)
+        val outcome = instance.moveOut(switchId, WorkMode.LITE, WorkMode.LITE)
         assertEquals(uncertain, outcome.code)
         assertFalse(outcome.detail.contains("0123456789abcdef"))
         assertFalse(File(tmp.root, "tx/$switchId/move-manifest.json").readText().contains("0123456789abcdef"))
     }
 
     @Test
-    fun rollbackIsReverseOfInboundThenOutboundWhenBothPhasesRan() {
-        val (instance, scripts) = mover({ ok(it) })
-        assertTrue(
-            instance.rollback(
-                switchId, WorkMode.LITE, WorkMode.KSU,
-                setOf(InstallMovePhase.OUT, InstallMovePhase.IN),
-            ).ok,
-        )
-        val inbound = MoveSet.inboundOrder(MoveSet.KSU_MOVE_SET).map { it.livePath }.reversed()
-        val outbound = MoveSet.outboundOrder(MoveSet.LITE_MOVE_SET).map { it.livePath }.reversed()
-        assertEquals(inbound + outbound, scripts.map { pathOf(it) })
-        assertTrue(scripts.all { phaseOf(it) == "rollback" })
-        // 先撤入仓（live→store），再撤出仓（store→live）。
-        assertEquals(
-            List(inbound.size) { RootScriptInstallConfigMover.DIR_LIVE_TO_STORE } +
-                List(outbound.size) { RootScriptInstallConfigMover.DIR_STORE_TO_LIVE },
-            scripts.map { directionOf(it) },
-        )
-    }
-
-    // ------------------------------------------------------------------ S3：只撤做过的阶段
-
-    @Test
     fun rollbackOfOutOnlyNeverTouchesInboundDirection() {
         val (instance, scripts) = mover({ ok(it) })
-        assertTrue(instance.rollback(switchId, WorkMode.LITE, WorkMode.KSU, setOf(InstallMovePhase.OUT)).ok)
+        assertTrue(instance.rollback(switchId, WorkMode.LITE, WorkMode.LITE, setOf(InstallMovePhase.OUT)).ok)
         // 只有 outbound 的 store→live；一条 live→store 都不许有。
         val outbound = MoveSet.outboundOrder(MoveSet.LITE_MOVE_SET).map { it.livePath }.reversed()
         assertEquals(outbound, scripts.map { pathOf(it) })
@@ -262,68 +228,24 @@ class RootScriptInstallConfigMoverTest {
         scripts.forEach { script ->
             assertFalse(
                 "rollback 不得引用目标模式的 store: $script",
-                script.contains(MoveSet.storePathFor(WorkMode.KSU, "/data/adb/modules")),
+                script.contains(MoveSet.storePathFor(WorkMode.LITE, "/data/adb/modules")),
             )
         }
     }
 
     @Test
-    fun rollbackOfInOnlyNeverTouchesOutboundDirection() {
-        val (instance, scripts) = mover({ ok(it) })
-        assertTrue(instance.rollback(switchId, WorkMode.LITE, WorkMode.KSU, setOf(InstallMovePhase.IN)).ok)
-        val inbound = MoveSet.inboundOrder(MoveSet.KSU_MOVE_SET).map { it.livePath }.reversed()
-        assertEquals(inbound, scripts.map { pathOf(it) })
-        assertTrue(scripts.all { directionOf(it) == RootScriptInstallConfigMover.DIR_LIVE_TO_STORE })
-    }
-
-    @Test
     fun rollbackWithNoCompletedPhaseDoesNothing() {
         val (instance, scripts) = mover({ ok(it) })
-        assertTrue(instance.rollback(switchId, WorkMode.LITE, WorkMode.KSU, emptySet()).ok)
+        assertTrue(instance.rollback(switchId, WorkMode.LITE, WorkMode.LITE, emptySet()).ok)
         assertTrue("没有任何阶段执行过就不许动文件: $scripts", scripts.isEmpty())
     }
 
     // ------------------------------------------------------------------ S2：4f 判据对齐参照实现
 
     @Test
-    fun materializeVerifiesStoreAbsentAndShapeOfLive() {
-        val (instance, scripts) = mover({ ok(it) })
-        assertTrue(instance.materialize(switchId, WorkMode.LITE, WorkMode.KSU).ok)
-        val inbound = MoveSet.inboundOrder(MoveSet.KSU_MOVE_SET)
-        assertEquals(inbound.size, scripts.size)
-        scripts.forEach { script ->
-            // 唯一强不变量：store 必须消失。
-            assertTrue(script.contains("STORE_REMNANT"))
-            // live 合法缺失 = SKIPPED（对齐 `ModeSwitchMoveStage.verifyInvariants`）。
-            assertTrue(script.contains("SKIPPED"))
-            assertTrue(script.contains("SHAPE_MISMATCH"))
-            // 绝不把 "live 必须存在" 当成失败判据（S2 的根因）。
-            assertFalse(
-                "4f 不得要求 live 必须存在（首次安装 KSU 槽为空是合法的）: $script",
-                script.contains("LIVE_MISSING"),
-            )
-        }
-        // 形态判据来自 expectedShape（不是本类自己发明的规则）。
-        val ksu = scripts.first { pathOf(it) == "/data/adb/ksu" }
-        assertTrue(ksu.contains("if [ ! -d \"\$L\" ]"))
-        val ksud = scripts.first { pathOf(it) == "/data/adb/ksud" }
-        assertTrue(ksud.contains("if [ ! -f \"\$L\" ]"))
-    }
-
-    @Test
-    fun materializeTreatsLegalAbsenceAsOk() {
-        // 首次 Ultra→Normal：KSU 槽从未播种 ⇒ 4e 全 SKIPPED ⇒ 4f 必须 **OK**。
-        val (instance, scripts) = mover({ RootScriptResult(true, 0, "SKIPPED") })
-        val outcome = instance.materialize(switchId, WorkMode.LITE, WorkMode.KSU)
-        assertTrue("合法缺失必须是 OK，而不是失败: $outcome", outcome.ok)
-        assertEquals(MoveSet.inboundOrder(MoveSet.KSU_MOVE_SET).size, scripts.size)
-        assertTrue(log.any { it.contains("absent=") })
-    }
-
-    @Test
     fun materializeFailureIsExplicit() {
         val (instance, _) = mover({ RootScriptResult(false, 52, "STORE_REMNANT") })
-        val outcome = instance.materialize(switchId, WorkMode.LITE, WorkMode.KSU)
+        val outcome = instance.materialize(switchId, WorkMode.LITE, WorkMode.LITE)
         assertFalse(outcome.ok)
         assertEquals(InstallCommitCodes.MATERIALIZE_FAILED, outcome.code)
     }
@@ -333,7 +255,7 @@ class RootScriptInstallConfigMoverTest {
     @Test
     fun installerLockSubtreeIsNeverMovedWithItsParent() {
         val (instance, scripts) = mover({ ok(it) })
-        assertTrue(instance.moveOut(switchId, WorkMode.LITE, WorkMode.KSU).ok)
+        assertTrue(instance.moveOut(switchId, WorkMode.LITE, WorkMode.LITE).ok)
         val maplesu = scripts.first { pathOf(it) == "/data/adb/maplesu" }
         // 绝不整树 rename（那会把 installer 锁目录一起搬走）。
         assertFalse("不得整树搬 /data/adb/maplesu: $maplesu", maplesu.contains("mv \"\$L\" \"\$S\""))
@@ -352,7 +274,7 @@ class RootScriptInstallConfigMoverTest {
     @Test
     fun rollbackOfPreservedEntryMergesBackIntoLive() {
         val (instance, scripts) = mover({ ok(it) })
-        assertTrue(instance.rollback(switchId, WorkMode.LITE, WorkMode.KSU, setOf(InstallMovePhase.OUT)).ok)
+        assertTrue(instance.rollback(switchId, WorkMode.LITE, WorkMode.LITE, setOf(InstallMovePhase.OUT)).ok)
         val maplesu = scripts.first { pathOf(it) == "/data/adb/maplesu" }
         // 反向也是逐子项合并（目标是**已存在**的 live 目录，不能 rm/mv 整树）。
         assertTrue(maplesu.contains("for c in"))
@@ -367,7 +289,7 @@ class RootScriptInstallConfigMoverTest {
             owner = WorkMode.LITE,
         )
         val (instance, scripts) = mover({ ok(it) }, dynamicFrom = external)
-        assertTrue(instance.moveOut(switchId, WorkMode.LITE, WorkMode.KSU).ok)
+        assertTrue(instance.moveOut(switchId, WorkMode.LITE, WorkMode.LITE).ok)
         assertTrue(scripts.any { pathOf(it) == "/data/adb/tricky_store" })
     }
 }

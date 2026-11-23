@@ -230,7 +230,7 @@ class InstallCommitCoordinatorTest {
         coordinator.commit(
             candidate = candidate,
             from = WorkMode.LITE,
-            to = WorkMode.KSU,
+            to = WorkMode.LITE,
             baselineId = baselineId,
             superuserJson = File(tmp.root, "su.json").apply { writeText("{}") },
             settingsMirrorJson = File(tmp.root, "settings.json").apply { writeText("{}") },
@@ -245,7 +245,7 @@ class InstallCommitCoordinatorTest {
             val client = FakeClient(log).apply { commitResult = ClientResult(true, status = statusOf("REBOOT_REQUIRED")) }
             val mover = FakeMover(log)
             val result = run(coordinator(client, log, mover, backendMoves, afterMaterialize = { mode ->
-                assertEquals(WorkMode.KSU, mode)
+                assertEquals(WorkMode.LITE, mode)
                 log += "normal-userland"
                 InstallMoveOutcome.OK
             }))
@@ -778,7 +778,7 @@ class InstallCommitCoordinatorTest {
             coordinator(client, log).commit(
                 candidate = candidate(),
                 from = WorkMode.LITE,
-                to = WorkMode.KSU,
+                to = WorkMode.LITE,
                 baselineId = "",
                 superuserJson = File(tmp.root, "su.json").apply { writeText("{}") },
                 settingsMirrorJson = File(tmp.root, "settings.json").apply { writeText("{}") },
@@ -795,7 +795,7 @@ class InstallCommitCoordinatorTest {
         val client = FakeClient(log).apply {
             snapshotResult = ClientResult(false, "SOURCE_RECOVERY_UNAVAILABLE", "ultra:boot")
         }
-        val result = coordinator(client, log).commit(candidate(), WorkMode.LITE, WorkMode.KSU, "",
+        val result = coordinator(client, log).commit(candidate(), WorkMode.LITE, WorkMode.LITE, "",
             File(tmp.root, "su.json"), File(tmp.root, "settings.json")) as InstallCommitOutcome.Rejected
         assertEquals("SOURCE_RECOVERY_UNAVAILABLE", result.code)
         assertEquals(listOf("begin", "snapshot", "abort"), client.calls)

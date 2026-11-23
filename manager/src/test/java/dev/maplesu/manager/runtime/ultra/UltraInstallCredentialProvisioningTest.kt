@@ -55,7 +55,7 @@ class UltraInstallCredentialProvisioningTest {
     }
 
     @Test fun explicitDirectPreparationDoesNotDependOnRuntimeDetection() {
-        for (mode in listOf(null, WorkMode.LITE, WorkMode.KSU)) {
+        for (mode in listOf(null, WorkMode.LITE, WorkMode.LITE)) {
             ModeRuntime.resetForTest()
             if (mode != null) ModeRuntime.overrideForTest(ModeActivation.Active(mode, "boot",
                 ActivationSource.TEST_OVERRIDE, ModeState.MODE_A_ACTIVE, 0))
@@ -79,7 +79,7 @@ class UltraInstallCredentialProvisioningTest {
     @Test fun selected61And510ImagesCanPrepareCredentialsInEveryRuntimeMode() {
         val boot = File.createTempFile("ultra-selected-", ".img")
         try {
-            for (mode in listOf(null, WorkMode.LITE, WorkMode.KSU)) {
+            for (mode in listOf(null, WorkMode.LITE, WorkMode.LITE)) {
                 ModeRuntime.resetForTest()
                 if (mode != null) ModeRuntime.overrideForTest(ModeActivation.Active(mode, "boot",
                     ActivationSource.TEST_OVERRIDE, ModeState.MODE_A_ACTIVE, 0))

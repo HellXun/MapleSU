@@ -4,7 +4,6 @@ import dev.maplesu.image.UltraInitBootProducer
 import dev.maplesu.manager.installer.BootPartitionSnapshot
 import dev.maplesu.manager.installer.InstallerSnapshot
 import dev.maplesu.manager.installer.StockOriginalResolver
-import dev.maplesu.manager.ksu.KsuRootCommandRunner
 import dev.maplesu.manager.ultrakernel.*
 import dev.maplesu.manager.workmode.WorkMode
 import dev.maplesu.manager.workmode.switch.CandidateInput
@@ -24,78 +23,6 @@ class RecoveredDeploymentLineageTest {
     @get:Rule val temporary = TemporaryFolder()
     private val assets = UltraKernelMemoryAssets(emptyMap())
     private val credential = UltraKernelCredential.of("Aa1".repeat(16))
-
-    @Test fun bothOuterBootRecoveriesKeepCleanBaselinesWhileVerifiedPreCarriesLineage() {
-        val f = fixture()
-        val record = namespace('A')
-        val receipts = temporary.newFolder()
-        val raw = bytes("kernel")
-        val plan = UltraKernelPlan.fromRecords("6.6.1-fixture", listOf(
-            UltraKernelPlan.PatchRecord("credential", 1024, ByteArray(48), credential.copySecret()),
-            UltraKernelPlan.PatchRecord("path", 2048, ByteArray(UltraKernelCredential.INIT_PATH_FIELD),
-                credential.initPathField(UltraKernelCredential.INIT_PATH_FIELD)),
-            UltraKernelPlan.PatchRecord("manager_claim:deployment_namespace", 3072, ByteArray(24), record.record())),
-            credential, baseKernelSha256 = UltraKernelSpec.sha256(raw)).let { it.withDerived(it.apply(raw).derived) }
-        val text = plan.specText(plan.credential)
-        val asset = UltraKernelGeneratedAsset.of(plan, f.artifact.targetBoot.length(), 0, text)
-        val compact = UltraKernelBuilder(receipts).generate(f.artifact.targetBoot, asset, UltraKernelSpec.parse(text)).image
-        // Recovery consumes a fixed partition PRE, not the compact producer export.
-        val installed = fullSizeSwitchCandidate(compact, File(temporary.newFolder(), "boot.img"),
-            f.artifact.targetBoot.length())
-        val before = installed.readBytes()
-        val snapshot = InstallerSnapshot("6.6.1-fixture", "fixture", "_a", "Enforcing", mapOf("boot" to
-            BootPartitionSnapshot("boot", "", "", installed.length(), UltraKernelSpec.sha256(installed))))
-        val resolved = StockOriginalResolver(assets, receipts, listOf(f.artifact.targetBoot))
-            .resolve(snapshot, mapOf("boot" to installed), temporary.newFolder())
-        assertArrayEquals(raw, UltraKernelPlan.readKernel(resolved.originals.getValue("boot")))
-        assertArrayEquals(f.artifact.targetBoot.readBytes(), resolved.originals.getValue("boot").readBytes())
-        val recovered = ModeSwitchSourceRecovery(assets, receipts, listOf(f.artifact.targetBoot), "unused",
-            KsuRootCommandRunner { _, _ -> error("unexpected ksud") }).recover(
-                WorkMode.LITE, "boot", installed, temporary.newFolder(), true)
-        assertTrue(recovered.detail, recovered.ok)
-        assertArrayEquals(raw, UltraKernelPlan.readKernel(requireNotNull(recovered.image)))
-        assertArrayEquals(f.artifact.targetBoot.readBytes(), requireNotNull(recovered.image).readBytes())
-        val lineage = runBlocking {
-            val input = CandidateInput("transaction", WorkMode.LITE, "init_boot", f.source,
-                UltraKernelSpec.sha256(f.source), temporary.newFolder(), "", "6.6.1-fixture")
-            ModeSwitchCandidateInput(assets, receipts).prepare(input,
-                status(listOf(row("boot", installed), row("init_boot", f.source))),
-                Captured(mapOf("boot" to installed, "init_boot" to f.source))).deploymentNamespace
-        }
-        assertArrayEquals(record.record(), requireNotNull(lineage).record())
-        val candidate = build(f.source, f.artifact, lineage)
-        assertArrayEquals(record.record(), UltraInitBootProducer.readDeploymentNamespace(candidate))
-        assertArrayEquals(before, installed.readBytes())
-    }
-
-    @Test fun transactionPreExportsRestoreInitBootLineageIntoTheActualCandidateInput() = runBlocking {
-        val f = fixture()
-        val record = namespace('B')
-        val installed = fullSizeSwitchCandidate(build(f.source, f.artifact, record),
-            File(temporary.newFolder(), "init_boot.img"), f.source.length())
-        val before = installed.readBytes()
-        val recovery = ModeSwitchSourceRecovery(assets, temporary.newFolder(), emptyList(), "unused",
-            KsuRootCommandRunner { _, _ -> error("unexpected ksud") }).recover(
-                WorkMode.LITE, "init_boot", installed, temporary.newFolder(), true)
-        assertTrue(recovery.detail, recovery.ok)
-        val baseline = requireNotNull(recovery.image)
-        assertArrayEquals(f.source.readBytes(), baseline.readBytes())
-        assertNull(UltraInitBootProducer.readDeploymentNamespace(baseline))
-        val work = temporary.newFolder()
-        val input = CandidateInput("transaction", WorkMode.LITE, "init_boot", baseline,
-            recovery.sha256, work, "", "6.6.1-fixture")
-        val row = row("init_boot", installed)
-        val status = status(listOf(row))
-        val client = Captured(mapOf("init_boot" to installed))
-        val prepared = ModeSwitchCandidateInput(assets, temporary.newFolder()).prepare(input, status, client)
-        assertArrayEquals(record.record(), requireNotNull(prepared.deploymentNamespace).record())
-        val candidate = build(prepared.baselineImage, f.artifact, prepared.deploymentNamespace)
-        assertArrayEquals(record.record(), UltraInitBootProducer.readDeploymentNamespace(candidate))
-        assertEquals(listOf("PRE:init_boot"), client.exports)
-        assertTrue(work.listFiles().orEmpty().isEmpty())
-        assertNull(input.deploymentNamespace)
-        assertArrayEquals(before, installed.readBytes())
-    }
 
     @Test fun conflictingOrChangedCapturedSourcesFailBeforeAnyCandidateAndKeepNoTemporaryExport() = runBlocking {
         val f = fixture()

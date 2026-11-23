@@ -124,13 +124,6 @@ object InstallPartitionPolicy {
     /** Legacy UI default only. This is not the execution-time carrier restriction. */
     val ULTRA_FIXED: InstallPartition = InstallPartition.BOOT
 
-    /** Normal 可选分区（顺序 = 选择器展示顺序，`init_boot` 默认在前）。 */
-    val NORMAL_SELECTABLE: List<InstallPartition> =
-        listOf(InstallPartition.INIT_BOOT, InstallPartition.BOOT)
-
-    /** Normal 默认分区（没选过 / 旧路由没带值）。 */
-    val NORMAL_DEFAULT: InstallPartition = InstallPartition.INIT_BOOT
-
     /** 该模式下的全部可选值（Ultra = 单元素列表，选择器据此决定"能不能点"）。 */
     fun optionsFor(mode: InstallTargetMode): List<InstallPartition> = listOf(ULTRA_FIXED)
 
@@ -150,7 +143,7 @@ object InstallPartitionPolicy {
      * 判定顺序有意如此：
      * 1. **非空但不在白名单** → [CODE_UNSUPPORTED]（不猜、不静默换成默认值）；
      * 2. Ultra 显式分区必须在已观测拓扑内；
-     * 3. 空/`null` → Ultra 默认采用现有 boot 后端；Normal 按实际节点和 KMI 选择。
+     * 3. 空/`null` → Ultra 默认采用现有 boot 后端。
      */
     fun resolve(
         mode: InstallTargetMode,

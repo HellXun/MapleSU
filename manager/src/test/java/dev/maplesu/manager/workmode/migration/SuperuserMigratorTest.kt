@@ -101,7 +101,7 @@ class SuperuserMigratorTest {
         val bytes = allowlist(records = listOf(Triple("com.example.a", 10123, false)))
         val plan = migrator.plan(
             Fixtures.MIGRATION_ID,
-            WorkMode.KSU,
+            WorkMode.LITE,
             AuthSource.KSU_ALLOWLIST,
             inventory(Fixtures.packageFacts(10123, "com.example.a")),
             allowlistBytes = bytes,
@@ -210,7 +210,7 @@ class SuperuserMigratorTest {
         )
         val plan = migrator.plan(
             Fixtures.MIGRATION_ID,
-            WorkMode.KSU,
+            WorkMode.LITE,
             AuthSource.MAGISK_DB,
             inventory(
                 Fixtures.packageFacts(10123, "com.example.a"),
@@ -236,7 +236,7 @@ class SuperuserMigratorTest {
     @Test
     fun noneSourceProducesEmptyPlanWithBackend() {
         val plan = migrator.plan(
-            Fixtures.MIGRATION_ID, WorkMode.KSU, AuthSource.NONE,
+            Fixtures.MIGRATION_ID, WorkMode.LITE, AuthSource.NONE,
             inventory(),
         )
         assertTrue(plan.intents.isEmpty())

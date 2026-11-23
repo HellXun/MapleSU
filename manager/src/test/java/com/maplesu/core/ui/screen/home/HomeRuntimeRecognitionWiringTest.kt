@@ -27,7 +27,7 @@ class HomeRuntimeRecognitionWiringTest {
         val refresh = panel.substringAfter("fun refresh(").substringBefore("fun install()")
         val readiness = panel.substringAfter("private fun localIdentity(").substringBefore("fun refresh(")
         assertTrue(refresh.contains("localIdentity(mode)"))
-        assertTrue(readiness.contains("mode == WorkMode.KSU || ModeRuntime.active == WorkMode.KSU"))
+        assertTrue(readiness.contains("mode == WorkMode.LITE || ModeRuntime.active == WorkMode.LITE"))
         assertTrue(readiness.contains("return UltraRootKeyStore.read(context)"))
         assertFalse(readiness.contains("UltraEnvironmentProbe.refresh("))
         assertFalse(readiness.contains("testBasics("))

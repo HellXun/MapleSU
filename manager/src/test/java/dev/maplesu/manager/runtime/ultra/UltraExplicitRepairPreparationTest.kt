@@ -19,7 +19,7 @@ class UltraExplicitRepairPreparationTest {
         assertTrue(Regex("!preparingUpgrade\\s*&&\\s*UltraEnvironmentProbe.currentSnapshot\\(context\\).state == UltraEnvironmentProbe.State.Fault")
             .containsMatchIn(guard))
         for (required in listOf("LiteImplantQuiesceGate.isBlocked()", "UltraRootKeyStore.isSuspended(context)",
-            "WorkModeSwitchSession.executing", "ModeRuntime.active == WorkMode.KSU",
+            "WorkModeSwitchSession.executing", "ModeRuntime.active == WorkMode.LITE",
             "UltraSdkSession.current(context) != null", "HookRootExecutor.production(context).available()",
             "ModeRuntime.latestDetection?.trace?.firstOrNull { it.id == \"S1\" }?.ok == true")) {
             assertTrue(required, guard.contains(required))

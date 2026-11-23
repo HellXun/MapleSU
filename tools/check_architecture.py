@@ -98,7 +98,7 @@ DOC_PATH_ROOTS = (
 )
 
 PINNED_7K_MANIFEST = "third_party/7kimisu/source-manifest.json"
-ORIGIN_SOURCE_ROOTS = ("manager/src/main/java/", "manager/src/ksu/java/")
+ORIGIN_SOURCE_ROOTS = ("manager/src/main/java/",)
 
 #: Top-level directories that need no README.md of their own: build plumbing, the policy file and the retained
 #: private inputs. Directories whose name starts with a dot are exempt as well.
@@ -118,7 +118,7 @@ LOCAL_PATH_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
 #: native-inputs/README.md), and pinned upstream trees are someone else's code; neither is edited to hide where it
 #: came from.
 LOCAL_PATH_EXEMPT_PREFIXES = (".analysis/", ".deps/", ".handoff/", "evidence/", "native-inputs/", "work/",
-                              "third_party/rezygisk/", "third_party/kernelsu/applied/")
+                              "third_party/rezygisk/", "third_party/ksu-uapi/")
 LOCAL_PATH_EXEMPT_DIRECTORIES = ("upstream", "maplesu-sdk")
 #: Files that name these strings in order to refuse them.
 LOCAL_PATH_DETECTORS = ("tools/check_architecture.py", "tools/tests/test_check_architecture.py",

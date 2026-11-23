@@ -5,9 +5,9 @@
   <img src="docs/assets/brand/maplesu-light.png" alt="MapleSU" width="720">
 </picture>
 
-### 内核级掌控 · 双工作模式 · 真正的内核管理器
+### 内核级掌控 · 内核补丁 SU · 真正的内核管理器
 
-Ultra 以内核补丁实现 SU 授权，Normal 承载 KernelSU 模块生态；两种模式共用一个管理器，按需切换。
+Ultra 以内核补丁实现 SU 授权，运行 KSU 风格脚本模块与 Ultra 原生模块。
 
 [![Android 12+](https://img.shields.io/badge/Android-12%2B-3DDC84?style=flat-square&logo=android&logoColor=white)](#兼容性)
 [![ARM64](https://img.shields.io/badge/ABI-arm64--v8a-57606A?style=flat-square)](#兼容性)
@@ -23,59 +23,24 @@ Ultra 以内核补丁实现 SU 授权，Normal 承载 KernelSU 模块生态；�
 
 ## MapleSU
 
-MapleSU 将内核级 Root、应用授权与模块管理整合进同一个 Android 管理器。**Ultra** 走内核补丁路线：在设备端为当前内核生成补丁、重建 boot 镜像，并由专用 SU 运行时完成授权；**Normal** 集成 KernelSU 的内核实现与模块生态。两种模式共享可定制的 Material / Miuix 界面，切换在管理器内完成。
+MapleSU 将内核级 Root、应用授权与模块管理整合进同一个 Android 管理器。**Ultra** 走内核补丁路线：在设备端为当前内核生成补丁、重建 boot 镜像，并由专用 SU 运行时完成授权，界面可在 Material 与 Miuix 之间定制。
 
 MapleSU 面向 Android 12 及以上的 ARM64 设备。构建与集成要求见[构建指南](docs/BUILD.md)。
 
 ## 特性
 
-### 双工作模式
-
-<table>
-<tr>
-<td width="50%" valign="top">
+### Ultra · 内核补丁 SU
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/assets/brand/ultra-dark.png">
   <img src="docs/assets/brand/ultra-light.png" alt="MapleSU Ultra" width="100%">
 </picture>
 
-**MapleSU Ultra** · 内核补丁 SU
-
 - 对内核进行补丁，实现 SU 授权，内核方案由 MapleSU 维护
 - 零模块下，0 可见 SELinux 策略修改、0 挂载，全局保持 Enforcing
 - 从内核层消除策略修改与挂载带来的侧信道特征
 - 在设备端为当前内核生成补丁并重建 boot 镜像
 - 运行 KSU 风格脚本模块，兼容 Ultra 原生模块
-
-</td>
-<td width="50%" valign="top">
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/brand/normal-dark.png">
-  <img src="docs/assets/brand/normal-light.png" alt="MapleSU Normal" width="100%">
-</picture>
-
-**MapleSU Normal** · KernelSU 内核实现
-
-- 以 KernelSU 作为底层实现，接入 KSU 模块生态
-- KSU 模块沿用原有的 `ksud` 生命周期安装与运行
-- 按 KMI 选择 LKM，经 KernelSU 安装路径准备 boot 镜像
-- 沿用 KernelSU 的超级用户、模块与设置接口
-
-</td>
-</tr>
-</table>
-
-两种模式共用同一套管理界面，安装与运行路径各自独立：
-
-<!-- 表格标签的汉字之间以 &#8288;（Word Joiner）连接，避免 GitHub 把短标签逐字折行。 -->
-| | MapleSU Ultra | MapleSU Normal |
-| --- | --- | --- |
-| 架&#8288;构 | 内核补丁 SU：按目标内核生成补丁，运行时授权与原生模块接入 | KernelSU 内核实现，配合专门的 `ksud` 集成 |
-| 安&#8288;装 | 在设备端修补并重建现有 boot 内核 | KMI 匹配的 LKM 与 boot 镜像 ramdisk 准备 |
-| 模&#8288;块 | KSU 风格脚本模块与 Ultra 原生模块，执行路径相互独立 | KSU 模块生态与生命周期 |
-| 运&#8288;行&#8288;时 | 内核支撑的 SU 与带版本的原生 SDK 适配；受支持的目标可使用提供方临时 Root | KernelSU 的超级用户、模块与设置接口 |
 
 模块开发与适配见[模块指南](docs/MODULES.md)与 [Ultra 原生模块指南](docs/ULTRA_MODULES.md)。
 
@@ -108,8 +73,8 @@ Ultra 针对目标内核解析补丁位置、核对补丁记录，并记录输�
 按应用授予与撤销 Root。支持的后端在写入后读回授权表，并在开机时恢复已有授权；应用 SDK 建立会话前校验调用方的真实 UID 与应用身份。
 </td>
 <td width="50%" valign="top">
-<b>可追踪的模式切换</b><br>
-切换经过预检、快照、候选准备、日志化安装与开机后验证；中断后保留操作身份与恢复状态。
+<b>可追踪的安装</b><br>
+安装经过预检、快照、候选准备、日志化安装与开机后验证；中断后保留操作身份与恢复状态。
 </td>
 </tr>
 </table>
@@ -145,9 +110,9 @@ Binder Root 会话，支持标准输入输出、退出状态、取消与终端�
 | --- | --- |
 | 系&#8288;统 | Android 12 及以上 |
 | 架&#8288;构 | ARM64（arm64-v8a） |
-| 内&#8288;核 | Ultra 的补丁方案按内核系列生成，现有 GKI 5.10、5.15、6.1、6.6、6.12、6.18 六个系列；Normal 使用与 KMI 匹配的 KernelSU 组件 |
+| 内&#8288;核 | 补丁方案按内核系列生成，现有 GKI 5.10、5.15、6.1、6.6、6.12、6.18 六个系列 |
 | 安&#8288;装 | 已有 Root 通道时可直接安装；受支持的目标可通过兼容的提供方取得临时 Root |
-| 模&#8288;块 | 兼容性取决于所选模式、后端版本与所需的内核接口，判定规则见[模块兼容判定](docs/MODULE_COMPATIBILITY.md) |
+| 模&#8288;块 | 兼容性取决于后端版本与所需的内核接口，判定规则见[模块兼容判定](docs/MODULE_COMPATIBILITY.md) |
 
 具体设备支持与发行状态以对应版本为准。执行路径与组件设计见[架构说明](docs/ARCHITECTURE.md)。
 
@@ -161,10 +126,8 @@ flowchart TD
     UI --> Images["image-core<br/>镜像准备"]
     Images --> Install["installer-core<br/>写入与恢复事务"]
     Modes --> Ultra["Ultra<br/>内核补丁 SU"]
-    Modes --> Normal["Normal<br/>KernelSU · ksud"]
     Ultra --> Scripts["KSU 风格<br/>脚本模块"]
     Ultra --> Native["Ultra<br/>原生模块"]
-    Normal --> KsuModules["KSU 模块生态"]
 ```
 
 ## 快速开始
@@ -206,7 +169,7 @@ python tools/check_architecture.py
 
 ## 关于 MapleSU
 
-一款 Android Root 管理器，提供两种工作模式，按需切换。开发者：**MapleAutumn**。
+一款 Android Root 管理器，以内核补丁方案提供 Root。开发者：**MapleAutumn**。
 
 <div align="center">
 <a href="https://t.me/KernelMapleSU">
@@ -224,7 +187,7 @@ python tools/check_architecture.py
 | 项目 | 与 MapleSU 的关系 |
 | --- | --- |
 | [FinaSU](https://github.com/LyraVoid/FinaSU) | UI 设计与交互的主要参考 |
-| [KernelSU](https://github.com/tiann/KernelSU) | Normal 模式的主要实现来源与模块生态基础 |
+| [KernelSU](https://github.com/tiann/KernelSU) | 策略加载器所对接的内核管理器 ABI 参考 |
 | [7kimisu](https://github.com/hartgerinktarcila-design/7kimisu) | 管理器的直接派生基础，保留原作署名与许可 |
 | [KernelPatch](https://github.com/bmax121/KernelPatch) | 内核补丁方向的开源工作与技术参考 |
 | [SKRoot](https://github.com/abcz316/SKRoot-linuxKernelRoot) | Ultra 模块适配与 SU 底层方案参考；组件的集成范围见[致谢](CREDITS.md) |
@@ -235,8 +198,7 @@ python tools/check_architecture.py
 
 | 组&#8288;成 | 由 MapleSU 实现与维护 | 上游来源 |
 | --- | --- | --- |
-| 管&#8288;理&#8288;器 | 模式编排、安装事务、镜像处理、受限 Binder 会话、客户端 SDK、模块检查、主题与市场接入、品牌与双界面适配 | 直接派生自 7kimisu；UI 与交互参考 FinaSU |
-| Normal | `ksud` 集成、安装路径与管理器接入 | KernelSU 固定版本源码与记录的补丁 |
+| 管&#8288;理&#8288;器 | 安装编排、安装事务、镜像处理、受限 Binder 会话、客户端 SDK、模块检查、主题与市场接入、品牌与双界面适配 | 直接派生自 7kimisu；UI 与交互参考 FinaSU |
 | Ultra | 补丁方案生成、授权事务、SDK 适配与模块兼容记录 | 离线修补核心与原生 SDK 为固定版本的第三方组件，组件来源见[致谢](CREDITS.md) |
 | 模&#8288;块&#8288;策&#8288;略 | 策略解析、加载与可选后端准备 | 保留 Magisk 派生代码与 libsepol 的原许可 |
 
@@ -262,7 +224,7 @@ MapleSU 的每一步，都有人一同走过。头像墙中央是作者 MapleAut
 | MapleAutumn | 作者 | ![UI](https://img.shields.io/badge/UI-F58B55?style=flat-square&logo=jetpackcompose&logoColor=white) ![Kotlin](https://img.shields.io/badge/Kotlin-7F52FF?style=flat-square&logo=kotlin&logoColor=white) | — |
 | 晚风 | 特别致谢 · 内测用户 | 幕后支持者 · 共同开发者 | [GitHub](https://github.com/bywanfeng) |
 | 小酒 | 特别致谢 · 内测用户 | 幕后支持者 · 共同开发者 | [Telegram](https://t.me/qingyu177) |
-| 佐佐鱼 | 特别致谢 · 内测用户 | 为越狱思路提供相关贡献 · 提供橘子7提权相关实现 ![C++](https://img.shields.io/badge/C%2B%2B-00599C?style=flat-square&logo=cplusplus&logoColor=white)<br>“如果有事通过🤖 @yutou\_004\_bot 联系我，私聊拉黑” | [GitHub](https://github.com/Yutou04-sa) · [Telegram](https://t.me/Yutou04) |
+| 佐佐鱼 | 特别致谢 · 内测用户 | 为 Ultra 方案的内核适配提供贡献 ![C++](https://img.shields.io/badge/C%2B%2B-00599C?style=flat-square&logo=cplusplus&logoColor=white)<br>“如果有事通过🤖 @yutou\_004\_bot 联系我，私聊拉黑” | [GitHub](https://github.com/Yutou04-sa) · [Telegram](https://t.me/Yutou04) |
 | 7kimimasy | 特别致谢 · 内测用户 | 为 MapleSU 内测与宣发提供贡献 ![Kotlin](https://img.shields.io/badge/Kotlin-7F52FF?style=flat-square&logo=kotlin&logoColor=white) | [GitHub](https://github.com/hartgerinktarcila-design) · [Telegram](https://t.me/kmimasy) |
 | jianhua114514 | 内测用户 | — | [Telegram](https://t.me/jianhua114514) |
 | 临冬诗意渐渐 | 内测用户 | — | — |

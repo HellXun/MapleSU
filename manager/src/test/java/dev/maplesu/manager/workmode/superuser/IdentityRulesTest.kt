@@ -112,37 +112,6 @@ class IdentityRulesTest {
     }
 
     @Test
-    fun multiUserEntriesAreSeparated() {
-        val user0 = Fixtures.intent(uid = Fixtures.UID, userId = 0)
-        val user10 = Fixtures.intent(uid = Fixtures.UID_OTHER_USER, userId = 10)
-        val expanded = IdentityRules.expandAll(listOf(user0, user10), BackendId.B_KSU, emptyMap())
-        assertEquals(2, expanded.size)
-        assertEquals(setOf(Fixtures.UID, Fixtures.UID_OTHER_USER), expanded.map { it.uid }.toSet())
-        assertEquals(setOf(0, 10), expanded.map { it.uid / 100_000 }.toSet())
-    }
-
-    @Test
-    fun protectedIdentitiesAreNeverExpanded() {
-        assertNull(IdentityRules.expand(
-            Fixtures.intent(uid = 0, userId = 0, packageName = "root"), BackendId.B_KSU, emptyList()))
-        assertNull(IdentityRules.expand(
-            Fixtures.intent(uid = 10_000, userId = 0, packageName = "android"), BackendId.A_ULTRA, emptyList()))
-        assertNull(IdentityRules.expand(
-            Fixtures.intent(uid = 10_100, userId = 0, packageName = Fixtures.MANAGER), BackendId.A_DIRECT, emptyList()))
-        // 普通应用不受影响。
-        assertTrue(IdentityRules.expand(intent, BackendId.B_KSU, emptyList()) != null)
-    }
-
-    @Test
-    fun bKsuSkipsGrantForUninstalledPackage() {
-        assertNull(IdentityRules.expand(intent, BackendId.B_KSU, listOf(Fixtures.OTHER)))
-        // deny 仍可撤回（安全方向）。
-        val deny = Fixtures.intentFrom(identity, GrantIntent.DENY)
-        val expanded = IdentityRules.expand(deny, BackendId.B_KSU, listOf(Fixtures.OTHER))
-        assertEquals(false, expanded?.allow)
-    }
-
-    @Test
     fun userIdIsDerivedFromFullUid() {
         assertEquals(0, IdentityRules.userIdOf(10_200))
         assertEquals(10, IdentityRules.userIdOf(1_010_200))

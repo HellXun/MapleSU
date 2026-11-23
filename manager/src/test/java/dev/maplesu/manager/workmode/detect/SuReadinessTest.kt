@@ -166,7 +166,7 @@ class SuReadinessTest {
     @Test
     fun installedRecordWinsOverLiveProbe() {
         val result = EnvironmentHomeProjection.decide(
-            EnvironmentHomeProjection.Facts(snapshot(WorkMode.KSU), BOOT, liveReadiness = SuReadiness.USABLE),
+            EnvironmentHomeProjection.Facts(snapshot(WorkMode.LITE), BOOT, liveReadiness = SuReadiness.USABLE),
         )
         assertFalse(result.confirmedNotInstalled)
     }
@@ -189,7 +189,7 @@ class SuReadinessTest {
 
     @Test
     fun liveUnknownProbeKeepsPreviousInstalledRecord() {
-        val previous = snapshot(WorkMode.KSU)
+        val previous = snapshot(WorkMode.LITE)
         val result = EnvironmentHomeProjection.decide(
             EnvironmentHomeProjection.Facts(previous, BOOT, liveReadiness = SuReadiness.UNKNOWN),
         )
@@ -262,23 +262,6 @@ class SuReadinessTest {
     }
 
     @Test
-    fun suUnknownWithoutKsuIsUnknownAndKeepsPreviousSnapshot() {
-        val previous = snapshot(WorkMode.KSU, dirty = true)
-        val state = store(previous)
-        val probes = FakeProbes(SuReadiness.UNKNOWN, ultra = null, ksu = null)
-
-        val outcome = resolver(probes, state).resolve(BOOT)
-
-        assertEquals(EnvironmentVerdict.UNKNOWN, outcome.verdict)
-        assertFalse(outcome.terminal)
-        assertEquals(EnvironmentCheckDetail.SU_PROBE_UNKNOWN + ":" +
-            EnvironmentCheckDetail.KSU_PROBE_UNAVAILABLE, outcome.detail)
-        assertEquals("UNKNOWN 不得覆盖上次状态", previous, state.snapshot())
-        assertEquals(WorkMode.KSU, outcome.mode)
-        assertEquals(listOf("su", "ultra", "ksu"), probes.calls)
-    }
-
-    @Test
     fun suUnknownNeverBecomesNotInstalled() {
         val state = store()
         val probes = FakeProbes(SuReadiness.UNKNOWN, ultra = null, ksu = null)
@@ -287,55 +270,6 @@ class SuReadinessTest {
 
         assertEquals(EnvironmentVerdict.UNKNOWN, outcome.verdict)
         assertNull("不得落盘未安装", state.snapshot())
-    }
-
-    @Test
-    fun suUnknownButKsuConfirmsResolvesKsuNormal() {
-        val state = store()
-        val probes = FakeProbes(SuReadiness.UNKNOWN, ultra = null, ksu = true)
-
-        val outcome = resolver(probes, state).resolve(BOOT)
-
-        assertEquals(EnvironmentVerdict.KSU_NORMAL, outcome.verdict)
-        assertEquals(WorkMode.KSU, state.snapshot()?.mode)
-    }
-
-    @Test
-    fun suNotUsableDoesNotHideAnOwnedNormalKernel() {
-        val state = store()
-        val probes = FakeProbes(SuReadiness.NOT_USABLE, ultra = null, ksu = true)
-
-        val outcome = resolver(probes, state).resolve(BOOT)
-
-        assertEquals(EnvironmentVerdict.KSU_NORMAL, outcome.verdict)
-        assertEquals(WorkMode.KSU, state.snapshot()?.mode)
-        assertEquals(false, state.snapshot()?.suAvailable)
-        assertEquals(listOf("su", "ultra", "ksu"), probes.calls)
-    }
-
-    @Test
-    fun suUsableWithoutModeDoesNotCreateOrPersistAnotherMode() {
-        val state = store()
-        val probes = FakeProbes(SuReadiness.USABLE, ultra = null, ksu = false)
-        val outcome = resolver(probes, state).resolve(BOOT)
-
-        assertEquals(EnvironmentVerdict.NOT_INSTALLED, outcome.verdict)
-        assertTrue(outcome.terminal)
-        assertNull(outcome.mode)
-        assertEquals(EnvironmentCheckDetail.KSU_PROBE_NEGATIVE, outcome.detail)
-        assertNull(state.snapshot()?.mode)
-        assertEquals(true, state.snapshot()?.suAvailable)
-    }
-
-    @Test
-    fun uninstalledRecordWithSuIsRecheckedForMode() {
-        val state = store(snapshot(null, su = true))
-        val probes = FakeProbes(SuReadiness.USABLE, ultra = null, ksu = true)
-
-        val outcome = resolver(probes, state).resolve(BOOT)
-
-        assertEquals(EnvironmentVerdict.KSU_NORMAL, outcome.verdict)
-        assertEquals(WorkMode.KSU, state.snapshot()?.mode)
     }
 
     @Test
@@ -354,7 +288,7 @@ class SuReadinessTest {
 
     @Test
     fun inheritedInstalledStateIsDroppedWhenSuProbeSaysNotUsable() {
-        val previous = snapshot(WorkMode.KSU)
+        val previous = snapshot(WorkMode.LITE)
         val state = store(previous)
         val probes = FakeProbes(SuReadiness.NOT_USABLE, ultra = null, ksu = null)
 
@@ -367,7 +301,7 @@ class SuReadinessTest {
 
     @Test
     fun trustedInstalledRecordIsClearedOnlyWhenKsuAlsoSaysNo() {
-        val state = store(snapshot(WorkMode.KSU))
+        val state = store(snapshot(WorkMode.LITE))
         val probes = FakeProbes(SuReadiness.NOT_USABLE, ultra = null, ksu = false)
 
         val outcome = resolver(probes, state).resolve(BOOT)
@@ -391,7 +325,7 @@ class SuReadinessTest {
 
     @Test
     fun codecPreservesConfirmedModeAndIgnoresRetiredFalseMarker() {
-        val original = snapshot(WorkMode.KSU, su = true)
+        val original = snapshot(WorkMode.LITE, su = true)
         val encoded = EnvironmentSnapshotCodec.encode(original)
         assertFalse(encoded.containsKey("env.suTemp"))
         assertEquals(original, EnvironmentSnapshotCodec.decode(encoded))
@@ -433,7 +367,7 @@ class SuReadinessTest {
 
     @Test
     fun confirmedModeIsDisplayedAndHiddenFactsStillMaskIt() {
-        val state = homeState().copy(environmentMode = WorkMode.KSU)
+        val state = homeState().copy(environmentMode = WorkMode.LITE)
         assertTrue(state.showInstalledStatus)
         val masked = state.asLiteHiddenNotInstalled()
         assertFalse(masked.showInstalledStatus)

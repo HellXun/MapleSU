@@ -99,7 +99,7 @@ class UltraStartupWarmupTest {
         listOf(verified.copy(suspended = true), verified.copy(quiescing = true),
             verified.copy(switchPending = true), verified.copy(conflictingRoot = true),
             verified.copy(ksuResponded = true), verified.copy(ksuResponded = null),
-            verified.copy(detectionSettled = false), verified.copy(activeMode = WorkMode.KSU)).forEach { input ->
+            verified.copy(detectionSettled = false), verified.copy(activeMode = WorkMode.LITE)).forEach { input ->
             val (result, calls) = run(input)
             assertFalse("unexpected recovery for $input", result.ran)
             assertTrue(calls.isEmpty())
@@ -112,7 +112,7 @@ class UltraStartupWarmupTest {
             pending.copy(ksuResponded = null),
             pending.copy(ksuResponded = true),
             pending.copy(pendingInstallCredential = false),
-            pending.copy(activeMode = WorkMode.KSU),
+            pending.copy(activeMode = WorkMode.LITE),
         ).forEach { input ->
             val (result, calls) = run(input)
             assertFalse("unexpected warmup for $input", result.ran)
@@ -146,7 +146,7 @@ class UltraStartupWarmupTest {
         listOf(recovery.copy(suspended = true), recovery.copy(quiescing = true),
             recovery.copy(conflictingRoot = true), recovery.copy(ksuResponded = true),
             recovery.copy(ksuResponded = null), recovery.copy(detectionSettled = false),
-            recovery.copy(activeMode = WorkMode.KSU)).forEach { input ->
+            recovery.copy(activeMode = WorkMode.LITE)).forEach { input ->
             val (result, calls) = run(input)
             assertFalse("unexpected setup for $input", result.ran)
             assertTrue(calls.isEmpty())
@@ -189,7 +189,7 @@ class UltraStartupWarmupTest {
         val live = pending.copy(liveEnvironmentReady = true)
         for (input in listOf(live.copy(suspended = true), live.copy(quiescing = true),
             live.copy(switchPending = true), live.copy(conflictingRoot = true),
-            live.copy(ksuResponded = true), live.copy(activeMode = WorkMode.KSU))) {
+            live.copy(ksuResponded = true), live.copy(activeMode = WorkMode.LITE))) {
             val result = UltraStartupWarmup.run(input,
                 setupEnvironment = { error("blocked") }, pairEnvironment = { error("blocked") },
                 retryDetection = { error("blocked") }, recoverIdentity = { error("blocked") })

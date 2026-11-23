@@ -289,7 +289,6 @@ class ParasiteBackendTest {
     private fun backend(
         mode: WorkMode? = WorkMode.LITE,
         ultraRoot: FakeRoot = FakeRoot(),
-        ksuRoot: FakeRoot = FakeRoot(),
         hostFacts: HostFactsSource = FakeHostFacts(HostFactsLookup.Ok(facts())),
         probe: HiddenDaemonProbe = FakeProbe(),
         state: HiddenStatePort = FakeState(),
@@ -310,14 +309,6 @@ class ParasiteBackendTest {
                 rootAvailable = { rootAvailable },
                 identity = { identity },
                 prepareBoot = prepareBoot,
-            ),
-            WorkMode.KSU to HiddenModeDeps(
-                mode = WorkMode.KSU,
-                root = ksuRoot,
-                suAuth = KsuPolicySuAuth,
-                state = state,
-                rootAvailable = { rootAvailable },
-                identity = { identity },
             ),
         ),
         hostFacts = hostFacts,
@@ -534,7 +525,7 @@ class ParasiteBackendTest {
     fun normalKeepsExistingInAppStealthRatherThanUninstallingItsKernelRestorer() {
         var removals = 0
         val result = activate(backend(
-            mode = WorkMode.KSU,
+            mode = WorkMode.LITE,
             managerRemoval = HiddenManagerRemoval { _, _ -> removals++; HiddenManagerRemovalResult(true) },
         ))
         assertTrue(result.steps.toString(), result.success)
@@ -1092,15 +1083,15 @@ class ParasiteBackendTest {
         val port = object : dev.maplesu.manager.runtime.ultra.SuAuthPort {
             override fun snapshot() = listOf("dev.maplesu.manager")
             override fun add(packageName: String) = error("deactivation must not grant")
-            override fun remove(packageName: String): String {
+            override fun remove(packageName: String): dev.maplesu.manager.runtime.ultra.NativeReceipt {
                 removeCalls++
-                return "ERR_MODULE_SU_LIST_NOT_FOUND"
+                return dev.maplesu.manager.runtime.ultra.testReceipt("ERR_MODULE_SU_LIST_NOT_FOUND")
             }
         }
         val auth = object : HiddenSuAuth {
             override fun grant(packageName: String) = error("deactivation must not grant")
             override fun revoke(packageName: String): SuAuthOutcome {
-                val error = authorizations.setGranted(port, packageName, false)
+                val error = authorizations.setGranted(port, packageName, false).error
                 return if (error == null) SuAuthOutcome.Revoked else SuAuthOutcome.Failed(error)
             }
             override fun isGranted(packageName: String) = packageName in authorizations.snapshot.packages
@@ -1265,37 +1256,20 @@ class ParasiteBackendTest {
     @Test
     fun modeIsolationUsesOnlyTheActiveModesChannel() {
         val ultraRoot = FakeRoot()
-        val ksuRoot = FakeRoot()
-        val b = backend(mode = WorkMode.LITE, ultraRoot = ultraRoot, ksuRoot = ksuRoot)
+        val b = backend(mode = WorkMode.LITE, ultraRoot = ultraRoot)
         assertTrue(activate(b).success)
         assertTrue(ultraRoot.scripts.isNotEmpty())
-        assertTrue("LITE 绝不能碰 KSU 通道", ksuRoot.scripts.isEmpty())
-    }
-
-    // 30
-    @Test
-    fun ksuModeUsesRouterChannelAndPolicyManagedSuAuth() {
-        val ultraRoot = FakeRoot()
-        val ksuRoot = FakeRoot()
-        val b = backend(mode = WorkMode.KSU, ultraRoot = ultraRoot, ksuRoot = ksuRoot)
-        val result = activate(b)
-        assertTrue(result.success)
-        assertTrue(ksuRoot.scripts.isNotEmpty())
-        assertTrue("KSU 绝不能碰 Ultra 通道", ultraRoot.scripts.isEmpty())
-        assertTrue(result.steps[1].detail.contains("su_auth=policy_managed"))
     }
 
     // 31
     @Test
     fun unresolvedModeFailsClosedWithoutTouchingEitherChannel() {
         val ultraRoot = FakeRoot()
-        val ksuRoot = FakeRoot()
-        val b = backend(mode = null, ultraRoot = ultraRoot, ksuRoot = ksuRoot)
+        val b = backend(mode = null, ultraRoot = ultraRoot)
         val result = activate(b)
         assertFalse(result.success)
         assertEquals(HiddenFailure.BACKEND_UNAVAILABLE.wire, result.code)
         assertTrue(ultraRoot.scripts.isEmpty())
-        assertTrue(ksuRoot.scripts.isEmpty())
     }
 
     // 32

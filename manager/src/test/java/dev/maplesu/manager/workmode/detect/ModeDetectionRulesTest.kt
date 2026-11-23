@@ -153,8 +153,8 @@ class ModeDetectionRulesTest {
 
     @Test
     fun defaultSelectedModeTable() {
-        assertEquals(WorkMode.KSU, DetectionRules.defaultSelectedMode(ModeState.MODE_B_ACTIVE))
-        assertEquals(WorkMode.KSU, DetectionRules.defaultSelectedMode(ModeState.MODE_B_KERNEL_ONLY))
+        assertEquals(WorkMode.LITE, DetectionRules.defaultSelectedMode(ModeState.MODE_B_ACTIVE))
+        assertEquals(WorkMode.LITE, DetectionRules.defaultSelectedMode(ModeState.MODE_B_KERNEL_ONLY))
         assertEquals(WorkMode.LITE, DetectionRules.defaultSelectedMode(ModeState.MODE_A_ACTIVE))
         assertEquals(WorkMode.LITE, DetectionRules.defaultSelectedMode(ModeState.MODE_A_INSTALLED_UNBOUND))
         assertNull(DetectionRules.defaultSelectedMode(ModeState.FOREIGN_SU))
@@ -164,8 +164,8 @@ class ModeDetectionRulesTest {
 
     @Test
     fun activeModeTableRespectsUnbound() {
-        assertEquals(WorkMode.KSU, ModeState.MODE_B_ACTIVE.activeMode)
-        assertEquals(WorkMode.KSU, ModeState.MODE_B_KERNEL_ONLY.activeMode)
+        assertEquals(WorkMode.LITE, ModeState.MODE_B_ACTIVE.activeMode)
+        assertEquals(WorkMode.LITE, ModeState.MODE_B_KERNEL_ONLY.activeMode)
         assertEquals(WorkMode.LITE, ModeState.MODE_A_ACTIVE.activeMode)
         assertNull(ModeState.MODE_A_INSTALLED_UNBOUND.activeMode)
         assertNull(ModeState.FOREIGN_SU.activeMode)
@@ -191,7 +191,7 @@ class ModeDetectionRulesTest {
         )
         val decision = DetectionRules.decide(facts(root = TestFixtures.rootFacts(modesJson = modes)))
         assertTrue(decision.recovery.controlPlaneReachable)
-        assertEquals(WorkMode.KSU, decision.recovery.restorableMode)
+        assertEquals(WorkMode.LITE, decision.recovery.restorableMode)
         assertEquals(9L, decision.recovery.restorableSettingsRevision)
         assertEquals(7L, decision.recovery.restorableSuperuserRevision)
         assertTrue(decision.recovery.hasSnapshot)

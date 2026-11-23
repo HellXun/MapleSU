@@ -5,7 +5,7 @@
 | 组件 | 来源与固定版本 | 使用范围与许可 |
 | --- | --- | --- |
 | 7kimisu | [源清单](7kimisu/source-manifest.json)，`dafd0a96ab1ad37cb4aa692b4081bf68e231d6a7` | Manager 直接派生基础；[GPL-3.0-or-later](7kimisu/LICENSE)，保留[原说明](7kimisu/UPSTREAM-SOURCE-NOTICE.md) |
-| KernelSU | [清单与补丁](kernelsu/manifest.json)，`528bafc5696196f3a9500cee2e7e18497421cd32` | Normal 主要实现；[用户态/管理器 GPLv3](kernelsu/upstream/LICENSE)、[内核 GPLv2](kernelsu/upstream/kernel/LICENSE)，具体版本选择见文件头 |
+| KernelSU UAPI | [来源与摘要](ksu-uapi/SOURCE.json)，`f4603d14bd7f3bf21206d6f7c622ddf1c049ade3` | 只保留 `uapi/supercall.h` 与 `uapi/app_profile.h`：`module-policy` 需要 manager fd 的 ioctl/struct 定义。内核侧 GPL-2.0-only；Normal 的补丁、LKM 与 `ksud` 用户态已整体删除 |
 | FinaSU | [官方仓库](https://github.com/LyraVoid/FinaSU) | UI/交互主要参考，主题格式兼容；直接代码来源按对应文件和管理器派生清单记录 |
 | libsu service | [SOURCE.json](libsu-service/SOURCE.json)，6.0.0，`8c3e80ffe466b89ff875471e542d77e6a1b480c5` | [Apache-2.0](libsu-service/LICENSE)；源码调整和官方 trampoline 摘要见相邻 README |
 | Apache Commons Compress | [固定工件清单](commons-compress/license-source-manifest.json)，1.28.0 | 模块 ZIP 静态检查；[LICENSE](commons-compress/LICENSE.txt) / [NOTICE](commons-compress/NOTICE.txt) |

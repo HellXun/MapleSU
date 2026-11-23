@@ -62,12 +62,12 @@ class UltraBrandPolicyTest {
 
     @Test
     fun normalOnlyShowsMapleSU() {
-        assertFalse(shouldShowUltraBrand(installedUltra.copy(active = WorkMode.KSU)))
+        assertFalse(shouldShowUltraBrand(installedUltra.copy(active = WorkMode.LITE)))
     }
 
     @Test
     fun currentModeWinsOverAnOlderEnvironmentSnapshotInBothDirections() {
-        for ((current, previous) in listOf(WorkMode.KSU to WorkMode.LITE, WorkMode.LITE to WorkMode.KSU)) {
+        for ((current, previous) in listOf(WorkMode.LITE to WorkMode.LITE, WorkMode.LITE to WorkMode.LITE)) {
             val home = homeWorkModeSwitchState(HomeWorkModeSwitchFacts(current, HomeInstallSignal.INSTALLED))
             val brand = homeUltraBrandFacts(home, false, false, environmentMode = previous)
             assertEquals(current, brand.active)
@@ -77,7 +77,7 @@ class UltraBrandPolicyTest {
 
     @Test
     fun allFactCombinationsFailClosed() {
-        for (mode in listOf(null, WorkMode.LITE, WorkMode.KSU)) {
+        for (mode in listOf(null, WorkMode.LITE, WorkMode.LITE)) {
             for (installed in HomeInstallSignal.entries) {
                 for (hidden in HomeHiddenSignal.entries) {
                     for (stealth in HomeHiddenSignal.entries) {

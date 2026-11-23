@@ -38,7 +38,7 @@ class MigrationUiReducerTest {
     private fun eligibility(
         enabled: Boolean = true,
         recommended: WorkMode? = WorkMode.LITE,
-        targetAllowed: Map<WorkMode, Boolean> = mapOf(WorkMode.LITE to true, WorkMode.KSU to true),
+        targetAllowed: Map<WorkMode, Boolean> = mapOf(WorkMode.LITE to true, WorkMode.LITE to true),
         blockers: List<Blocker> = emptyList(),
     ) = MigrationEligibility(
         enabled = enabled,
@@ -114,7 +114,7 @@ class MigrationUiReducerTest {
         assertTrue(detection.willUninstallManager())
         assertEquals("KernelSU 1.0 (uapi: 7)", detection.versionLabel)
         assertEquals(7, detection.uapi)
-        assertEquals(listOf("boot"), detection.restorePartitionsFor(WorkMode.KSU))
+        assertEquals(listOf("boot"), detection.restorePartitionsFor(WorkMode.LITE))
     }
 
     // 3) 目标分区还原关系：KSU→Lite 需还原 init_boot；KSU→KSU 相交无需还原
@@ -122,7 +122,7 @@ class MigrationUiReducerTest {
     fun restorePartitionsDependOnTarget() {
         val state = detected(info(patched = setOf("init_boot")))
         assertEquals(listOf("init_boot"), state.detection!!.restorePartitionsFor(WorkMode.LITE))
-        assertEquals(emptyList<String>(), state.detection!!.restorePartitionsFor(WorkMode.KSU))
+        assertEquals(emptyList<String>(), state.detection!!.restorePartitionsFor(WorkMode.LITE))
         assertEquals(listOf("init_boot"), MigrationUiReducer.reduce(
             state, MigrationUiEvent.TargetSelected(WorkMode.LITE),
         ).restorePartitions)
@@ -131,9 +131,9 @@ class MigrationUiReducerTest {
     // 4) 推荐目标成为默认选中；无推荐时选第一个可用
     @Test
     fun recommendedTargetBecomesDefaultSelection() {
-        assertEquals(WorkMode.KSU, detected(eligibility = eligibility(recommended = WorkMode.KSU)).selectedTarget)
+        assertEquals(WorkMode.LITE, detected(eligibility = eligibility(recommended = WorkMode.LITE)).selectedTarget)
         val noRecommendation = detected(
-            eligibility = eligibility(recommended = null, targetAllowed = mapOf(WorkMode.LITE to true, WorkMode.KSU to false)),
+            eligibility = eligibility(recommended = null, targetAllowed = mapOf(WorkMode.LITE to true, WorkMode.LITE to false)),
         )
         assertEquals(WorkMode.LITE, noRecommendation.selectedTarget)
     }
@@ -171,12 +171,12 @@ class MigrationUiReducerTest {
     @Test
     fun disabledTargetOptionCannotBeSelected() {
         val state = detected(
-            eligibility = eligibility(targetAllowed = mapOf(WorkMode.LITE to true, WorkMode.KSU to false)),
+            eligibility = eligibility(targetAllowed = mapOf(WorkMode.LITE to true, WorkMode.LITE to false)),
         )
-        val ksu = state.targetOptions.single { it.mode == WorkMode.KSU }
+        val ksu = state.targetOptions.single { it.mode == WorkMode.LITE }
         assertFalse(ksu.enabled)
         assertEquals(MigrationBlockerKeys.CLEAN_IMAGE, ksu.disabledReasonKey)
-        val after = MigrationUiReducer.reduce(state, MigrationUiEvent.TargetSelected(WorkMode.KSU))
+        val after = MigrationUiReducer.reduce(state, MigrationUiEvent.TargetSelected(WorkMode.LITE))
         assertEquals(WorkMode.LITE, after.selectedTarget)
     }
 

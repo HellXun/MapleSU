@@ -6,12 +6,10 @@ import dev.maplesu.manager.workmode.WorkMode
 /**
  * 本次修补的**方式**（目标模式的产物，不是页面各自 if 出来的）。
  *
- * - [ULTRA_ULTRA_KERNEL]：Ultra 内核 release 资产/门禁链路（`UltraKernelFlow`）；
- * - [NORMAL_KSU_LKM]：KSU LKM 链路（`KsuInstallGlue` → `KsuInstallProducer` → ksud 产候选）。
+ * 只有 [ULTRA_ULTRA_KERNEL]：Ultra 内核 release 资产/门禁链路（`UltraKernelFlow`）。
  */
 enum class InstallPatchPath {
     ULTRA_ULTRA_KERNEL,
-    NORMAL_KSU_LKM,
 }
 
 /** 修补对象来源：用户选的镜像文件 / 下载得到的镜像 / 当前分区直装。 */
@@ -65,12 +63,6 @@ object InstallTargetCodes {
  * Normal 不可用时的 blocker（纯层不引用 `R`：UI 用 `when` 映射到字符串资源）。
  */
 enum class InstallTargetBlocker {
-    /** 需要选一个镜像（**保留**：旧装配/旧日志口径；直装现在走 root 提取）。 */
-    NORMAL_REQUIRES_IMAGE,
-
-    /** 下载方式只提供 `boot` 分区，不能作为镜像修补输入。 */
-    NORMAL_DOWNLOAD_UNSUPPORTED,
-
     /** 该模式下的目标分区被固定（Ultra 只能是管线自己的那一个），用户选择被拒绝。 */
     PARTITION_FIXED,
 
@@ -171,9 +163,6 @@ sealed interface InstallTargetDecision {
  *   release 没有对应资产时由 `UltraKernelFlow` 自己报 `ULTRA_KERNEL_RELEASE_UNSUPPORTED:<release>`
  *   或回退到兼容 manifest —— 这里是**既有行为**，本分派不额外拦截，以免改变 Ultra 语义。
  *   按输入内容/实际后端与拓扑解析载体；init_boot 的桥输入由 producer 核实。
- * - **Normal** → [InstallPatchPath.NORMAL_KSU_LKM]，按实际目标选择 `init_boot` 或 `boot`。
- *   当前分区使用设备 KMI；文件交给生产者从目标内核解析后选择 `kernelsu.ko`。
- *   对应执行阶段准确返回 KMI 或资产错误，不回退 Ultra。
  */
 object InstallTargetDispatch {
 
@@ -196,7 +185,6 @@ object InstallTargetDispatch {
             )
         }
 
-    /** File targets resolve their KMI from the actual source during candidate generation. */
     /** 分区被拒 → UI blocker（一码一文案；纯层不引用 `R`）。 */
     private fun InstallPartitionResolution.Rejected.blocker(): InstallTargetBlocker = when (code) {
         InstallPartitionPolicy.CODE_ULTRA_FIXED -> InstallTargetBlocker.PARTITION_FIXED

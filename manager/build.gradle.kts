@@ -234,11 +234,6 @@ android {
         // runtime/maplesu-sdk/PROVENANCE.json. Stripping the bridge would change the
         // bytes the deployment receipt records, so keep them.
         keepDebugSymbols += "**/libmaplesu_ultra_bridge.so"
-        // KSU JNI (W12d): built by third_party/kernelsu/scripts/build_jni.sh (NDK 26.1,
-        // 16KB page). ksu-payload.json records their exact sha256, and the KSU facade is
-        // validated against those bytes; AGP strip would change them, so keep them intact.
-        keepDebugSymbols += "**/libksud_ksu.so"
-        keepDebugSymbols += "**/libadbroot.so"
     }
 }
 
@@ -354,7 +349,7 @@ val buildModulePolicy = tasks.register<Exec>("buildModulePolicy") {
         include("policy_hook_abi.h", "boot_sdk_abi.h", "selinux_hide_abi.h")
     })
     inputs.files(policyHookBundles, policyHookBundles.resolveSibling("${policyHookBundles.nameWithoutExtension}.json"))
-    inputs.files(rootProject.fileTree("third_party/kernelsu/applied/uapi") { include("*.h") })
+    inputs.files(rootProject.fileTree("third_party/ksu-uapi/uapi") { include("*.h") })
     outputs.files(policyBuild.file("maplesu-policy"), policyBuild.file("build.json"))
     // Validate the pinned checkout and retained upstream hashes on every build.
     outputs.upToDateWhen { false }

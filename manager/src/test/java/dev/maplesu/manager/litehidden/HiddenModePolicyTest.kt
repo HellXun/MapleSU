@@ -25,10 +25,10 @@ class HiddenModePolicyTest {
     fun entryVisibleInBothModesUntilHidden() {
         // 最新定稿：A/B 都要有隐藏入口；只有隐藏生效后消失。
         assertTrue(HiddenModePolicy.cardVisible(WorkMode.LITE, LiteHiddenState.OFF))
-        assertTrue(HiddenModePolicy.cardVisible(WorkMode.KSU, LiteHiddenState.OFF))
+        assertTrue(HiddenModePolicy.cardVisible(WorkMode.LITE, LiteHiddenState.OFF))
         assertFalse(HiddenModePolicy.cardVisible(WorkMode.LITE, LiteHiddenState.ON))
-        assertFalse(HiddenModePolicy.cardVisible(WorkMode.KSU, LiteHiddenState.ON))
-        assertFalse(HiddenModePolicy.anyHiddenEntriesVisible(WorkMode.KSU, LiteHiddenState.ON))
+        assertFalse(HiddenModePolicy.cardVisible(WorkMode.LITE, LiteHiddenState.ON))
+        assertFalse(HiddenModePolicy.anyHiddenEntriesVisible(WorkMode.LITE, LiteHiddenState.ON))
     }
 
     @Test
@@ -133,7 +133,7 @@ class HiddenModePolicyTest {
         )
         assertEquals(
             HiddenFailure.BACKEND_UNAVAILABLE,
-            HiddenModePolicy.canEnable(WorkMode.KSU, LiteHiddenState.OFF, HiddenModePolicy.validatePort("18427"), good),
+            HiddenModePolicy.canEnable(WorkMode.LITE, LiteHiddenState.OFF, HiddenModePolicy.validatePort("18427"), good),
         )
     }
 

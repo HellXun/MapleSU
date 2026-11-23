@@ -27,7 +27,7 @@ class NormalUltraModulesPreservationTest {
         }
         val stage = FileSwitchMoveStage(roots)
         val journal = FileSwitchJournal(File(tmp.root, "journal.jsonl"))
-        for ((from, to) in listOf(WorkMode.KSU to WorkMode.LITE, WorkMode.LITE to WorkMode.KSU)) {
+        for ((from, to) in listOf(WorkMode.LITE to WorkMode.LITE, WorkMode.LITE to WorkMode.LITE)) {
             val plan = stage.plan("keep-${from.suffix}", from, to)
             assertTrue(plan.validationErrors.toString(), plan.ok)
             assertTrue(stage.moveOut(plan, journal).ok)

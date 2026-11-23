@@ -12,7 +12,7 @@ import java.io.File
  * 设置总仓（`settings`）的 A/B 路由策略（01 §3.1/§3.2，P0 配置隔离）。
  *
  * 规则（禁止默认 A）：
- * - `ModeRuntime.active` 已判定：LITE → `settings`（A 原名，逐字节等价）；KSU → `settings_B`；
+ * - `ModeRuntime.active` 已判定：LITE → `settings`（A 原名，逐字节等价）；
  * - 未判定：中性 prefs 的 `active_mode` **提示**优先（上次模式）；
  *   无提示时只有**明确的 A 证据**（no-backup 目录里有 48B 凭据文件）才读 A 原名，
  *   否则用中性 prefs（绝不把"未判定"当 A）。
@@ -21,7 +21,7 @@ object SettingsPrefsPolicy {
     /** A（LITE）保持原名（01 §3.2）。 */
     const val A_NAME = "settings"
 
-    /** B（KSU）独立文件。 */
+    /** 旧 Normal 的独立文件；只为把遗留安装 prefs 读回来，不再写入。 */
     const val B_NAME = "settings_B"
 
     fun nameFor(active: WorkMode?): String? = when (active) {
@@ -29,10 +29,9 @@ object SettingsPrefsPolicy {
         null -> null
     }
 
-    /** 未判定时的回退名；结果只会是 A / B / 中性 prefs。 */
+    /** 未判定时的回退名；结果只会是 A / 中性 prefs。 */
     fun unresolvedName(lastKnown: WorkMode?, liteEvidencePresent: Boolean): String = when {
         lastKnown == WorkMode.LITE -> A_NAME
-        false -> B_NAME
         // 明确的 A 证据（已配对过 Lite）：保持 A 行为逐字节等价。
         liteEvidencePresent -> A_NAME
         // 既无提示又无 A 证据：用中性 prefs，禁止默认 A。

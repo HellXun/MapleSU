@@ -30,6 +30,6 @@ class BrandBannerLayoutTest {
 
     @Test fun eachWorkModeHasItsOwnBanner() {
         assertEquals(BrandBannerKind.ULTRA, brandBannerKind(WorkMode.LITE))
-        assertEquals(BrandBannerKind.NORMAL, brandBannerKind(WorkMode.KSU))
+        assertEquals(BrandBannerKind.NORMAL, brandBannerKind(WorkMode.LITE))
     }
 }

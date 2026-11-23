@@ -96,7 +96,7 @@ class FileSnapshotServiceTest {
         )
         assertEquals("rev-2-A", (second as SnapshotResult.Ok).manifest.id)
         assertEquals(3L, service().nextRevision(WorkMode.LITE))
-        assertEquals(1L, service().nextRevision(WorkMode.KSU))
+        assertEquals(1L, service().nextRevision(WorkMode.LITE))
     }
 
     @Test

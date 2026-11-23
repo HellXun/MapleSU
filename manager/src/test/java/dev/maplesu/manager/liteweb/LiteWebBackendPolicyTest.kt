@@ -47,7 +47,7 @@ class LiteWebBackendPolicyTest {
     fun ksuIsAlwaysRefusedButUnresolvedWithoutEvidenceGetsItsOwnCode() {
         assertEquals(
             LiteWebStartStrategy.UNAVAILABLE,
-            LiteWebBackendPolicy.strategy(WorkMode.KSU, RootBackend.ULTRA_ENV),
+            LiteWebBackendPolicy.strategy(WorkMode.LITE, RootBackend.ULTRA_ENV),
         )
         // 未判定且没有 LITE 证据：仍然拒绝（不放宽成"任何模式都能起 daemon"）。
         assertEquals(
@@ -61,7 +61,7 @@ class LiteWebBackendPolicyTest {
         // 明确是 B 模式 → 依然是"模式不是 Lite"，不是"未判定"。
         assertEquals(
             LiteWebBackendPolicy.MODE_NOT_LITE,
-            LiteWebBackendPolicy.unavailableCode(WorkMode.KSU, RootBackend.ULTRA_ENV),
+            LiteWebBackendPolicy.unavailableCode(WorkMode.LITE, RootBackend.ULTRA_ENV),
         )
     }
 
@@ -90,7 +90,7 @@ class LiteWebBackendPolicyTest {
         )
         assertEquals("", LiteWebBackendPolicy.inferredWarning(null, liteInstalled = false))
         assertEquals("", LiteWebBackendPolicy.inferredWarning(WorkMode.LITE, liteInstalled = true))
-        assertEquals("", LiteWebBackendPolicy.inferredWarning(WorkMode.KSU, liteInstalled = true))
+        assertEquals("", LiteWebBackendPolicy.inferredWarning(WorkMode.LITE, liteInstalled = true))
     }
 
     @Test

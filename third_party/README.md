@@ -7,7 +7,7 @@ Pinned upstream sources, prebuilt inputs, integration patches and their notices.
 | Directory | Content |
 | --- | --- |
 | `7kimisu/` | Source record of the Manager's derivation base |
-| `kernelsu/` | The pinned KernelSU snapshot, MapleSU's integration patches and the scripts that apply and check them ([README](kernelsu/README.md)) |
+| `ksu-uapi/` | The two KernelSU UAPI headers `module-policy` compiles against ([README](ksu-uapi/README.md)) |
 | `libsu-service/` | The `:libsu-service` Gradle module, a pinned Apache-2.0 source tree ([README](libsu-service/README.md)) |
 | `ksu_props/` | Pinned property library used by [`module-tools`](../module-tools/README.md) |
 | `skroot/` | Source and hash records for the Lite and Pro backend inputs |
@@ -22,5 +22,5 @@ Pinned upstream sources, prebuilt inputs, integration patches and their notices.
 
 - **Never copy third-party code into first-party packages.** Add a pinned input with a record here and reach it through an existing adapter ([where new code goes](../docs/ARCHITECTURE.md#where-new-code-goes)).
 - **Pin before you use.** A new input records its origin, fixed version, license, the file digests and what was changed. A prebuilt input also records its digest and the source it corresponds to.
-- **Edit snapshots only through their patch series.** For KernelSU that is `kernelsu/patches/`; `kernelsu/applied/` is generated from `upstream/` plus those patches and is not a second source to edit by hand.
+- **Vendored headers stay verbatim.** `ksu-uapi/` copies the KernelSU UAPI as-is; `SOURCE.json` records their digests.
 - `python tools/check_architecture.py` (`third-party-records`) fails when a directory here has no source, license or manifest record, or when a link in `DEPENDENCIES.md` does not resolve.

@@ -33,7 +33,7 @@ class WebUiModulesTest {
 
     private fun activate(mode: WorkMode) {
         ModeRuntime.recordDetection(TestFixtures.detection(
-            if (mode == WorkMode.KSU) ModeState.MODE_B_ACTIVE else ModeState.MODE_A_ACTIVE))
+            if (mode == WorkMode.LITE) ModeState.MODE_B_ACTIVE else ModeState.MODE_A_ACTIVE))
         assertTrue(ModeRuntime.activate(mode, "webui-boot", ActivationSource.BOOT_DETECTION))
     }
 
@@ -51,7 +51,7 @@ class WebUiModulesTest {
         val pending = async(start = CoroutineStart.UNDISPATCHED) { loadWebUiModules(repository) }
         assertEquals(0, repository.reads)
         assertFalse(pending.isCompleted)
-        activate(WorkMode.KSU)
+        activate(WorkMode.LITE)
         assertEquals(0, repository.reads)
         assertFalse(pending.isCompleted)
         ModuleBackendPorts.ksuFactory = { error("readiness must not execute the backend") }
@@ -67,7 +67,7 @@ class WebUiModulesTest {
     }
 
     @Test fun failedNormalWiringLeavesAVisibleFailureWithoutReadingAStaleBackend() = runBlocking {
-        activate(WorkMode.KSU)
+        activate(WorkMode.LITE)
         val repository = Repository()
         val pending = async(start = CoroutineStart.UNDISPATCHED) { loadWebUiModules(repository) }
         ModuleBackendPorts.markWiringFailed("TEST_WIRING_FAILED")

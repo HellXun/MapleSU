@@ -66,10 +66,10 @@ class HomeWorkModeSwitchStateTest {
 
     @Test
     fun installedKsuShowsEnabledEntry() {
-        val s = homeWorkModeSwitchState(facts(active = WorkMode.KSU))
+        val s = homeWorkModeSwitchState(facts(active = WorkMode.LITE))
         assertTrue("Normal 已安装且无隐身 → 首页同样必须画入口", s.visible)
         assertTrue(s.enabled)
-        assertEquals(WorkMode.KSU, s.current)
+        assertEquals(WorkMode.LITE, s.current)
         assertEquals(HomeWorkModeSwitchBlock.NONE, s.blocked)
     }
 
@@ -88,7 +88,7 @@ class HomeWorkModeSwitchStateTest {
     @Test
     fun installUndeterminedHidesEntry() {
         val s = homeWorkModeSwitchState(
-            facts(active = WorkMode.KSU, installed = HomeInstallSignal.UNKNOWN),
+            facts(active = WorkMode.LITE, installed = HomeInstallSignal.UNKNOWN),
         )
         assertFalse("安装证据读不到（判定中/读失败）→ 不画入口", s.visible)
         assertEquals(HomeWorkModeSwitchBlock.NOT_INSTALLED, s.blocked)
@@ -131,7 +131,7 @@ class HomeWorkModeSwitchStateTest {
     @Test
     fun ksuStealthOnHidesEntry() {
         val s = homeWorkModeSwitchState(
-            facts(active = WorkMode.KSU, ksuStealth = HomeHiddenSignal.ON),
+            facts(active = WorkMode.LITE, ksuStealth = HomeHiddenSignal.ON),
         )
         assertFalse("KSU 隐身开着 → 任何模式信息都不得出现", s.visible)
         assertEquals(HomeWorkModeSwitchBlock.STEALTH_MASKED, s.blocked)
@@ -140,7 +140,7 @@ class HomeWorkModeSwitchStateTest {
     @Test
     fun ksuStealthUnknownHidesEntry() {
         val s = homeWorkModeSwitchState(
-            facts(active = WorkMode.KSU, ksuStealth = HomeHiddenSignal.UNKNOWN),
+            facts(active = WorkMode.LITE, ksuStealth = HomeHiddenSignal.UNKNOWN),
         )
         assertFalse("KSU stealth 读不到 → 保守按开启（含 UNKNOWN）", s.visible)
         assertEquals(HomeWorkModeSwitchBlock.STEALTH_MASKED, s.blocked)
@@ -183,7 +183,7 @@ class HomeWorkModeSwitchStateTest {
     @Test
     fun hiddenWinsOverPendingSwitch() {
         val s = homeWorkModeSwitchState(
-            facts(active = WorkMode.KSU, liteHidden = HomeHiddenSignal.ON, pending = true),
+            facts(active = WorkMode.LITE, liteHidden = HomeHiddenSignal.ON, pending = true),
         )
         assertFalse("隐藏优先级最高", s.visible)
         assertEquals(HomeWorkModeSwitchBlock.HIDDEN_ACTIVE, s.blocked)
@@ -271,7 +271,7 @@ class HomeWorkModeSwitchStateTest {
             assertFalse(runtime.current().enabled)
         } finally {
             runtime.factsSource = oldFacts
-            WorkModeSwitchSession.finish(SwitchOutcome.ImagesRequired(WorkMode.KSU, false))
+            WorkModeSwitchSession.finish(SwitchOutcome.ImagesRequired(WorkMode.LITE, false))
         }
     }
 
@@ -293,7 +293,7 @@ class HomeWorkModeSwitchStateTest {
             runtime.pendingSwitchSource = HomeSwitchPendingSource { false }
             runtime.factsSource = HomeWorkModeSwitchFactsSource {
                 facts(
-                    active = WorkMode.KSU,
+                    active = WorkMode.LITE,
                     installed = HomeInstallSignal.INSTALLED,
                     liteHidden = HomeHiddenSignal.UNKNOWN,
                 )

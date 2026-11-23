@@ -49,7 +49,7 @@ The default Manager build links the precompiled native SDKs included in the chec
 
 The runtime archive and headers are in `runtime/upstream/`; the Ultra archive and headers are in `runtime/upstream-pro/lib/arm64-v8a/` and `runtime/upstream-pro/include/`. The matching helper, policy backend and build identity are included in `runtime/upstream-pro/`. Gradle and CMake use these paths automatically. Manager UI, application logic and client SDK changes use the existing native SDK directly, with no SDK rebuild or manual import step.
 
-Both modes, provider kernel images, symbols, policy bundles, Normal source snapshots, BusyBox and SELinux build inputs are retained in the repository. The [native input inventory](../release/native-inputs.json) pins their bytes. Updating the native SDK or its paired policy backend follows the separate [native maintenance procedure](NATIVE_DEPENDENCIES.md#update-the-policy-backend).
+Ultra's provider kernel images, symbols, policy bundles, BusyBox and SELinux build inputs are retained in the repository. The [native input inventory](../release/native-inputs.json) pins their bytes. Updating the native SDK or its paired policy backend follows the separate [native maintenance procedure](NATIVE_DEPENDENCIES.md#update-the-policy-backend).
 
 The Android application SDK builds from `client/`. For integration into another app, build its AAR as described [below](#build-the-application-sdk-and-example), or use the AAR uploaded by the [Build Manager workflow](ACTIONS.md#run-a-build).
 
@@ -59,12 +59,11 @@ The Android application SDK builds from `client/`. For integration into another 
 python scripts/sync-pro-sdk-identity.py --check
 python tools/prepare_native_inputs.py --check
 python tools/build_module_policy.py --prepare-only --offline
-python third_party/kernelsu/scripts/apply_patches.py
 ```
 
 The checkout retains the SDK archives, helper, paired policy backend, provider kernel images, symbols, policy payloads and SELinux source. No research directory or private attachment is needed. `prepare_native_inputs.py` can restore the fixed BusyBox and stock provider inputs from their recorded upstream commits; `--check` verifies them without downloading.
 
-The KernelSU patch command creates `third_party/kernelsu/applied/` from its retained source snapshot. For an existing derived tree, use `--check-only` to verify it. Module-tool builds use the retained `ksu_props` snapshot and Cargo lockfile.
+Module-tool builds use the retained `ksu_props` snapshot and Cargo lockfile. The policy loader's in-kernel manager ABI comes from the two UAPI headers under `third_party/ksu-uapi/`, which `module-policy/CMakeLists.txt` adds to the include path.
 
 ## Build the complete Manager
 
@@ -75,7 +74,7 @@ The KernelSU patch command creates `third_party/kernelsu/applied/` from its reta
 
 The outputs are `manager/build/outputs/apk/debug/manager-debug.apk` and `manager/build/outputs/apk/release/manager-release-unsigned.apk` for an unsigned release. With release signing configured, the release output is `manager-release.apk`.
 
-The normal build includes both operating modes and all configured providers. It verifies the SDK archive, embedded helper, policy source identity and paired backend before packaging. When updating native sources, regenerate the matching candidate artifacts and identity together using [Native dependencies](NATIVE_DEPENDENCIES.md).
+The manager build includes the Ultra backend and all configured provider inputs. It verifies the SDK archive, embedded helper, policy source identity and paired backend before packaging. When updating native sources, regenerate the matching candidate artifacts and identity together using [Native dependencies](NATIVE_DEPENDENCIES.md).
 
 For a clean build without reusing task outputs:
 

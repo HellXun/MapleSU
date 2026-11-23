@@ -11,7 +11,7 @@ target_compile_options(maplesu_sepol PRIVATE -Wno-unused-result)
 add_executable(maplesu-policy src/main.cpp src/jailbreak_selinux_hide.cpp src/ksu_manager_fd.cpp src/boot_sdk_control.cpp src/boot_sdk_layout.cpp derived/sepolicy.cpp
     ../runtime/ultra/policy/module_policy_config.cpp ../runtime/ultra/policy/kernel_layout.cpp
     ../runtime/ultra/policy/jailbreak_status_layout.cpp)
-target_include_directories(maplesu-policy PRIVATE ../runtime/ultra/policy ../third_party/kernelsu/applied)
+target_include_directories(maplesu-policy PRIVATE ../runtime/ultra/policy ../third_party/ksu-uapi)
 set(MAPLESU_POLICY_HOOK_BUNDLE_SOURCE "" CACHE FILEPATH "Generated, verified temporary Hook policy bundles")
 if(MAPLESU_POLICY_HOOK_BUNDLE_SOURCE)
   if(NOT EXISTS "${MAPLESU_POLICY_HOOK_BUNDLE_SOURCE}")

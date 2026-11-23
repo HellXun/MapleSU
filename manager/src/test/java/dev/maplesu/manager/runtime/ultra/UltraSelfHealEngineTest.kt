@@ -284,7 +284,7 @@ class UltraSelfHealEngineTest {
 
     @Test
     fun preflightSkipsWithoutTouchingStoredKeyOrRootBackup() {
-        val ksu = FakePorts(modeValue = WorkMode.KSU, storedKeyValue = null)
+        val ksu = FakePorts(modeValue = WorkMode.LITE, storedKeyValue = null)
         val outcome = engine(ksu).runOnce()
 
         assertFalse(outcome.attempted)
@@ -329,7 +329,7 @@ class UltraSelfHealEngineTest {
 
     @Test
     fun ksuModeAndRateLimitAndRepeatAreSkipped() {
-        val ksu = FakePorts(modeValue = WorkMode.KSU)
+        val ksu = FakePorts(modeValue = WorkMode.LITE)
         assertEquals("SKIP:KSU_MODE", engine(ksu).runOnce().action)
         assertFalse(ksu.attempted)
 

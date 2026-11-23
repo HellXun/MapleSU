@@ -295,7 +295,7 @@ class CheckArchitectureTest(unittest.TestCase):
         self.write("docs/placeholders.md", "C:\\Users\\<name>\\x, C:/Users/Public, /home/runner/work/MapleSU, "
                                            "/Users/$USER/x, ~/Android/Sdk, $ANDROID_HOME/ndk\n")
         for exempt in ("work/receipt.json", ".analysis/x.json", "evidence/x.txt", "native-inputs/policy/a/identity.json",
-                       "third_party/kernelsu/upstream/a.py",
+                       "third_party/ksu-uapi/a.py",
                        "runtime/maplesu-sdk/b.txt", "zygisk/package.py", "tools/check_architecture.py"):
             self.write(exempt, "D:/Maple_Workflow\n")
         self.write("assets/logo.bin", b"\0\0D:/Maple_Env")

@@ -33,7 +33,7 @@ class HiddenStartupConfirmTest {
         assertTrue(HiddenStartupConfirm.masksWithMode(null, hiddenOn = true))
         assertTrue(HiddenStartupConfirm.masksWithMode(WorkMode.LITE, hiddenOn = true))
         // 明确 KSU：走内核 stealth 自己的判据，不按 Lite 隐藏。
-        assertFalse(HiddenStartupConfirm.masksWithMode(WorkMode.KSU, hiddenOn = true))
+        assertFalse(HiddenStartupConfirm.masksWithMode(WorkMode.LITE, hiddenOn = true))
         assertFalse(HiddenStartupConfirm.masksWithMode(null, hiddenOn = false))
     }
 
@@ -68,7 +68,7 @@ class HiddenStartupConfirmTest {
             HiddenStartupConfirm.masks(
                 dev.maplesu.manager.litehidden.LiteHiddenState.ON,
                 lastKnownOn = true,
-                active = dev.maplesu.manager.workmode.WorkMode.KSU,
+                active = dev.maplesu.manager.workmode.WorkMode.LITE,
             ),
         )
     }

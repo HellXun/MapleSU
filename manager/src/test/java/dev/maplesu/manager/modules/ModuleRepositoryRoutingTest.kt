@@ -183,7 +183,7 @@ class ModuleRepositoryRoutingTest {
         val lite = FakePort(json = """[{"id":"lite-a","enabled":true,"remove":false}]""")
         val ksu = FakePort(json = ksuJson)
         val parser = FakeParser(listOf(module(id = "ksu-a")))
-        val modules = repository({ WorkMode.KSU }, lite, ksu, parser).getModules().getOrThrow()
+        val modules = repository({ WorkMode.LITE }, lite, ksu, parser).getModules().getOrThrow()
         assertEquals("ksu-a", modules.single().id)
         assertEquals(listOf("listJson"), ksu.calls)
         assertTrue("LITE backend must not be touched in KSU mode", lite.calls.isEmpty())
@@ -217,7 +217,7 @@ class ModuleRepositoryRoutingTest {
 
     @Test
     fun missingKsuPortIsBackendUnavailable() = runBlocking {
-        val result = repository({ WorkMode.KSU }, FakePort(), ksu = null).getModules()
+        val result = repository({ WorkMode.LITE }, FakePort(), ksu = null).getModules()
         assertTrue(result.isFailure)
         assertTrue(result.exceptionOrNull() is ModuleBackendUnavailableException)
         assertTrue(result.exceptionOrNull()!!.message!!.contains("BACKEND_UNAVAILABLE"))
@@ -254,7 +254,7 @@ class ModuleRepositoryRoutingTest {
     fun ksuOperationsDelegateToKsuPort() = runBlocking {
         val lite = FakePort()
         val ksu = FakePort(result = true)
-        val repo = repository({ WorkMode.KSU }, lite, ksu)
+        val repo = repository({ WorkMode.LITE }, lite, ksu)
         assertTrue(repo.toggleModule("m", true).getOrThrow())
         assertTrue(repo.uninstallModule("m").getOrThrow())
         assertTrue(repo.undoUninstallModule("m").getOrThrow())

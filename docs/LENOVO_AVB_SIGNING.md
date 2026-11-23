@@ -2,7 +2,7 @@
 
 ## 路由和使用方式
 
-签名类型以最终目标分区为准，与 Normal / Ultra 模式独立：
+签名类型以最终目标分区为准，与所选安装目标独立：
 
 | 目标分区 | 签名方式 | 选文件时的完整输入 | 输出 |
 | --- | --- | --- | --- |
@@ -28,7 +28,7 @@
   `Rebuild` 或 `RebuildAospChain`。实际 UI 固定 `useOriginalSalt=true`、`keySelection=0`
   （按原算法选密钥）。MapleSU 对应这两个实际默认参数。
 - 脱机修补入口在 `MainWindow.xaml`，管理器修补与 AVB 重构分离；本次保留 MapleSU 原有
-  Normal / Ultra 修补管线，只在所有修补完成后增加 AVB 最终化，不运行上游 Windows 工具。
+  Ultra 修补管线，只在所有修补完成后增加 AVB 最终化，不运行上游 Windows 工具。
 - 上游 README 的许可证声明为 GPL-3.0 或更高。移植类保留 SPDX 和来源标记；根目录
   `LICENSE` 为 GPL-3.0 全文，APK 资产包含 `maplesu/avb/NOTICE`。
 

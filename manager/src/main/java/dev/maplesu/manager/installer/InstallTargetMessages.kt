@@ -18,12 +18,6 @@ fun installTargetBlockerMessage(
     blocked: InstallTargetDecision.Blocked,
 ): String {
     val text = when (blocked.blocker) {
-        InstallTargetBlocker.NORMAL_REQUIRES_IMAGE ->
-            resources.getString(R.string.install_target_blocker_normal_requires_image)
-
-        InstallTargetBlocker.NORMAL_DOWNLOAD_UNSUPPORTED ->
-            resources.getString(R.string.install_target_blocker_normal_download)
-
         InstallTargetBlocker.PARTITION_FIXED ->
             resources.getString(
                 R.string.install_target_blocker_partition_fixed,
@@ -54,29 +48,11 @@ fun installTargetBlockerMessage(
 
 /**
  * 安装确认 / 事务记录里的「目标：…」行（用户点「下一步」后在刷写日志第一条就能看到）。
- *
- * Normal 额外带上选中的 KMI 与期望产物名；目录未上报时说明"由 ksud 内嵌查找硬失败兜底"
- * —— 用户能看出这次到底会走哪条路，而不是一句笼统的"开始安装"。
  */
 fun installTargetBanner(
     resources: Resources,
     ready: InstallTargetDecision.Ready,
 ): String {
     val current = resources.getString(R.string.install_target_mode_current, ready.target.productName)
-    return when (ready.path) {
-        InstallPatchPath.ULTRA_ULTRA_KERNEL ->
-            "$current · ${resources.getString(R.string.install_target_mode_ultra_summary)}"
-
-        InstallPatchPath.NORMAL_KSU_LKM -> buildString {
-            append(current)
-            append(" · ")
-            append(resources.getString(R.string.install_target_mode_normal_summary))
-            append(" · ")
-            // 分区是**用户选的那个**（`init_boot` 默认 / `boot` 可选），不是写死的常量。
-            append(ready.partition ?: InstallPartitionPolicy.NORMAL_DEFAULT.wire)
-            append(" · KMI=${ready.kmi}")
-            append(" · ko=${ready.kmiArtifact}")
-            if (!ready.kmiCatalogKnown) append(" (catalog=unknown)")
-        }
-    }
+    return "$current · ${resources.getString(R.string.install_target_mode_ultra_summary)}"
 }

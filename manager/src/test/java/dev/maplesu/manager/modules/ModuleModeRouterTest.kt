@@ -98,7 +98,7 @@ class ModuleModeRouterTest {
     fun ksuListDelegatesToKsuPortOnly() {
         val ksuJson = """[{"id":"ksu-mod","enabled":"true"}]"""
         val port = FakePort("ksu-list", json = ksuJson)
-        val result = router({ WorkMode.KSU }, ksuPort = port).listJson()
+        val result = router({ WorkMode.LITE }, ksuPort = port).listJson()
         assertEquals(ModuleRouteResult.Ok(ksuJson), result)
         assertEquals(listOf("listJson"), port.calls)
         assertTrue(lite.calls.isEmpty())
@@ -107,7 +107,7 @@ class ModuleModeRouterTest {
     @Test
     fun ksuToggleUninstallUndoInstallDelegateToKsuPort() {
         val port = FakePort("ksu-ops")
-        val r = router({ WorkMode.KSU }, ksuPort = port)
+        val r = router({ WorkMode.LITE }, ksuPort = port)
         assertEquals(ModuleRouteResult.Ok(true), r.toggle("mod", false))
         assertEquals(ModuleRouteResult.Ok(true), r.uninstall("mod"))
         assertEquals(ModuleRouteResult.Ok(true), r.undoUninstall("mod"))
@@ -149,7 +149,7 @@ class ModuleModeRouterTest {
 
     @Test
     fun missingKsuPortIsExplicitlyUnavailable() {
-        val result = router({ WorkMode.KSU }, ksuPort = null).listJson()
+        val result = router({ WorkMode.LITE }, ksuPort = null).listJson()
         assertTrue(result is ModuleRouteResult.Unavailable)
         assertTrue((result as ModuleRouteResult.Unavailable).reason.contains("ksu"))
     }
@@ -157,14 +157,14 @@ class ModuleModeRouterTest {
     @Test
     fun unavailablePortIsReportedAsUnavailable() {
         val port = FakePort("ksu-down", available = false)
-        val result = router({ WorkMode.KSU }, ksuPort = port).toggle("m1", true)
+        val result = router({ WorkMode.LITE }, ksuPort = port).toggle("m1", true)
         assertTrue(result is ModuleRouteResult.Unavailable)
     }
 
     @Test
     fun portExceptionDegradesToFailed() {
         val port = FakePort("ksu-boom", failWith = IllegalStateException("ksud crashed"))
-        val result = router({ WorkMode.KSU }, ksuPort = port).listJson()
+        val result = router({ WorkMode.LITE }, ksuPort = port).listJson()
         assertTrue(result is ModuleRouteResult.Failed)
         assertEquals("ksud crashed", (result as ModuleRouteResult.Failed).error.message)
     }
@@ -180,6 +180,6 @@ class ModuleModeRouterTest {
     fun routedModeExposesResolvedMode() {
         assertNull(router({ null }).routedMode())
         assertEquals(WorkMode.LITE, router({ WorkMode.LITE }).routedMode())
-        assertEquals(WorkMode.KSU, router({ WorkMode.KSU }).routedMode())
+        assertEquals(WorkMode.LITE, router({ WorkMode.LITE }).routedMode())
     }
 }

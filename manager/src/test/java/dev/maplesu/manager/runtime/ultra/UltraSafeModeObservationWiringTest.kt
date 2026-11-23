@@ -31,7 +31,7 @@ class UltraSafeModeObservationWiringTest {
         val text = source("com/maplesu/core/ui/viewmodel/HomeViewModel.kt")
         val observer = text.substringAfter("UltraEnvironmentProbe.states.collect").substringBefore("previous = state")
         assertTrue(observer.contains("state == UltraEnvironmentProbe.State.Running && previous != state"))
-        assertTrue(observer.contains("ModeRuntime.active != WorkMode.KSU"))
+        assertTrue(observer.contains("ModeRuntime.active != WorkMode.LITE"))
         assertTrue(observer.contains("ModeBootstrap.retryEnvironmentDetection()"))
         assertTrue(observer.contains("probeAndPublish(rootProbeSettled"))
         assertTrue(observer.contains("recovery?.cancel()"))

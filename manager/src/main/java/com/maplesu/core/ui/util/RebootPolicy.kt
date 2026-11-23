@@ -1,6 +1,6 @@
 package com.maplesu.core.ui.util
 
-internal enum class RebootBackend { NORMAL, ULTRA, DIRECT }
+internal enum class RebootBackend { ULTRA, DIRECT }
 
 /** One selected reboot route; a failed mutation is never retried through another backend. */
 internal class RebootDispatcher(
@@ -11,7 +11,6 @@ internal class RebootDispatcher(
     fun execute(reason: String): Boolean {
         if (reason !in REASONS) return false
         if (reason == "soft_reboot") return when (backend) {
-            RebootBackend.NORMAL -> runRoot("${KsuDaemonPolicy.DEPLOYED_KSUD} soft-reboot")
             RebootBackend.ULTRA -> restartUltra()
             RebootBackend.DIRECT ->
                 runRoot("/system/bin/setprop ctl.restart zygote64 || " +
@@ -46,14 +45,12 @@ internal class RebootDispatcher(
                 "$(/system/bin/pidof zygote) 2>/dev/null || " +
                 "/system/bin/reboot soft_reboot || /system/bin/reboot"
 
-        // Match RootExecutionRouter: a verified Ultra identity outranks a residual Hook
-        // record; a cached Running observation alone does not establish that identity.
+        // A verified Ultra identity outranks a cached Running observation: only the
+        // identity check proves which backend actually answers.
         fun backend(
-            normal: Boolean,
             ultraRunning: Boolean,
             verifiedUltraIdentity: Boolean,
         ): RebootBackend = when {
-            normal -> RebootBackend.NORMAL
             verifiedUltraIdentity -> RebootBackend.ULTRA
             ultraRunning -> RebootBackend.ULTRA
             else -> RebootBackend.DIRECT

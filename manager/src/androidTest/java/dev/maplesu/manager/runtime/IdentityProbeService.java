@@ -31,12 +31,6 @@ public final class IdentityProbeService extends Service {
         return new Binder() {
             @Override
             protected boolean onTransact(int code, Parcel data, Parcel reply, int flags) throws RemoteException {
-                if (code == FIRST_CALL_TRANSACTION + 10) {
-                    data.enforceInterface(DESCRIPTOR);
-                    if (reply == null) throw new IllegalArgumentException("Missing fixture reply");
-                    NativeSuProbe.visibility(IdentityProbeService.this, reply);
-                    return true;
-                }
                 if (code == FIRST_CALL_TRANSACTION + 7) {
                     data.enforceInterface(DESCRIPTOR);
                     if (reply == null) throw new IllegalArgumentException("Missing fixture reply");
@@ -47,29 +41,6 @@ public final class IdentityProbeService extends Service {
                     data.enforceInterface(DESCRIPTOR);
                     if (reply == null) throw new IllegalArgumentException("Missing fixture reply");
                     socketContextProbe(data, reply);
-                    return true;
-                }
-                if (code == FIRST_CALL_TRANSACTION + 4) {
-                    data.enforceInterface(DESCRIPTOR);
-                    if (reply == null) throw new IllegalArgumentException("Missing fixture reply");
-                    NativeSuProbe.run(IdentityProbeService.this, data, reply);
-                    return true;
-                }
-                if (code == FIRST_CALL_TRANSACTION + 8) {
-                    data.enforceInterface(DESCRIPTOR);
-                    if (reply == null) throw new IllegalArgumentException("Missing fixture reply");
-                    // P1.su: the fixture's own UID executes /system/bin/su, so the
-                    // KernelSU sucompat hook judges THIS uid and not the Manager's.
-                    NativeSuProbe.suCompat(IdentityProbeService.this, reply);
-                    return true;
-                }
-                if (code == FIRST_CALL_TRANSACTION + 9) {
-                    data.enforceInterface(DESCRIPTOR);
-                    if (reply == null) throw new IllegalArgumentException("Missing fixture reply");
-                    // P1.su domain: same real su exec, but the command also prints the
-                    // SELinux domain of the child, so a uid of 0 can be told apart from a
-                    // working root (uid 0 in untrusted_app cannot search the daemon dir).
-                    NativeSuProbe.suDomain(IdentityProbeService.this, reply);
                     return true;
                 }
                 if (code == FIRST_CALL_TRANSACTION + 5) {

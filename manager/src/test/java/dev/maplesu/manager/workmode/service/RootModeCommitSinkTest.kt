@@ -45,7 +45,7 @@ class RootModeCommitSinkTest {
 
     @Test fun verifiedSwitchPublishesModeAndPreservesBaseline() {
         seed()
-        sink().commit(WorkMode.KSU, bootId, TestFixtures.hash('b'), TestFixtures.hash('c'))
+        sink().commit(WorkMode.LITE, bootId, TestFixtures.hash('b'), TestFixtures.hash('c'))
         val result = read()
         assertEquals("B", result.current)
         assertEquals("A", result.last)
@@ -64,7 +64,7 @@ class RootModeCommitSinkTest {
         RootModeCommitSink(::shell, clock = { 2000L },
             root = control.absolutePath.replace('\\', '/'),
             initial = { TestFixtures.modesFile(current = "NONE", revision = 0) })
-            .commit(WorkMode.KSU, bootId, TestFixtures.hash('b'), TestFixtures.hash('c'))
+            .commit(WorkMode.LITE, bootId, TestFixtures.hash('b'), TestFixtures.hash('c'))
         assertEquals("B", read().current)
         assertNull(read().last)
         assertEquals(1L, read().revision)
@@ -76,13 +76,13 @@ class RootModeCommitSinkTest {
         sink { script ->
             if (script.contains(staging.absolutePath)) RootExecResult(RootBackend.KSU, 1, "EACCES")
             else shell(script)
-        }.commit(WorkMode.KSU, bootId, "", "")
+        }.commit(WorkMode.LITE, bootId, "", "")
         assertEquals("B", read().current)
     }
 
     @Test fun repeatedVerificationPreservesLastModeAndUnchangedHashes() {
         seed(current = "B", last = "A")
-        sink().commit(WorkMode.KSU, bootId, "", "")
+        sink().commit(WorkMode.LITE, bootId, "", "")
         assertEquals("A", read().last)
         assertEquals(TestFixtures.HASH_64, read().boot.bootSha256)
     }
@@ -90,7 +90,7 @@ class RootModeCommitSinkTest {
     @Test fun legacyFileWithoutSidecarCanBeUpdated() {
         seed()
         assertTrue(sha.delete())
-        sink().commit(WorkMode.KSU, bootId, "", "")
+        sink().commit(WorkMode.LITE, bootId, "", "")
         assertEquals(Hashes.sha256(modes.readBytes()), sha.readText())
     }
 
@@ -98,7 +98,7 @@ class RootModeCommitSinkTest {
         seed()
         val original = modes.readText()
         sha.writeText("0".repeat(64))
-        assertThrows(IllegalStateException::class.java) { sink().commit(WorkMode.KSU, bootId, "", "") }
+        assertThrows(IllegalStateException::class.java) { sink().commit(WorkMode.LITE, bootId, "", "") }
         assertEquals(original, modes.readText())
     }
 
@@ -112,7 +112,7 @@ class RootModeCommitSinkTest {
             }
             shell(script)
         }
-        assertThrows(IllegalStateException::class.java) { sink.commit(WorkMode.KSU, bootId, "", "") }
+        assertThrows(IllegalStateException::class.java) { sink.commit(WorkMode.LITE, bootId, "", "") }
         assertEquals(99L, read().revision)
         assertEquals("A", read().current)
         assertTrue(staging.listFiles().orEmpty().isEmpty())
@@ -124,7 +124,7 @@ class RootModeCommitSinkTest {
         val sink = sink { script ->
             shell(if (script.contains("/system/bin/printf '%s'")) "base64() { return 1; }\n$script" else script)
         }
-        assertThrows(IllegalStateException::class.java) { sink.commit(WorkMode.KSU, bootId, "", "") }
+        assertThrows(IllegalStateException::class.java) { sink.commit(WorkMode.LITE, bootId, "", "") }
         assertEquals(original, modes.readText())
         assertTrue(staging.listFiles().orEmpty().isEmpty())
         assertEquals(setOf("modes.json", "modes.json.sha256"), control.list().orEmpty().toSet())

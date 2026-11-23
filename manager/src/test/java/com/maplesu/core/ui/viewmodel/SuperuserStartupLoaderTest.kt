@@ -42,9 +42,9 @@ class SuperuserStartupLoaderTest {
     @Test
     fun coldNormalActivationDoesNotFallBackToUltra() = runBlocking {
         var loaded: WorkMode? = null
-        val loader = SuperuserStartupLoader({ null }, { WorkMode.KSU })
+        val loader = SuperuserStartupLoader({ null }, { WorkMode.LITE })
         assertTrue(loader.load({}) { loaded = it })
-        assertEquals(WorkMode.KSU, loaded)
+        assertEquals(WorkMode.LITE, loaded)
     }
 
     @Test
@@ -83,7 +83,7 @@ class SuperuserStartupLoaderTest {
     @Test
     fun backendFailureIsNotReportedAsSuccessfulLoad() = runBlocking {
         val expected = IllegalStateException("BACKEND_UNAVAILABLE")
-        val loader = SuperuserStartupLoader({ WorkMode.KSU }, { null })
+        val loader = SuperuserStartupLoader({ WorkMode.LITE }, { null })
         val failure = runCatching { loader.load({}) { throw expected } }.exceptionOrNull()
         assertTrue(failure === expected)
     }

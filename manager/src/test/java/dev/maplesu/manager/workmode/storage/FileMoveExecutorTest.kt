@@ -55,7 +55,7 @@ class FileMoveExecutorTest {
         outbound: List<MoveEntry> = emptyList(),
         inbound: List<MoveEntry> = emptyList(),
         switchId: String = "sw-1",
-    ) = MovePlan(switchId, WorkMode.LITE, WorkMode.KSU, outbound, inbound, emptyMap())
+    ) = MovePlan(switchId, WorkMode.LITE, WorkMode.LITE, outbound, inbound, emptyMap())
 
     private fun writeLiveTree(path: String) {
         val root = live(path)
@@ -149,29 +149,11 @@ class FileMoveExecutorTest {
     }
 
     @Test
-    fun replayingRollbackDoesNotSwapTheRestoredModuleTreesAgain() {
-        writeLiveFile("/data/adb/modules/ultra/config", "ultra")
-        val normal = File(store(WorkMode.KSU, "/data/adb/modules"), "normal/config")
-        normal.parentFile!!.mkdirs()
-        normal.writeText("normal")
-        val switching = plan(outbound = listOf(entry("/data/adb/modules")),
-            inbound = listOf(entry("/data/adb/modules", owner = WorkMode.KSU)))
-        val executor = executor()
-        val journal = journal()
-        assertTrue(executor.execute(switching, journal).ok)
-        assertTrue(executor.rollback(switching, journal).ok)
-        val retried = executor.rollback(switching, journal)
-        assertTrue(retried.failures.toString(), retried.ok)
-        assertEquals("ultra", live("/data/adb/modules/ultra/config").readText())
-        assertEquals("normal", normal.readText())
-    }
-
-    @Test
     fun inboundMovesStoreTreeToLive() {
-        val storeRootEntry = store(WorkMode.KSU, "/data/adb/modules")
+        val storeRootEntry = store(WorkMode.LITE, "/data/adb/modules")
         File(storeRootEntry, "demo").mkdirs()
         File(storeRootEntry, "demo/module.prop").writeText("id=demo")
-        val inbound = entry("/data/adb/modules", owner = WorkMode.KSU)
+        val inbound = entry("/data/adb/modules", owner = WorkMode.LITE)
         val report = executor().execute(plan(inbound = listOf(inbound)), journal())
         assertTrue(report.ok)
         assertEquals(listOf("/data/adb/modules"), report.movedIn)
@@ -182,12 +164,12 @@ class FileMoveExecutorTest {
     @Test
     fun executionIsOutboundThenInbound() {
         writeLiveTree("/data/adb/maplesu")
-        val inboundStore = store(WorkMode.KSU, "/data/adb/modules")
+        val inboundStore = store(WorkMode.LITE, "/data/adb/modules")
         File(inboundStore, "x").mkdirs()
         val report = executor().execute(
             plan(
                 outbound = listOf(entry("/data/adb/maplesu")),
-                inbound = listOf(entry("/data/adb/modules", owner = WorkMode.KSU)),
+                inbound = listOf(entry("/data/adb/modules", owner = WorkMode.LITE)),
             ),
             journal(),
         )
@@ -285,14 +267,14 @@ class FileMoveExecutorTest {
                 outbound = listOf(
                     entry(
                         "/metadata/ksu", mount = MoveMount.CROSS_MOUNT_COPY,
-                        owner = WorkMode.KSU, shape = MoveEntry.REAL_DIR,
+                        owner = WorkMode.LITE, shape = MoveEntry.REAL_DIR,
                     ),
                 ),
             ),
             journal(),
         )
         assertTrue("failures=${report.failures}", report.ok)
-        val copied = store(WorkMode.KSU, "/metadata/ksu")
+        val copied = store(WorkMode.LITE, "/metadata/ksu")
         assertEquals("root", File(copied, "root.txt").readText())
         assertEquals("child", File(copied, "sub/child.txt").readText())
         assertFalse(source.exists())
@@ -317,12 +299,12 @@ class FileMoveExecutorTest {
 
     @Test
     fun rollbackInboundRestoresStore() {
-        val storeEntry = store(WorkMode.KSU, "/data/adb/modules")
+        val storeEntry = store(WorkMode.LITE, "/data/adb/modules")
         File(storeEntry, "demo").mkdirs()
         File(storeEntry, "demo/module.prop").writeText("id=demo")
         val journal = journal()
         val executor = executor()
-        val executePlan = plan(inbound = listOf(entry("/data/adb/modules", owner = WorkMode.KSU)))
+        val executePlan = plan(inbound = listOf(entry("/data/adb/modules", owner = WorkMode.LITE)))
         assertTrue(executor.execute(executePlan, journal).ok)
         assertTrue(live("/data/adb/modules").isDirectory)
 

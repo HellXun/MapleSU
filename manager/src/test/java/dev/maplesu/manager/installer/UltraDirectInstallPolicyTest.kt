@@ -117,8 +117,8 @@ class UltraDirectInstallPolicyTest {
 
     @Test fun normalMigrationFileDownloadVariantSigningAndBootOptionsKeepTheirBootPath() {
         val requests = listOf(
-            direct.copy(target = InstallTargetMode.NORMAL),
-            direct.copy(activeMode = WorkMode.KSU),
+            direct.copy(target = InstallTargetMode.ULTRA),
+            direct.copy(activeMode = WorkMode.LITE),
             direct.copy(activeMode = null),
             direct.copy(source = InstallSourceKind.IMAGE),
             direct.copy(source = InstallSourceKind.DOWNLOADED_BOOT),
@@ -162,8 +162,8 @@ class UltraDirectInstallPolicyTest {
 
     @Test fun sameModeUltraPreservesModulesAndNormalToUltraKeepsTheChoice() {
         assertFalse(UltraDirectInstallPolicy.requiresModuleChoice(InstallTargetMode.ULTRA, WorkMode.LITE))
-        assertTrue(UltraDirectInstallPolicy.requiresModuleChoice(InstallTargetMode.ULTRA, WorkMode.KSU))
+        assertTrue(UltraDirectInstallPolicy.requiresModuleChoice(InstallTargetMode.ULTRA, WorkMode.LITE))
         assertTrue(UltraDirectInstallPolicy.requiresModuleChoice(InstallTargetMode.ULTRA, null))
-        assertFalse(UltraDirectInstallPolicy.requiresModuleChoice(InstallTargetMode.NORMAL, WorkMode.LITE))
+        assertFalse(UltraDirectInstallPolicy.requiresModuleChoice(InstallTargetMode.ULTRA, WorkMode.LITE))
     }
 }

@@ -47,7 +47,7 @@ class HiddenModeBackendsTest {
         )
         assertEquals(
             HiddenMode.B_KSU,
-            HiddenModeBackends.select(WorkMode.KSU, root, root)!!.mode,
+            HiddenModeBackends.select(WorkMode.LITE, root, root)!!.mode,
         )
         assertNull(HiddenModeBackends.select(null, root, root))
     }

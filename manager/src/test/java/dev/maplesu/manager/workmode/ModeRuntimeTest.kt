@@ -50,7 +50,7 @@ class ModeRuntimeTest {
         record(ModeState.MODE_A_ACTIVE)
         assertTrue(ModeRuntime.activate(WorkMode.LITE, "boot-1", ActivationSource.BOOT_DETECTION))
         record(ModeState.MODE_B_ACTIVE)
-        assertFalse(ModeRuntime.activate(WorkMode.KSU, "boot-1", ActivationSource.PENDING_SWITCH_VERIFIED))
+        assertFalse(ModeRuntime.activate(WorkMode.LITE, "boot-1", ActivationSource.PENDING_SWITCH_VERIFIED))
         assertEquals(WorkMode.LITE, ModeRuntime.active)
     }
 
@@ -95,7 +95,7 @@ class ModeRuntimeTest {
     fun runIfGatesOnActivatedMode() {
         armBootId()
         record(ModeState.MODE_B_ACTIVE)
-        assertTrue(ModeRuntime.activate(WorkMode.KSU, "boot-1", ActivationSource.BOOT_DETECTION))
+        assertTrue(ModeRuntime.activate(WorkMode.LITE, "boot-1", ActivationSource.BOOT_DETECTION))
         assertEquals(2, ModeRuntime.runIfKsu { 2 })
         assertNull(ModeRuntime.runIfLite { 1 })
     }
@@ -117,7 +117,7 @@ class ModeRuntimeTest {
         assertTrue(ModeRuntime.activate(WorkMode.LITE, "boot-1", ActivationSource.BOOT_DETECTION))
         ModeRuntime.requireMode(WorkMode.LITE)
         try {
-            ModeRuntime.requireMode(WorkMode.KSU)
+            ModeRuntime.requireMode(WorkMode.LITE)
             fail("requireMode must throw for mismatched mode")
         } catch (_: IllegalStateException) {
         }
@@ -147,15 +147,15 @@ class ModeRuntimeTest {
     fun overrideForTest_setsCapabilitiesAndActivation() {
         ModeRuntime.overrideForTest(
             ModeActivation.Active(
-                mode = WorkMode.KSU,
+                mode = WorkMode.LITE,
                 bootId = "boot-1",
                 source = ActivationSource.TEST_OVERRIDE,
                 detectedState = ModeState.MODE_B_ACTIVE,
                 activatedAtMillis = 5L,
             ),
         )
-        assertEquals(WorkMode.KSU, ModeRuntime.active)
-        assertEquals(ModeCapabilities.forMode(WorkMode.KSU), ModeRuntime.capabilities)
+        assertEquals(WorkMode.LITE, ModeRuntime.active)
+        assertEquals(ModeCapabilities.forMode(WorkMode.LITE), ModeRuntime.capabilities)
         assertEquals(ActivationSource.TEST_OVERRIDE, (ModeRuntime.activation as ModeActivation.Active).source)
     }
 

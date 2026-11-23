@@ -220,7 +220,7 @@ class MigrationDetectorTest {
             setOf("init_boot"), setOf("init_boot"), 0, 0, 1_000L,
         )
         val eligibility = MigrationDetector.eligibility(info, Fixtures.device(), space)
-        assertEquals(WorkMode.KSU, eligibility.recommendedTarget)
+        assertEquals(WorkMode.LITE, eligibility.recommendedTarget)
         assertEquals(MigrationDetector.TARGET_REASON_KSU, eligibility.recommendedReason)
     }
 

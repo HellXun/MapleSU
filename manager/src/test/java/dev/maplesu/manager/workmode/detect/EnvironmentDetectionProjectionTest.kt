@@ -34,21 +34,6 @@ class EnvironmentDetectionProjectionTest {
     )
 
     @Test
-    fun ksuNormalActivatesKsuWithoutRootEvidence() {
-        val detection = EnvironmentDetectionProjection.override(
-            outcome(EnvironmentVerdict.KSU_NORMAL, WorkMode.KSU),
-            observedAtMillis = 99L,
-        )
-        assertNotNull(detection)
-        assertEquals(ModeState.MODE_B_KERNEL_ONLY, detection?.state)
-        assertEquals(WorkMode.KSU, detection?.state?.activeMode)
-        assertEquals("boot-1", detection?.bootId)
-        assertEquals(99L, detection?.observedAtMillis)
-        assertEquals(EnvironmentDetectionProjection.TRACE_ID, detection?.trace?.firstOrNull()?.id)
-        assertNull("前置覆盖不得声称已开 root 通道", detection?.rootChannel)
-    }
-
-    @Test
     fun notInstalledIsTerminalWithoutAnyMode() {
         val detection = EnvironmentDetectionProjection.override(
             outcome(EnvironmentVerdict.NOT_INSTALLED, null, detail = EnvironmentCheckDetail.SU_ABSENT_NO_ULTRA),
@@ -61,7 +46,7 @@ class EnvironmentDetectionProjectionTest {
     @Test
     fun inheritedStatesOverrideOnlyForKsuAndNotInstalled() {
         val inheritedKsu = EnvironmentDetectionProjection.override(
-            outcome(EnvironmentVerdict.INHERITED, WorkMode.KSU, trigger = null),
+            outcome(EnvironmentVerdict.INHERITED, WorkMode.LITE, trigger = null),
         )
         assertEquals(ModeState.MODE_B_KERNEL_ONLY, inheritedKsu?.state)
 

@@ -30,9 +30,9 @@ internal data class InstallUiState(
     /** 步骤 ①：目标工作模式（默认 Ultra，与 `InstallTargetMode.DEFAULT` 一致）。 */
     val targetMode: InstallTargetMode = InstallTargetMode.DEFAULT,
     /** 步骤 ①：提交时快照的实际目标分区。 */
-    val partition: InstallPartition = InstallPartitionPolicy.NORMAL_DEFAULT,
+    val partition: InstallPartition = InstallPartitionPolicy.ULTRA_FIXED,
     /** 按当前槽位拓扑或已选镜像头确定的分区选项。 */
-    val partitionOptions: List<InstallPartition> = InstallPartitionPolicy.NORMAL_SELECTABLE,
+    val partitionOptions: List<InstallPartition> = InstallPartitionPolicy.optionsFor(InstallTargetMode.ULTRA),
     /** 目标模式 / 分区选择是否可操作（安装或切换进行中禁用，但仍然可见）。 */
     val targetSelectable: Boolean = true,
     /**

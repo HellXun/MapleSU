@@ -5,9 +5,9 @@
   <img src="docs/assets/brand/maplesu-light.png" alt="MapleSU" width="720">
 </picture>
 
-### Kernel-level control. Two work modes. A real kernel manager.
+### Kernel-level control. Kernel-patch SU. A real kernel manager.
 
-Ultra grants SU through kernel patches; Normal carries the KernelSU module ecosystem. One manager runs both, and you switch between them as you need.
+Ultra grants SU through kernel patches and runs KSU-style script modules and Ultra native modules.
 
 [![Android 12+](https://img.shields.io/badge/Android-12%2B-3DDC84?style=flat-square&logo=android&logoColor=white)](#compatibility)
 [![ARM64](https://img.shields.io/badge/ABI-arm64--v8a-57606A?style=flat-square)](#compatibility)
@@ -23,58 +23,24 @@ Ultra grants SU through kernel patches; Normal carries the KernelSU module ecosy
 
 ## MapleSU
 
-MapleSU brings kernel-level root, application authorization and module management into one Android manager. **Ultra** takes the kernel-patch route: it generates a patch for the running kernel on the device, rebuilds the boot image and authorizes through a dedicated SU runtime. **Normal** integrates KernelSU's kernel implementation and module ecosystem. Both share a customizable Material / Miuix interface, and switching between them happens inside the manager.
+MapleSU brings kernel-level root, application authorization and module management into one Android manager. **Ultra** takes the kernel-patch route: it generates a patch for the running kernel on the device, rebuilds the boot image and authorizes through a dedicated SU runtime, with a customizable Material / Miuix interface.
 
 MapleSU targets ARM64 devices running Android 12 or later. See the [build guide](docs/BUILD.md) for build and integration requirements.
 
 ## Features
 
-### Two work modes
-
-<table>
-<tr>
-<td width="50%" valign="top">
+### Ultra · kernel-patch SU
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/assets/brand/ultra-dark.png">
   <img src="docs/assets/brand/ultra-light.png" alt="MapleSU Ultra" width="100%">
 </picture>
 
-**MapleSU Ultra** · kernel-patch SU
-
 - Patches the kernel for SU authorization, with the kernel implementation maintained by MapleSU
 - With no modules installed: 0 visible SELinux policy changes, 0 mounts and SELinux globally Enforcing
 - Eliminates side-channel signatures from policy changes and mounts at the kernel level
 - Generates the patch for the running kernel and rebuilds the boot image on the device
 - Runs KSU-style script modules and supports Ultra native modules
-
-</td>
-<td width="50%" valign="top">
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/brand/normal-dark.png">
-  <img src="docs/assets/brand/normal-light.png" alt="MapleSU Normal" width="100%">
-</picture>
-
-**MapleSU Normal** · KernelSU kernel implementation
-
-- Built on KernelSU, with integration into the KSU module ecosystem
-- KSU modules install and run through their usual `ksud` lifecycle
-- Selects the LKM by KMI and prepares the boot image through KernelSU's installation path
-- Keeps KernelSU's superuser, module and settings interfaces
-
-</td>
-</tr>
-</table>
-
-Both modes share one management interface, with dedicated installation and runtime paths:
-
-| | MapleSU Ultra | MapleSU Normal |
-| --- | --- | --- |
-| Root architecture | Kernel-patch SU, with target-kernel patch generation, runtime authorization and native-module integration | KernelSU kernel implementation, with a dedicated `ksud` integration |
-| Installation | On-device patching and rebuilding of the existing boot kernel | KMI-matched LKM and boot-image ramdisk preparation |
-| Modules | KSU-style script modules and Ultra native modules, with separate execution paths | KSU module ecosystem and lifecycle |
-| Runtime | Kernel-backed SU and versioned native SDK adapters; provider-backed temporary root on supported targets | KernelSU superuser, module and settings interfaces |
 
 See the [module guide](docs/MODULES.md) and [Ultra native module guide](docs/ULTRA_MODULES.md) for development and integration.
 
@@ -107,8 +73,8 @@ Image preparation and partition writes run in distinct stages: preflight checks,
 Grant and revoke root access per app. Supported backends read the authorization table back after each write and restore existing grants at boot; the application SDK checks the caller's real UID and app identity before starting a session.
 </td>
 <td width="50%" valign="top">
-<b>Traceable mode switching</b><br>
-A switch runs through preflight, snapshots, candidate preparation, journaled installation and post-boot verification, and retains its operation identity and recovery state across interruptions.
+<b>Traceable installation</b><br>
+An installation runs through preflight, snapshots, candidate preparation, journaled installation and post-boot verification, and retains its operation identity and recovery state across interruptions.
 </td>
 </tr>
 </table>
@@ -144,9 +110,9 @@ Discover modules through signed catalogs with package size and digest checks, an
 | --- | --- |
 | System | Android 12 or later |
 | Architecture | ARM64 (arm64-v8a) |
-| Kernel | Ultra renders its patch recipe per kernel series, currently GKI 5.10, 5.15, 6.1, 6.6, 6.12 and 6.18; Normal uses KMI-matched KernelSU components |
-| Installation | Direct installation through an existing root channel; temporary root through a compatible provider on supported targets |
-| Modules | Compatibility follows the selected mode, backend version and required kernel interfaces; see [module compatibility](docs/MODULE_COMPATIBILITY.md) |
+| Kernel | Renders its patch recipe per kernel series, currently GKI 5.10, 5.15, 6.1, 6.6, 6.12 and 6.18 |
+| Installation | Direct installation through an existing root channel, or image export for flashing outside the manager |
+| Modules | Compatibility follows the backend version and required kernel interfaces; see [module compatibility](docs/MODULE_COMPATIBILITY.md) |
 
 Device support and release status are defined per version. See the [architecture overview](docs/ARCHITECTURE.md) for the execution paths and component design.
 
@@ -160,10 +126,8 @@ flowchart TD
     UI --> Images["image-core<br/>image preparation"]
     Images --> Install["installer-core<br/>write and recovery transactions"]
     Modes --> Ultra["Ultra<br/>kernel-patch SU"]
-    Modes --> Normal["Normal<br/>KernelSU · ksud"]
     Ultra --> Scripts["KSU-style<br/>script modules"]
     Ultra --> Native["Ultra<br/>native modules"]
-    Normal --> KsuModules["KSU module ecosystem"]
 ```
 
 ## Getting started
@@ -205,7 +169,7 @@ Use `./gradlew.bat` in Windows PowerShell. The [build guide](docs/BUILD.md) list
 
 ## About MapleSU
 
-An Android root manager with two work modes you can switch between. Developer: **MapleAutumn**.
+An Android root manager built on a kernel-patch SU scheme. Developer: **MapleAutumn**.
 
 <div align="center">
 <a href="https://t.me/KernelMapleSU">
@@ -223,7 +187,7 @@ Thanks to the developers and contributors who share their code, designs and expe
 | Project | Relationship to MapleSU |
 | --- | --- |
 | [FinaSU](https://github.com/LyraVoid/FinaSU) | Main reference for UI design and interaction |
-| [KernelSU](https://github.com/tiann/KernelSU) | Primary implementation source and module ecosystem for Normal mode |
+| [KernelSU](https://github.com/tiann/KernelSU) | Reference for the in-kernel manager ABI used by the policy loader |
 | [7kimisu](https://github.com/hartgerinktarcila-design/7kimisu) | Direct base of the manager, with original credits and licensing retained |
 | [KernelPatch](https://github.com/bmax121/KernelPatch) | Open-source work and technical reference for kernel patching |
 | [SKRoot](https://github.com/abcz316/SKRoot-linuxKernelRoot) | Reference for Ultra module adaptation and SU internals; the scope of component integration is in [Credits](CREDITS.md) |
@@ -234,8 +198,7 @@ What MapleSU implements and maintains, and what comes from upstream, recorded se
 
 | Part | Implemented and maintained by MapleSU | Upstream origin |
 | --- | --- | --- |
-| Manager | Mode orchestration, installation transactions, image handling, restricted Binder sessions, client SDK, module inspection, theme and catalog integration, branding and both interfaces | Directly derived from 7kimisu; UI and interaction reference FinaSU |
-| Normal | `ksud` integration, installation path and manager integration | Pinned KernelSU sources with recorded patches |
+| Manager | Installation orchestration, installation transactions, image handling, restricted Binder sessions, client SDK, module inspection, theme and catalog integration, branding and both interfaces | Directly derived from 7kimisu; UI and interaction reference FinaSU |
 | Ultra | Patch-recipe generation, authorization transactions, SDK adapters and module compatibility records | The offline patch core and native SDK are pinned third-party components; component origins are in [Credits](CREDITS.md) |
 | Module policy | Policy parsing, loading and optional backend preparation | Magisk-derived code and libsepol keep their original licenses |
 

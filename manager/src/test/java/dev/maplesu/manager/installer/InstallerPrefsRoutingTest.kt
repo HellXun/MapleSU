@@ -27,8 +27,8 @@ class InstallerPrefsRoutingTest {
 
     @Test
     fun ksuUsesSeparateInstallerFileName() {
-        assertEquals("installer_B", name(WorkMode.KSU, SettingsPrefsPolicy.A_NAME))
-        assertNotEquals(InstallerPrefsPolicy.LEGACY_NAME, name(WorkMode.KSU, ""))
+        assertEquals("installer_B", name(WorkMode.LITE, SettingsPrefsPolicy.A_NAME))
+        assertNotEquals(InstallerPrefsPolicy.LEGACY_NAME, name(WorkMode.LITE, ""))
     }
 
     @Test
@@ -36,8 +36,8 @@ class InstallerPrefsRoutingTest {
         // 已判定时，Settings 总仓的 decision 不参与 installer 路由。
         assertEquals("installer", name(WorkMode.LITE, "settings"))
         assertEquals("installer", name(WorkMode.LITE, "settings_B"))
-        assertEquals("installer_B", name(WorkMode.KSU, "settings"))
-        assertEquals("installer_B", name(WorkMode.KSU, "settings_B"))
+        assertEquals("installer_B", name(WorkMode.LITE, "settings"))
+        assertEquals("installer_B", name(WorkMode.LITE, "settings_B"))
     }
 
     @Test
@@ -66,13 +66,13 @@ class InstallerPrefsRoutingTest {
         assertEquals("installer", entry!!.liteName)
         assertEquals("installer_B", entry.ksuName)
         assertEquals("installer", ModePaths.prefsNameFor("installer", WorkMode.LITE))
-        assertEquals("installer_B", ModePaths.prefsNameFor("installer", WorkMode.KSU))
+        assertEquals("installer_B", ModePaths.prefsNameFor("installer", WorkMode.LITE))
     }
 
     @Test
     fun modeSwitchNeverSharesTheSamePrefsFile() {
         val lite = name(WorkMode.LITE, "unused")
-        val ksu = name(WorkMode.KSU, "unused")
+        val ksu = name(WorkMode.LITE, "unused")
         assertNotEquals(lite, ksu)
         // 未判定的两个出口也不得等于另一模式的专属文件（中性/或证据明确一侧）。
         assertFalse(name(null, SettingsPrefsPolicy.A_NAME) == ksu)

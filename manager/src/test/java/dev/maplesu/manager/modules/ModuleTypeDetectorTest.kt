@@ -136,10 +136,10 @@ class ModuleInstallRouterTest {
 
     @Test
     fun ksuModeRoutesKsuDaemonAndRejectsPro() {
-        val ksu = ModuleInstallRouter.route(WorkMode.KSU, ModuleType.KERNELSU)
+        val ksu = ModuleInstallRouter.route(WorkMode.LITE, ModuleType.KERNELSU)
         assertTrue(ksu.ok)
         assertEquals(ModuleInstallBackend.KSU_DAEMON, ksu.backend)
-        val ultra = ModuleInstallRouter.route(WorkMode.KSU, ModuleType.MAPLESU)
+        val ultra = ModuleInstallRouter.route(WorkMode.LITE, ModuleType.MAPLESU)
         assertFalse(ultra.ok)
         assertEquals(ModuleInstallRouter.UNSUPPORTED_IN_MODE, ultra.code)
         assertTrue(ultra.reason.contains("not supported"))
@@ -167,7 +167,7 @@ class ModuleInstallRouterTest {
         assertEquals(ModuleInstallRouter.CONFIRM_REQUIRED, routing.code)
         assertEquals(
             ModuleInstallRouter.CONFIRM_REQUIRED,
-            ModuleInstallRouter.route(WorkMode.KSU, ModuleType.AMBIGUOUS, ambiguousConfirmed = true).code,
+            ModuleInstallRouter.route(WorkMode.LITE, ModuleType.AMBIGUOUS, ambiguousConfirmed = true).code,
         )
     }
 

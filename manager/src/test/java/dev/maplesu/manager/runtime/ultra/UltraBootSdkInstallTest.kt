@@ -54,6 +54,7 @@ class UltraBootSdkInstallTest {
         override fun rootVerified() = observed("root", root)
         override fun whitelistVerified() = observed("whitelist", whitelist)
         override fun moduleListVerified() = observed("modules", modules)
+        override fun managerSuVerified() = true
         fun run() = UltraBootSdkInstall.ensure(guardStored, this)
     }
 

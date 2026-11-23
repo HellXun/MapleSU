@@ -102,7 +102,7 @@ class UltraStartupAutoActivationTest {
                 UltraAutoPair.complete(UltraEnvironmentProbe.Snapshot(
                     state = if (installed) UltraEnvironmentProbe.State.Running else UltraEnvironmentProbe.State.NotInstalled,
                     kernelRootVerified = local == live && candidateUid == 0,
-                ), current = { local == live }, alreadyPaired = { true }, persist = {}, maintain = {}).paired
+                ), current = { local == live }, alreadyPaired = { true }, persist = {}, verifyManagerSu = { true }, maintain = {}).paired
             },
             retryDetection = { detections++ },
         )

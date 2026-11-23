@@ -97,7 +97,7 @@ class RootExecutionRouterTest {
         val ksu = FakeExecutor(RootBackend.KSU, result = RootExecResult(RootBackend.KSU, 0, "ksu-out"))
         val lite = FakeExecutor(RootBackend.LITE_KERNEL)
         val ultra = FakeExecutor(RootBackend.ULTRA_ENV)
-        val result = router(lite, ultra, mode = { WorkMode.KSU }, ksu = ksu).execute("id")
+        val result = router(lite, ultra, mode = { WorkMode.LITE }, ksu = ksu).execute("id")
         assertEquals(RootBackend.KSU, result.backend)
         assertEquals("ksu-out", result.output)
         assertEquals(1, ksu.calls)
@@ -109,7 +109,7 @@ class RootExecutionRouterTest {
     fun ksuModeWithoutExecutorFallsToUltraThenStructuredNone() {
         val lite = FakeExecutor(RootBackend.LITE_KERNEL)
         val ultra = FakeExecutor(RootBackend.ULTRA_ENV, available = false)
-        val result = router(lite, ultra, mode = { WorkMode.KSU }).execute("id")
+        val result = router(lite, ultra, mode = { WorkMode.LITE }).execute("id")
         assertEquals(RootBackend.NONE, result.backend)
         assertFalse(result.ok)
         // 绝不因为"KSU 后端没装"就偷偷回落到 Lite 内核凭据。
@@ -125,7 +125,7 @@ class RootExecutionRouterTest {
             result = RootExecResult(RootBackend.KSU, -1, "", "KSU_ROOT_CHANNEL_UNAVAILABLE:SHELL_NOT_ROOT"),
         )
         val ultra = FakeExecutor(RootBackend.ULTRA_ENV, available = false)
-        val result = router(FakeExecutor(RootBackend.LITE_KERNEL), ultra, mode = { WorkMode.KSU }, ksu = ksu)
+        val result = router(FakeExecutor(RootBackend.LITE_KERNEL), ultra, mode = { WorkMode.LITE }, ksu = ksu)
             .execute("id")
         assertEquals(RootBackend.KSU, result.backend)
         assertFalse(result.ok)
@@ -139,7 +139,7 @@ class RootExecutionRouterTest {
             RootExecutionRouter(
                 liteKernel = FakeExecutor(RootBackend.LITE_KERNEL),
                 ultraEnv = null,
-                modeProvider = { WorkMode.KSU },
+                modeProvider = { WorkMode.LITE },
             ),
         )
         // 接线前：没有 KSU executor → 结构化 NONE（不伪造）
@@ -243,14 +243,14 @@ class RootExecutionRouterTest {
         val ksuWired = router(
             FakeExecutor(RootBackend.LITE_KERNEL),
             FakeExecutor(RootBackend.ULTRA_ENV),
-            mode = { WorkMode.KSU },
+            mode = { WorkMode.LITE },
             ksu = FakeExecutor(RootBackend.KSU),
         )
         assertEquals(RootBackend.KSU, ksuWired.preferredBackend())
         val ksuUnwired = router(
             FakeExecutor(RootBackend.LITE_KERNEL),
             FakeExecutor(RootBackend.ULTRA_ENV),
-            mode = { WorkMode.KSU },
+            mode = { WorkMode.LITE },
         )
         assertEquals(RootBackend.ULTRA_ENV, ksuUnwired.preferredBackend())
     }

@@ -28,14 +28,14 @@ class SwitchAvailabilityPolicyTest {
         val availability = evaluate()
         assertTrue(availability.canSwitch)
         assertEquals(WorkMode.LITE, availability.current)
-        assertEquals(WorkMode.KSU, availability.target)
+        assertEquals(WorkMode.LITE, availability.target)
         assertEquals("baseline-1", availability.baselineId)
         assertTrue(availability.blockers.isEmpty())
     }
 
     @Test
     fun bActiveCanSwitchToLite() {
-        val availability = evaluate(state = ModeState.MODE_B_ACTIVE, current = WorkMode.KSU)
+        val availability = evaluate(state = ModeState.MODE_B_ACTIVE, current = WorkMode.LITE)
         assertTrue(availability.canSwitch)
         assertEquals(WorkMode.LITE, availability.target)
     }

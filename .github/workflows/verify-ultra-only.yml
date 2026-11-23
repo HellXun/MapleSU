@@ -1,14 +1,13 @@
 name: Verify Ultra-only Kotlin
 
 # Minimal gate for the Ultra-only tree: compiles the Manager's Kotlin without the
-# native provider packaging tasks, whose inputs (shark plants, prebuilt provider
-# binaries) are not part of the public source tree.
+# asset tasks that need private policy bundles and claim payloads, which are not
+# part of the public source tree.
 on:
   workflow_dispatch:
   push:
     paths:
       - 'manager/src/main/java/**'
-      - 'manager/src/ksu/java/**'
       - '.github/workflows/verify-ultra-only.yml'
 
 permissions:
@@ -48,6 +47,5 @@ jobs:
       - name: Compile Manager Kotlin
         run: |
           ./gradlew.bat :manager:compileDebugKotlin --no-daemon --no-build-cache --no-configuration-cache --max-workers=2 `
-            -x :manager:buildJailbreakProviders `
-            -x :manager:packageJailbreakProviders `
-            -x :manager:checkProviderTracelessInvariants
+            -x :manager:packagePolicyHooks `
+            -x :manager:packageUltraManagerClaim

@@ -183,6 +183,8 @@ class EnvironmentResolver(
             if (!ultraChecked) {
                 calls += PROBE_ULTRA
                 ultra = probes.ultraFingerprint()
+                // 读到了"没有"就是明确阴性：null 返回值即终态证据，异常才走 UNKNOWN。
+                ultraChecked = true
             }
         } catch (error: Throwable) {
             return unknown(

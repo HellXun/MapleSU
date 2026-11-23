@@ -41,12 +41,6 @@ MapleSU_Ultra 沿用原 SKRoot(Pro) 原生模块 ABI，现有模块保留 ZIP、
 3. 按宿主检查、安装、启动、WebUI、禁用和卸载等动作填写 `verifiedScopes`，问题组合登记到 `incompatibleScope`。
 4. 添加匹配及相邻组合的回归测试，更新模块、SDK 或内核时同步核对记录。
 
-Manager 原生包识别回归命令：
-
-```shell
-python scripts/tests/test-normal-module-archive.py --out ../module-archive-tests
-```
-
-该脚本使用生产 Java 检查器运行 Kotlin/JUnit 测试，覆盖原生描述、SDK 独立标签常量、旧包混合布局与重复入口识别。
+Manager 原生包识别回归测试位于 `manager/src/test`，由 `./gradlew :manager:testDebugUnitTest` 运行，覆盖原生描述、SDK 独立标签常量、旧包混合布局与重复入口识别。
 
 开发与投稿入口见 [Ultra 原生模块指南](ULTRA_MODULES.md)和[模块仓库指南](MODULE_REPOSITORY.md)。

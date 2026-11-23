@@ -106,22 +106,12 @@ private const val SHELL_REBUILD_MAX_BACKOFF_MS = 60_000L
 // ══════════════════════════════════════════════════════════════════════════
 
 /**
- * 当前模式下 `ksud <subcommand>` 的可执行路径。
+ * `ksud <subcommand>` 的可执行路径：Ultra 的运行时 `<nativeLibraryDir>/libksud.so`。
  *
- * - **Ultra（LITE/未判定）**：行为逐字节不变 —— `<nativeLibraryDir>/libksud.so`；
- * - **Normal（KSU）**：部署后的 `/data/adb/ksud`（`KsuDaemonPolicy.DEPLOYED_KSUD`）。
- *   以前这里恒返回 `libksud.so`，而 APK 里**没有**那个文件（它是 Ultra 的运行时），
- *   于是 Normal 下每条 `execKsud`（sulog/adb_root/feature save…）都必然失败。
- *
- * 部署路径不在本进程 `stat`：`/data/adb` 是 0700 root，app uid 读不到；
- * 内核 rc 的形态就是 `/data/adb/ksud`，直接用（失败会以真实退出码显式暴露）。
+ * Normal 的 `/data/adb/ksud` 部署路径随后端一起删除。
  */
 internal fun getKsuDaemonPath(): String =
-    if (false) {
-        KsuDaemonPolicy.ksuDaemonPath()
-    } else {
-        ksuApp.applicationInfo.nativeLibraryDir + File.separator + "libksud.so"
-    }
+    ksuApp.applicationInfo.nativeLibraryDir + File.separator + "libksud.so"
 
 private fun String.shellQuote(): String = "'" + replace("'", "'\\''") + "'"
 

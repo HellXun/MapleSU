@@ -14,7 +14,6 @@ internal fun requestSystemReboot(context: Context, reason: String): Boolean {
         // Ultra-only：重启只走 Ultra 通道（SDK zygote 重启 / Ultra 根命令）。
         // 越狱 Hook 与 Normal(KSU) 两条旧通道已从本构建移除。
         val backend = RebootDispatcher.backend(
-            normal = false,
             ultraRunning = UltraEnvironmentProbe.isRunning(),
             verifiedUltraIdentity = UltraEnvironmentProbe.usesUltraBackend(app),
         )

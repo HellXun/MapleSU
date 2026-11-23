@@ -11,7 +11,7 @@ class UltraHookIdentityRoutingTest {
         val source = listOf(File(relative), File("manager/$relative")).first { it.isFile }.readText()
         val body = source.substringAfter("fun usesUltraBackend(context: Context): Boolean {")
             .substringBefore("/** Coalesced background probe")
-        val normal = body.indexOf("ModeRuntime.active == WorkMode.KSU")
+        val normal = body.indexOf("ModeRuntime.active == WorkMode.LITE")
         val hook = body.indexOf("if (UltraSdkCredentials.hookWithoutSdk(context)) return false")
         val suppression = body.indexOf("UltraSdkCredentials.suspended(context)")
         val pairing = body.indexOf("UltraKeyPairedStore.matchesVerifiedKey(context, key)")

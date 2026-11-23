@@ -109,7 +109,7 @@ class SnapshotRestoreMergeTest {
         val appDir = TestFixtures.tempDir("restore-empty-app").toFile()
         val storeRoot = TestFixtures.tempDir("restore-empty-store").toFile()
         val outcome = restorer(appDir, storeRoot).restore(
-            RestoreRequest(WorkMode.KSU, allowOverwrite = false, reason = RestoreReason.USER_REQUEST),
+            RestoreRequest(WorkMode.LITE, allowOverwrite = false, reason = RestoreReason.USER_REQUEST),
         )
         assertTrue(outcome.result.blockers.contains(SnapshotErrors.SNAPSHOT_NOT_FOUND))
         assertTrue(outcome.settingsToApply.isEmpty())

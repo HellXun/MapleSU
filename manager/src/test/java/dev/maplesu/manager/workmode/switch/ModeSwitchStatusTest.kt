@@ -55,7 +55,7 @@ class ModeSwitchStatusTest {
         assertFalse(status.requiresExternalRecovery)
         assertNull(status.externalRecovery)
         assertEquals(WorkMode.LITE, status.fromMode)
-        assertEquals(WorkMode.KSU, status.toMode)
+        assertEquals(WorkMode.LITE, status.toMode)
     }
 
     @Test

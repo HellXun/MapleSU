@@ -170,16 +170,6 @@ public final class BinderAdmissionColdClient {
             if (!io.getBoolean("stdio") || io.getInt("exitCode", -1) != 37 ||
                 !output.equals(new String(INPUT, StandardCharsets.UTF_8)) || !errors.equals(ERROR))
                 throw new IOException("BINDER_ADMISSION_STDIO_MISMATCH: " + bounded(io.toString()));
-            if (args.length == 3 && args[2].equals("sessions")) {
-                stage.set("real_root_sessions");
-                BinderAdmissionRealSessionClient.run(root, report);
-            } else if (args.length == 3 && args[2].equals("extended")) {
-                stage.set("extended_root_sessions");
-                BinderAdmissionRealSessionClient.runExtended(root, report);
-            } else if (args.length == 3 && args[2].equals("hold")) {
-                stage.set("held_root_session");
-                BinderAdmissionRealSessionClient.runHold(root, report);
-            }
             report.put("status", "pass");
             stage.set("complete");
             exit = 0;

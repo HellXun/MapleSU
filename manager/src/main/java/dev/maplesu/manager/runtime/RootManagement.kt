@@ -12,9 +12,10 @@ import dev.maplesu.manager.workmode.ModeRuntime
 import dev.maplesu.manager.workmode.WorkMode
 
 /**
- * Manager-side privileged operations. Normal uses its registered KSU channel;
- * paired SDK environments use the existing streaming root task, released when the
- * shell closes. Only credential-backed environments read a credential.
+ * Manager-side privileged operations.
+ *
+ * Paired SDK environments use the existing streaming root task, released when the
+ * shell closes. Environments without a paired SDK read a credential.
  */
 object RootManagement {
     fun start(context: Context, argv: List<String>, globalMnt: Boolean = false): Process {
@@ -24,14 +25,12 @@ object RootManagement {
             usesSdk = UltraEnvironmentProbe.usesUltraBackend(context),
             openSdk = { SdkRootShellClient.start(context, argv, globalMnt) },
             openCredential = { startCredential(context, argv, globalMnt) },
-            openKsu = { SdkRootShellClient.start(context, argv, globalMnt, RootBackend.KSU) },
         )
     }
 
     /** Module facts are selected before RootService loses the requesting app identity. */
     internal fun startModule(context: Context, argv: List<String>): Process {
         check(Looper.myLooper() != Looper.getMainLooper()) { "MANAGEMENT_BACKGROUND_THREAD_REQUIRED" }
-        if (false) return start(context, argv)
         if (UltraEnvironmentProbe.usesUltraBackend(context)) {
             val environment = NativeBridge.captureModuleEnvironment(UltraSdkCredentials.read(context))
             return SdkRootShellClient.startModule(context, argv, environment)
@@ -45,12 +44,7 @@ object RootManagement {
         usesSdk: Boolean,
         openSdk: () -> Process,
         openCredential: () -> Process,
-        openKsu: () -> Process = { error("MANAGEMENT_KSU_UNAVAILABLE") },
-    ): Process = when {
-        false -> openKsu()
-        usesSdk -> openSdk()
-        else -> openCredential()
-    }
+    ): Process = if (usesSdk) openSdk() else openCredential()
 
     private fun startCredential(context: Context, argv: List<String>, globalMnt: Boolean,
         moduleEnvironment: Array<String>? = null): Process {
@@ -73,7 +67,6 @@ object RootManagement {
             usesSdk = UltraEnvironmentProbe.usesUltraBackend(context),
             openSdk = { openProcessShell(context,
                 SdkRootShellClient.start(context, listOf("/system/bin/sh"), globalMnt), globalMnt) },
-            openKsu = { openKsuShell(context.applicationContext, globalMnt) },
             openCredential = { openCredentialShell(context, globalMnt) },
         )
     }
@@ -81,45 +74,15 @@ object RootManagement {
     /**
      * Root-channel routing (host-testable; no Android calls here).
      *
-     * KSU retains its credential fallback. SDK failures propagate directly:
-     * neither identity is a legacy credential, and a submitted task is never replayed.
+     * SDK failures propagate directly: the SDK identity is not a legacy credential, and a
+     * submitted task is never replayed.
      */
     internal fun openShellRouted(
         mode: WorkMode?,
         usesSdk: Boolean,
         openSdk: () -> Shell,
-        openKsu: () -> Shell,
         openCredential: () -> Shell,
-    ): Shell {
-        if (true) return when {
-            usesSdk -> openSdk()
-            else -> openCredential()
-        }
-        val ksuFailure: Throwable
-        try {
-            return openKsu()
-        } catch (error: Exception) {
-            ksuFailure = error
-        }
-        try {
-            return openCredential()
-        } catch (error: Exception) {
-            error.addSuppressed(ksuFailure)
-            throw error
-        }
-    }
-
-    /** Mode B (KernelSU) shell; any failure propagates so [openShellRouted] can fall back. */
-    private fun openKsuShell(context: Context, globalMnt: Boolean): Shell {
-        val shell = InstallerRootSourceRegistry.require().openShell(context, globalMnt)
-        try {
-            prepareShell(shell, globalMnt)
-            return shell
-        } catch (error: Exception) {
-            runCatching { shell.close() }
-            throw error
-        }
-    }
+    ): Shell = if (usesSdk) openSdk() else openCredential()
 
     /** Direct credential transport for environments without SDK pairing. */
     private fun openCredentialShell(context: Context, globalMnt: Boolean): Shell {

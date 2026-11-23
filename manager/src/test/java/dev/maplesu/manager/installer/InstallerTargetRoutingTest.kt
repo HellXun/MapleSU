@@ -25,8 +25,8 @@ class InstallerTargetRoutingTest {
 
     @Test fun neutralTaskReceiptSurvivesNormalActivation() {
         val records = mapOf(ModePaths.NEUTRAL_PREFS to (task to "normal"))
-        assertEquals(InstallTargetMode.NORMAL, target(null, records))
-        assertEquals(InstallTargetMode.NORMAL, target(WorkMode.KSU, records))
+        assertEquals(InstallTargetMode.ULTRA, target(null, records))
+        assertEquals(InstallTargetMode.ULTRA, target(WorkMode.LITE, records))
     }
 
     @Test fun anUnrelatedNeutralTaskDoesNotOverrideTheRequestedTask() {
@@ -34,8 +34,8 @@ class InstallerTargetRoutingTest {
             ModePaths.NEUTRAL_PREFS to ("another-task" to "ultra"),
             InstallerPrefsPolicy.LEGACY_NAME to (task to "normal"),
         )
-        assertEquals(InstallTargetMode.NORMAL, target(WorkMode.LITE, records))
-        assertNull(target(WorkMode.KSU, mapOf(ModePaths.NEUTRAL_PREFS to ("another-task" to "ultra"))))
+        assertEquals(InstallTargetMode.ULTRA, target(WorkMode.LITE, records))
+        assertNull(target(WorkMode.LITE, mapOf(ModePaths.NEUTRAL_PREFS to ("another-task" to "ultra"))))
     }
 
     @Test fun conflictingOrCorruptNeutralReceiptsRemainRejectedAfterActivation() {
@@ -46,13 +46,13 @@ class InstallerTargetRoutingTest {
             )
             assertNull(target(null, records))
             assertNull(target(WorkMode.LITE, records))
-            assertNull(target(WorkMode.KSU, records))
+            assertNull(target(WorkMode.LITE, records))
         }
     }
 
     @Test fun receiptLookupDoesNotChangeWhereModeSettingsAreWritten() {
         assertEquals("installer", InstallerPrefsPolicy.name(WorkMode.LITE, SettingsPrefsPolicy.B_NAME))
-        assertEquals("installer_B", InstallerPrefsPolicy.name(WorkMode.KSU, SettingsPrefsPolicy.A_NAME))
+        assertEquals("installer_B", InstallerPrefsPolicy.name(WorkMode.LITE, SettingsPrefsPolicy.A_NAME))
         assertEquals(ModePaths.NEUTRAL_PREFS, InstallerPrefsPolicy.name(null, ModePaths.NEUTRAL_PREFS))
     }
 

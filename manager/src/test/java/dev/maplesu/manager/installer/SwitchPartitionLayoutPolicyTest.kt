@@ -55,9 +55,9 @@ class SwitchPartitionLayoutPolicyTest {
 
     @Test
     fun ksuTargetUsesBootWhenNoIndependentInitBootExists() {
-        SwitchPartitionLayoutPolicy.requireTargetLayout(snapshot("boot", "init_boot"), WorkMode.KSU)
+        SwitchPartitionLayoutPolicy.requireTargetLayout(snapshot("boot", "init_boot"), WorkMode.LITE)
         SwitchPartitionLayoutPolicy.requireTargetLayout(snapshot("boot"), WorkMode.LITE)
-        SwitchPartitionLayoutPolicy.requireTargetLayout(snapshot("boot"), WorkMode.KSU)
+        SwitchPartitionLayoutPolicy.requireTargetLayout(snapshot("boot"), WorkMode.LITE)
     }
 
     @Test

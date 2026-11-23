@@ -21,7 +21,7 @@ class HomeUltraStatusRefreshTest {
     }
 
     @Test fun recognizedKernelIdentityDoesNotAdvertiseExternalRootMigration() {
-        assertFalse(state(root = true).copy(environmentMode = WorkMode.KSU).showMigrationEntry)
+        assertFalse(state(root = true).copy(environmentMode = WorkMode.LITE).showMigrationEntry)
     }
 
     @Test fun externalRootStillOffersMigration() {
@@ -130,7 +130,7 @@ class HomeUltraStatusRefreshTest {
     @Test fun newBootOrModeChangeDoesNotReuseThePreviousUltraResult() {
         val failed = project(state().copy(environmentFailure = HomeEnvironmentFailure.FAILED))
         assertTrue(failed.showInstalledStatus)
-        for (mode in listOf(null, WorkMode.KSU)) {
+        for (mode in listOf(null, WorkMode.LITE)) {
             val changed = project(failed, mode = mode)
             assertFalse(changed.ultraBrandVisible)
             assertFalse(changed.showInstalledStatus)
@@ -161,7 +161,7 @@ class HomeUltraStatusRefreshTest {
     }
 
     @Test fun normalKsuKeepsItsOriginalInstalledBranch() {
-        val normal = project(state(root = true).copy(ksuVersion = 123), mode = WorkMode.KSU)
+        val normal = project(state(root = true).copy(ksuVersion = 123), mode = WorkMode.LITE)
         assertFalse(normal.ultraBrandVisible)
         assertTrue(normal.showInstalledStatus)
         assertFalse(normal.showEnvironmentStatusCard)

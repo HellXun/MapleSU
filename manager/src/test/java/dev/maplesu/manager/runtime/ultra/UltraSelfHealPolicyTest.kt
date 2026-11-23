@@ -47,7 +47,7 @@ class UltraSelfHealPolicyTest {
 
     @Test
     fun ksuModeNeverActs() {
-        val decision = UltraSelfHealPolicy.decide(facts(mode = WorkMode.KSU, rootUid = 0))
+        val decision = UltraSelfHealPolicy.decide(facts(mode = WorkMode.LITE, rootUid = 0))
         assertEquals(SelfHealSkip.KSU_MODE, (decision as SelfHealDecision.Skip).reason)
     }
 

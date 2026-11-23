@@ -34,7 +34,7 @@ class ModuleTypeUiTest {
 
     @Test
     fun ksuModeKsuModuleIsSupported() {
-        val routing = ModuleTypeUi.routeWithChoice(evidence(ModuleType.KERNELSU), WorkMode.KSU)
+        val routing = ModuleTypeUi.routeWithChoice(evidence(ModuleType.KERNELSU), WorkMode.LITE)
         assertTrue(routing.ok)
         assertEquals(ModuleInstallBackend.KSU_DAEMON, routing.backend)
     }
@@ -42,12 +42,12 @@ class ModuleTypeUiTest {
     @Test
     fun ksuModeUltraModuleIsUnsupportedAndDialogDisabled() {
         val ev = evidence(ModuleType.MAPLESU)
-        val routing = ModuleTypeUi.routeWithChoice(ev, WorkMode.KSU)
+        val routing = ModuleTypeUi.routeWithChoice(ev, WorkMode.LITE)
         assertFalse(routing.ok)
         assertEquals(ModuleInstallRouter.UNSUPPORTED_IN_MODE, routing.code)
-        val model = ModuleTypeUi.dialogModel(ev, WorkMode.KSU)
+        val model = ModuleTypeUi.dialogModel(ev, WorkMode.LITE)
         assertFalse(model.installEnabled)
-        assertTrue(ModuleTypeUi.unsupportedInMode(ev, WorkMode.KSU))
+        assertTrue(ModuleTypeUi.unsupportedInMode(ev, WorkMode.LITE))
         assertFalse(ModuleTypeUi.unsupportedInMode(ev, WorkMode.LITE))
     }
 
@@ -74,8 +74,8 @@ class ModuleTypeUiTest {
             ModuleTypeUi.routeWithChoice(ev, WorkMode.LITE, ModuleType.MAPLESU).backend,
         )
         // B 模式选择 KSU 可用、选择 Ultra 明确不支持。
-        assertTrue(ModuleTypeUi.routeWithChoice(ev, WorkMode.KSU, ModuleType.KERNELSU).ok)
-        assertFalse(ModuleTypeUi.routeWithChoice(ev, WorkMode.KSU, ModuleType.MAPLESU).ok)
+        assertTrue(ModuleTypeUi.routeWithChoice(ev, WorkMode.LITE, ModuleType.KERNELSU).ok)
+        assertFalse(ModuleTypeUi.routeWithChoice(ev, WorkMode.LITE, ModuleType.MAPLESU).ok)
     }
 
     @Test
@@ -134,10 +134,10 @@ class ModuleTypeUiTest {
     @Test
     fun ambiguousInKsuModeStillRequiresChoiceNotAutoPro() {
         val ev = evidence(ModuleType.AMBIGUOUS)
-        val model = ModuleTypeUi.dialogModel(ev, WorkMode.KSU)
+        val model = ModuleTypeUi.dialogModel(ev, WorkMode.LITE)
         assertFalse(model.installEnabled)
         assertTrue(model.requiresChoice)
         // 未选择时不能默认走 Ultra（B 模式不支持）。
-        assertFalse(ModuleTypeUi.routeWithChoice(ev, WorkMode.KSU).ok)
+        assertFalse(ModuleTypeUi.routeWithChoice(ev, WorkMode.LITE).ok)
     }
 }

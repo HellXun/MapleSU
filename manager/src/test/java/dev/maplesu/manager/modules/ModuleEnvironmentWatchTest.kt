@@ -72,14 +72,14 @@ class ModuleEnvironmentWatchTest {
         val pending = async(start = CoroutineStart.UNDISPATCHED) {
             ModuleEnvironmentWatch.awaitReady(ModuleWaitReason.MODE_UNRESOLVED, 15_000)
         }
-        activate(WorkMode.KSU)
+        activate(WorkMode.LITE)
         assertFalse(pending.isCompleted)
         ModuleBackendPorts.ksuFactory = { error("Readiness does no backend I/O") }
         assertTrue(withTimeout(1_000) { pending.await() })
     }
 
     @Test fun failedKsuWiringIsNeverReportedAsReady() = runBlocking {
-        activate(WorkMode.KSU)
+        activate(WorkMode.LITE)
         ModuleBackendPorts.markWiringFailed("MODULE_WIRING_FAILED")
         assertFalse(ModuleEnvironmentWatch.awaitReady(ModuleWaitReason.KSU_BACKEND_UNWIRED, 15_000))
         assertEquals("MODULE_WIRING_FAILED", ModuleBackendPorts.wiringFailureCode)

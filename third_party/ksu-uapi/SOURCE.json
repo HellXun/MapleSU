@@ -1,0 +1,13 @@
+{
+  "repository": "https://github.com/tiann/KernelSU",
+  "commit": "f4603d14bd7f3bf21206d6f7c622ddf1c049ade3",
+  "extractedFrom": "third_party/kernelsu/applied/uapi/ (removed in this Ultra-only branch)",
+  "reason": "module-policy talks to the in-kernel manager fd and needs the ioctl/struct definitions",
+  "license": "GPL-2.0-only",
+  "hash_normalization": "CRLF to LF",
+  "files": {
+    "README.md": "33d37456fd3a95fa7f8dedd9b32d54832ca99bbb62a1049dcaabfce8ed251eb8",
+    "uapi/app_profile.h": "dffad173122bb7bb183a61b5c24269e3cb36e3d4f22598cd34c0130945bed615",
+    "uapi/supercall.h": "7d0e9eb474c937251f95d4ce1c9c553eaa2534d206b75e39b0a1e7cbc1e8c5ea"
+  }
+}

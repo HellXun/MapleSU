@@ -37,25 +37,21 @@ class SelinuxRestorerTest {
     @Test
     fun alreadyEnforcingDoesNotTouchRoot() {
         val ultra = FakeChannel()
-        val normal = FakeChannel()
-        val result = AndroidSelinuxRestorer(ultra, normal) { "Enforcing" }.ensureEnforcing()
+        val result = AndroidSelinuxRestorer(ultra) { "Enforcing" }.ensureEnforcing()
         assertTrue(result.enforcing)
         assertFalse("已 Enforcing 不得执行任何根命令", result.attempted)
         assertTrue(ultra.scripts.isEmpty())
-        assertTrue(normal.scripts.isEmpty())
     }
 
     @Test
     fun permissiveRunsSetenforceAndConfirmsByReadBack() {
         val ultra = FakeChannel(enforceOutput = "Enforcing")
-        val normal = FakeChannel()
-        val result = AndroidSelinuxRestorer(ultra, normal) { "Permissive" }.ensureEnforcing()
+        val result = AndroidSelinuxRestorer(ultra) { "Permissive" }.ensureEnforcing()
 
         assertTrue(result.enforcing)
         assertTrue(result.attempted)
         assertTrue("恢复成功后必须做 id -u 活性探针", result.rootAlive)
         assertEquals(2, ultra.scripts.size)
-        assertTrue("Normal 通道不应被调用: ${normal.scripts}", normal.scripts.isEmpty())
 
         val script = ultra.scripts.first()
         assertTrue("必须包含 setenforce 1: $script", script.contains("setenforce 1"))
@@ -105,22 +101,9 @@ class SelinuxRestorerTest {
     }
 
     @Test
-    fun normalChannelIsUsedWhenUltraUnavailable() {
-        val ultra = FakeChannel(fail = true)
-        val normal = FakeChannel(enforceOutput = "Enforcing", livenessOutput = "0")
-        val result = AndroidSelinuxRestorer(ultra, normal) { "Permissive" }.ensureEnforcing()
-
-        assertTrue(result.enforcing)
-        assertTrue(result.rootAlive)
-        assertEquals("Ultra 先试一次", 1, ultra.scripts.size)
-        assertTrue("Normal 必须接手: ${normal.scripts}", normal.scripts.isNotEmpty())
-    }
-
-    @Test
     fun allChannelsFailReturnsRealStateNotFakeSuccess() {
         val ultra = FakeChannel(fail = true)
-        val normal = FakeChannel(fail = true)
-        val result = AndroidSelinuxRestorer(ultra, normal) { "Permissive" }.ensureEnforcing()
+        val result = AndroidSelinuxRestorer(ultra) { "Permissive" }.ensureEnforcing()
 
         assertFalse(result.enforcing)
         assertEquals(SelinuxRestoreResult.PERMISSIVE, result.status)
@@ -160,7 +143,7 @@ class SelinuxRestorerTest {
     @Test
     fun channelThrowingIsFailureNotFakeSuccess() {
         val throwing = SelinuxRootChannel { error("channel boom") }
-        val result = AndroidSelinuxRestorer(throwing, throwing) { "Permissive" }.ensureEnforcing()
+        val result = AndroidSelinuxRestorer(throwing) { "Permissive" }.ensureEnforcing()
         assertFalse("通道抛异常绝不算成功", result.enforcing)
         assertTrue(result.attempted)
     }

@@ -191,7 +191,7 @@ class WebUiOwnerScopeJvmTest {
 
     @Test fun ksuSnapshotDoesNotProduceOrCaptureUltraOwner() {
         page("ksu-observation", a).use {
-            ModeRuntime.active = WorkMode.KSU
+            ModeRuntime.active = WorkMode.LITE
             observe(b)
             assertNull(UltraEnvironmentProbe.webUiOwnerScope(context))
             assertTrue(it.bridge.io().canOpenStream())

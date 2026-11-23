@@ -6,7 +6,6 @@ The artwork in [`brand/`](brand/) is rendered by [`tools/brand/render_brand_bann
 | --- | --- | --- |
 | `brand/maplesu-dark.png` · `brand/maplesu-light.png` | 1800 × 520 | README header: the About MapleSU wordmark, with the credits microprinted inside the glyphs |
 | `brand/ultra-dark.png` · `brand/ultra-light.png` | 1032 × 288 | Ultra mode banner: square grid in Ultra violet |
-| `brand/normal-dark.png` · `brand/normal-light.png` | 1032 × 288 | Normal mode banner: round dots. In the Manager they follow the theme colour; the documentation uses the Material 3 primary of the built-in Blue preset |
 | `brand/community-{zh,en,de,ru}-{dark,light}.png` | 1200 × 208 | The About dialog's channel line: Telegram · @KernelMapleSU, one label per README language |
 | `brand/social-preview.png` | 1280 × 640 | Repository social preview (Settings → General → Social preview) |
 | `banner.png` | 1032 × 300 | Original capture of the Manager's About MapleSU banner |

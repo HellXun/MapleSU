@@ -167,9 +167,9 @@ class HiddenHostPolicyTest {
     @Test
     fun pickerEntryVisibleInBothModesButNotWhenAlreadyHidden() {
         assertTrue(HiddenHostPolicy.canOpenHostPicker(WorkMode.LITE, LiteHiddenState.OFF))
-        assertTrue("B 模式同一入口", HiddenHostPolicy.canOpenHostPicker(WorkMode.KSU, LiteHiddenState.OFF))
+        assertTrue("B 模式同一入口", HiddenHostPolicy.canOpenHostPicker(WorkMode.LITE, LiteHiddenState.OFF))
         assertFalse(HiddenHostPolicy.canOpenHostPicker(WorkMode.LITE, LiteHiddenState.ON))
-        assertFalse("UNKNOWN 保守按 ON", HiddenHostPolicy.canOpenHostPicker(WorkMode.KSU, LiteHiddenState.UNKNOWN))
+        assertFalse("UNKNOWN 保守按 ON", HiddenHostPolicy.canOpenHostPicker(WorkMode.LITE, LiteHiddenState.UNKNOWN))
     }
 
     // 14

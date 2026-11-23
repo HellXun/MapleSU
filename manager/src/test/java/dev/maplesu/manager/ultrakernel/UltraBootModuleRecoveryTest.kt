@@ -2,7 +2,6 @@ package dev.maplesu.manager.ultrakernel
 
 import dev.maplesu.image.BootImageInspector
 import dev.maplesu.image.UltraInitBootProducer
-import dev.maplesu.manager.ksu.KsuRootCommandRunner
 import dev.maplesu.manager.workmode.WorkMode
 import dev.maplesu.manager.workmode.service.ModeSwitchCandidateInput
 import dev.maplesu.manager.workmode.service.ModeSwitchSourceRecovery
@@ -41,8 +40,7 @@ class UltraBootModuleRecoveryTest {
 
     @Test fun bootSourceRecoveryUsesOwnedRamdiskInsteadOfKernelInverse() {
         val input = fixture(true)
-        val recovery = ModeSwitchSourceRecovery(assets, temporary.newFolder(), emptyList(), "unused-ksud",
-            KsuRootCommandRunner { _, _ -> error("UNEXPECTED_ROOT_COMMAND") })
+        val recovery = ModeSwitchSourceRecovery(assets, temporary.newFolder(), emptyList())
         val result = recovery.recover(WorkMode.LITE, "boot", input.installed, temporary.newFolder(), true)
         assertTrue(result.code + ":" + result.detail, result.ok)
         assertEquals("ultra:boot:owned-writes-restored", result.structureEvidence)
@@ -62,8 +60,7 @@ class UltraBootModuleRecoveryTest {
             this[at] = (this[at].toInt() xor 1).toByte()
         })
         val before = input.installed.readBytes()
-        val result = ModeSwitchSourceRecovery(assets, temporary.newFolder(), emptyList(), "unused-ksud",
-            KsuRootCommandRunner { _, _ -> error("UNEXPECTED_ROOT_COMMAND") })
+        val result = ModeSwitchSourceRecovery(assets, temporary.newFolder(), emptyList())
             .recover(WorkMode.LITE, "boot", input.installed, temporary.newFolder(), true)
         assertFalse(result.ok)
         assertNull(result.image)

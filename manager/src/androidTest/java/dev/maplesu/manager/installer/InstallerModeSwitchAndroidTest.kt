@@ -66,11 +66,4 @@ class InstallerModeSwitchAndroidTest {
         assertFalse(InstallerPending.isPendingSwitchState("VERIFIED"))
     }
 
-    @Test
-    fun ksuSourceIsSelectedEvenWithoutKernelProof() {
-        // 2026-11-01: the in-service kernel proof is evidence, not a gate; the KSU source is always
-        // selected and InstallerRootSession degrades to another transport instead of refusing.
-        assertEquals(RootSource.KSU_NATIVE, RootSourcePolicy.sourceFor(WorkMode.KSU, false))
-        assertEquals(RootSource.KSU_NATIVE, RootSourcePolicy.sourceFor(WorkMode.KSU, true))
-    }
 }

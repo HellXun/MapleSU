@@ -77,7 +77,7 @@ class UltraIdentityMatrixTest {
             var writes = 0
             var maintenance = 0
             val pairing = UltraAutoPair.complete(snapshot, current = { valid }, alreadyPaired = { paired },
-                persist = { writes++ }, maintain = { maintenance++ })
+                persist = { writes++ }, verifyManagerSu = { true }, maintain = { maintenance++ })
             assertEquals(root, pairing.paired)
             assertEquals(if (root && !paired) 1 else 0, writes)
             assertEquals(if (root) 1 else 0, maintenance)
@@ -115,7 +115,7 @@ class UltraIdentityMatrixTest {
                 // The production guard rechecks temporary ownership before any permanent write.
                 current = { false },
                 alreadyPaired = { pairedReads++; historicallyPaired },
-                persist = { writes++ }, maintain = { maintenance++ })
+                persist = { writes++ }, verifyManagerSu = { true }, maintain = { maintenance++ })
             assertFalse(result.paired)
             assertEquals("ULTRA_KEY_CHANGED", result.reason)
             assertEquals(0, pairedReads)

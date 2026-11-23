@@ -46,7 +46,7 @@ class ModuleTypeChoiceContractTest {
             ModuleTypeUi.installEnabled(evidence, WorkMode.LITE, it)
         }.toSet())
         assertEquals(listOf(ModuleType.KERNELSU), options.filter {
-            ModuleTypeUi.installEnabled(evidence, WorkMode.KSU, it)
+            ModuleTypeUi.installEnabled(evidence, WorkMode.LITE, it)
         })
         assertFalse(ModuleTypeUi.installEnabled(evidence, WorkMode.LITE, null))
     }
