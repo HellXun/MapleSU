@@ -9311,11 +9311,6 @@
       "sha256": "e2b213ab6c7ef480c9d77058d168aa1d7bf9435d2efdee308fc000fa7cf40929"
     },
     {
-      "path": "manager/src/main/jniLibs/arm64-v8a/libksud_ksu.so",
-      "bytes": 26358976,
-      "sha256": "7704c4e38d546050fb4a1d88b3a48d714cc697c92941adf46a7def58a4e350cd"
-    },
-    {
       "path": "manager/src/main/jniLibs/arm64-v8a/libmaplesu_ksu.so",
       "bytes": 186256,
       "sha256": "b72c44fb0d92dd51891c621304c64a1a2e2d377eef9768fbf894bd81a3a04ed6"
