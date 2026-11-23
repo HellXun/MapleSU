@@ -1,0 +1,49 @@
+name: Verify Ultra-only Kotlin
+
+# Minimal gate for the Ultra-only tree: compiles the Manager's Kotlin without the
+# native provider packaging tasks, whose inputs (shark plants, prebuilt provider
+# binaries) are not part of the public source tree.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'manager/src/main/java/**'
+      - 'manager/src/ksu/java/**'
+      - '.github/workflows/verify-ultra-only.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-ultra-only-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  kotlin:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Android SDK packages
+        run: |
+          & "$env:ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager.bat" 'platforms;android-37.0' 'build-tools;37.0.0' 'cmake;3.22.1' 'ndk;26.1.10909125'
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          "ANDROID_SDK_ROOT=$env:ANDROID_HOME" >> $env:GITHUB_ENV
+      - name: Compile Manager Kotlin
+        run: |
+          ./gradlew.bat :manager:compileDebugKotlin --no-daemon --no-build-cache --no-configuration-cache --max-workers=2 `
+            -x :manager:buildJailbreakProviders `
+            -x :manager:packageJailbreakProviders `
+            -x :manager:checkProviderTracelessInvariants
