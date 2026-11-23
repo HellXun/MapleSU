@@ -41,6 +41,10 @@ jobs:
           & "$env:ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager.bat" 'platforms;android-37.0' 'build-tools;37.0.0' 'cmake;3.22.1' 'ndk;26.1.10909125'
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           "ANDROID_SDK_ROOT=$env:ANDROID_HOME" >> $env:GITHUB_ENV
+      - name: Install native Python requirements
+        run: |
+          python -m pip install -r requirements-native.txt
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Compile Manager Kotlin
         run: |
           ./gradlew.bat :manager:compileDebugKotlin --no-daemon --no-build-cache --no-configuration-cache --max-workers=2 `
