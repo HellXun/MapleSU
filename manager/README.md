@@ -16,7 +16,7 @@ The Android app (`:manager`): UI, mode detection and routing, authorization, ins
 | `src/themeTest/` | The manifest that debug builds use for presentation tests, which must not bootstrap root |
 | `proguard-rules.pro`, `lint-baseline.xml` | Shrinker rules and the accepted lint baseline |
 
-The module also compiles four source roots from [`jailbreak-providers/`](../jailbreak-providers/README.md), so provider work stays reviewable in one place.
+The module also compiles `third_party/t3-sdk/src/main/java` (the Ultra side-channel transport). The former provider source roots under [`jailbreak-providers/`](../jailbreak-providers/README.md) were removed; only the Ultra kernel-side inputs remain.
 
 ## Build and test
 

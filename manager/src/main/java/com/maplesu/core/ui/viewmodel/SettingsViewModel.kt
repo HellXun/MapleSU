@@ -1014,12 +1014,6 @@ class SettingsViewModel(
         }
     }
 
-    fun setAutoJailbreak(enabled: Boolean) {
-        localRevision.incrementAndGet()
-        repo.autoJailbreak = enabled
-        _uiState.update { it.copy(autoJailbreak = enabled) }
-    }
-
     fun setUseSoftReboot(enabled: Boolean) {
         localRevision.incrementAndGet()
         repo.useSoftReboot = enabled

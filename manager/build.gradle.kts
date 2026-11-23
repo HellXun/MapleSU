@@ -203,30 +203,15 @@ android {
         // （本构建 assets 里已无任何 `.xz`）。若将来重新随包 xz 资产，必须把这条加回来，
         // 否则 AAPT2 会再 deflate 一遍；**绝不能**把 "img" 加进来（104 MiB 裸镜像会直接爆体积闸门）。
     }
-    // Provider, lease and artefact Java live in their own tree so the jailbreak
-    // provider work stays reviewable and independent of the runtime sources.
-    sourceSets["main"].java.srcDir(rootProject.file("jailbreak-providers/android/src/main/java"))
+    // 越狱 provider 树已删除（ultra-only）；t3-sdk 仍是 Ultra 侧旁路传输的依赖，保留其源码目录。
     sourceSets["main"].java.srcDir(rootProject.file("third_party/t3-sdk/src/main/java"))
     if (providers.gradleProperty("maplesuThemeIsolatedTests").orNull == "true") {
         sourceSets["debug"].manifest.srcFile("src/themeTest/AndroidManifest.xml")
     }
-    // Vendored upstream Ghostlock profile-core (byte-for-byte, see
-    // jailbreak-providers/ghostlock/profile-core/vendored.json): the HOCON profile
-    // must be turned into the typed wire v2 document the native decoder accepts.
-    sourceSets["main"].kotlin.srcDir(
-        rootProject.file("jailbreak-providers/ghostlock/profile-core/src/main/kotlin"))
-    // Ghostlock OTA/local inputs and offsets.conf imports. The App delegates
-    // image analysis to the retained native reference; helpers are host-tested.
-    sourceSets["main"].kotlin.srcDir(
-        rootProject.file("jailbreak-providers/ghostlock/extractor/src/main/kotlin"))
-    sourceSets["test"].java.srcDir(rootProject.file("jailbreak-providers/android/src/test/java"))
-    sourceSets["test"].kotlin.srcDir(
-        rootProject.file("jailbreak-providers/ghostlock/extractor/src/test/kotlin"))
     // MapleSU 双工作模式：KSU 后端独立目录（W10/W11）。D5 要求「独立 sourceSet」，
     // 但 AGP 不把任意命名的 sourceSet 编进 variant，故使用单 sourceSet
     // 多目录方案并入 main；边界由 KsuSourceIsolationTest 机器校验（目录 + import 规则）。
     sourceSets["main"].kotlin.srcDir("src/ksu/java")
-    sourceSets["main"].kotlin.srcDir(rootProject.file("jailbreak-providers/maplesu-93260/src/main/kotlin"))
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
@@ -249,13 +234,6 @@ android {
         // Module tool host is published by digest and symlinked at deploy time;
         // stripping it would change the bytes the deployment receipt records.
         keepDebugSymbols += "**/libmaplesu_tools.so"
-        // Provider entries are digest-bound by the packaged manifest; stripping
-        // them would change the bytes the App verifies at runtime.
-        keepDebugSymbols += "**/libdfroot.so"
-        keepDebugSymbols += "**/libmaplesu_dirtyfrag_bootstrap.so"
-        keepDebugSymbols += "**/libmaplesu_root_consumer.so"
-        keepDebugSymbols += "**/libmaplesu_ghostlock_provider.so"
-        keepDebugSymbols += "**/libmaplesu_ghostlock_extract.so"
         // Ultra bridge: the imported SDK archive is prebuilt and its bytes are recorded in
         // runtime/maplesu-sdk/PROVENANCE.json. Stripping the bridge would change the
         // bytes the deployment receipt records, so keep them.
@@ -507,117 +485,15 @@ androidComponents.onVariants { variant ->
     variant.sources.jniLibs?.addGeneratedSourceDirectory(packageMapleSuRuntime, PackageMapleSuRuntime::jniDirectory)
 }
 
-// --- Jailbreak provider edge -------------------------------------------------
-// Builds the retained-source provider entries offline and packages them with the
-// digest manifest the App verifies before it starts an attempt. No provider is
-// started here and no device is touched.
+// Ultra 内核侧输入（历史目录名 jailbreak-providers/root-loader）。
+// 该目录只保留 Ultra 的 boot SDK / policy hook ABI、内核契约与构建脚本；
+// Ghostlock/DirtyFrag 越狱 provider、lease、android 桥与 93260 移植均已删除。
 val jailbreakProviders = rootProject.layout.projectDirectory.dir("jailbreak-providers")
-val jailbreakBuild = layout.buildDirectory.dir("jailbreakProviders")
-val jailbreakJni = layout.buildDirectory.dir("generated/jailbreakJni")
-val jailbreakAssets = layout.buildDirectory.dir("generated/jailbreakAssets")
-val jailbreakManifest = layout.buildDirectory.file("generated/jailbreakManifest/maplesu-jailbreak-artifacts.json")
 val jailbreakKoVariant = providers.gradleProperty("maplesuKoVariant").getOrElse("minimal")
-// Step-2 canary packaging (default off). When on, the product in-kernel slot carries
-// a non-ELF stub, the canary slot carries a freshly built maplesu_root.ko, and the
-// canary helper is packaged as an asset the App stages 0700. A default build is
-// byte-for-byte the product one.
-val jailbreakRootCanary = providers.gradleProperty("maplesuRootCanary")
-    .map { it.toBoolean() }.getOrElse(false)
 val providerNdk = providers.gradleProperty("maplesuUltraviderNdk")
     .orElse(providers.environmentVariable("MAPLESU_PROVIDER_NDK"))
     .orElse(providers.provider { runtimeSdk.get().asFile.resolve("ndk/28.2.13676358").absolutePath })
-/**
- * Build gate for jailbreak-providers/contracts/detection-baseline.json: the
- * restoration/cleanup shapes must exist in the code that would actually be
- * compiled. Dropping them fails the build instead of shipping a provider that
- * leaves the device dirty.
- */
-val checkProviderTracelessInvariants = tasks.register<Exec>("checkProviderTracelessInvariants") {
-    group = "jailbreak"
-    description = "Verifies the provider traceless invariants (snapshot, verified restore, disarm handshake)"
-    inputs.files(fileTree(jailbreakProviders) {
-        include("**/*.py", "**/*.c", "**/*.cpp")
-        exclude("**/__pycache__/**")
-    })
-    outputs.upToDateWhen { false }
-    workingDir(rootProject.projectDir)
-    doFirst {
-        val python = providers.gradleProperty("maplesuPython")
-            .orElse(providers.environmentVariable("MAPLESU_PYTHON")).getOrElse("python")
-        commandLine(python,
-            jailbreakProviders.file("check_traceless_invariants.py").asFile.absolutePath)
-    }
-}
 
-val buildJailbreakProviders = tasks.register<Exec>("buildJailbreakProviders") {
-    group = "jailbreak"
-    description = "Builds the pinned Ghostlock/DirtyFrag provider entries and the shared lease consumer"
-    dependsOn(checkProviderTracelessInvariants)
-    inputs.files(fileTree(jailbreakProviders) {
-        include("**/*.py", "**/*.c", "**/*.cpp", "**/*.h", "**/*.hpp", "**/*.cmake", "**/*.json",
-            "**/*.S", "**/*.sh", "**/*.in", "**/*.rs", "**/*.toml", "**/Cargo.lock", "**/*.proto",
-            "**/CMakeLists.txt")
-        exclude("**/__pycache__/**")
-    })
-    inputs.files(policyHookBundles, policyHookBundles.resolveSibling("${policyHookBundles.nameWithoutExtension}.json"))
-    outputs.dir(jailbreakBuild)
-    // Retained upstream bytes are re-verified on every build, so this task must
-    // run even when its own inputs look unchanged.
-    outputs.upToDateWhen { false }
-    workingDir(rootProject.projectDir)
-    doFirst {
-        val python = providers.gradleProperty("maplesuPython")
-            .orElse(providers.environmentVariable("MAPLESU_PYTHON")).getOrElse("python")
-        val arguments = mutableListOf(
-            python, jailbreakProviders.file("build.py").asFile.absolutePath,
-            "--dirtyfrag-adapter", "--ghostlock-adapter",
-            "--ko-variant", jailbreakKoVariant)
-        if (jailbreakRootCanary) arguments += "--root-canary"
-        environment("MAPLESU_POLICY_HOOK_BUNDLES", policyHookBundles.absolutePath)
-        environment("MAPLESU_MINGW_BIN", providers.gradleProperty("maplesuMingwBin")
-            .orElse(providers.environmentVariable("MAPLESU_MINGW_BIN")).getOrElse(""))
-        environment("MAPLESU_RUST_TOOLCHAIN", providers.gradleProperty("maplesuRustToolchain")
-            .orElse(providers.environmentVariable("MAPLESU_RUST_TOOLCHAIN"))
-            .getOrElse(if (System.getProperty("os.name").startsWith("Windows")) "stable-x86_64-pc-windows-gnu" else "stable"))
-        arguments += listOf("--sdk", runtimeSdk.get().asFile.absolutePath, "--ndk-dir", providerNdk.get(),
-            "--output", jailbreakBuild.get().asFile.absolutePath)
-        commandLine(arguments)
-    }
-}
-abstract class PackageJailbreakProviders : DefaultTask() {
-    @get:InputFile abstract val buildReport: RegularFileProperty
-    @get:InputDirectory abstract val providerDirectory: DirectoryProperty
-    @get:Input abstract val koVariant: Property<String>
-    @get:Input abstract val pythonExecutable: Property<String>
-    @get:OutputDirectory abstract val jniDirectory: DirectoryProperty
-    @get:OutputDirectory abstract val assetsDirectory: DirectoryProperty
-    @get:Inject abstract val execOperations: ExecOperations
-
-    @TaskAction fun packageEntries() {
-        jniDirectory.get().asFile.mkdirs()
-        assetsDirectory.get().asFile.mkdirs()
-        val manifest = assetsDirectory.get().file("maplesu-jailbreak-artifacts.json").asFile
-        val result = execOperations.exec {
-            workingDir(project.rootProject.projectDir)
-            commandLine(pythonExecutable.get(),
-                providerDirectory.get().file("package.py").asFile.absolutePath,
-                "--build", buildReport.get().asFile.parentFile.absolutePath,
-                "--jni", jniDirectory.get().asFile.absolutePath,
-                "--manifest", manifest.absolutePath)
-        }
-        check(result.exitValue == 0) { "provider packaging failed" }
-    }
-}
-val packageJailbreakProviders = tasks.register<PackageJailbreakProviders>("packageJailbreakProviders") {
-    dependsOn(buildJailbreakProviders)
-    buildReport.set(jailbreakBuild.map { it.file("build.json") })
-    providerDirectory.set(jailbreakProviders)
-    koVariant.set(jailbreakKoVariant)
-    pythonExecutable.set(providers.gradleProperty("maplesuPython")
-        .orElse(providers.environmentVariable("MAPLESU_PYTHON")).getOrElse("python"))
-    jniDirectory.set(jailbreakJni)
-    assetsDirectory.set(jailbreakAssets)
-}
 abstract class PackagePolicyHooks : DefaultTask() {
     @get:InputFile abstract val bundles: RegularFileProperty
     @get:InputDirectory abstract val sourceDirectory: DirectoryProperty
@@ -970,10 +846,6 @@ androidComponents.onVariants { variant ->
         variant.sources.assets?.addGeneratedSourceDirectory(packageUltraInitBridge, PackageUltraInitBridge::assetsDirectory)
     }
     variant.sources.assets?.addGeneratedSourceDirectory(packagePolicyHooks, PackagePolicyHooks::assetsDirectory)
-    variant.sources.jniLibs?.addGeneratedSourceDirectory(packageJailbreakProviders,
-        PackageJailbreakProviders::jniDirectory)
-    variant.sources.assets?.addGeneratedSourceDirectory(packageJailbreakProviders,
-        PackageJailbreakProviders::assetsDirectory)
 }
 
 dependencies {

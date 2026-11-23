@@ -35,7 +35,7 @@ flowchart TD
 | `runtime/` | Native SU execution, supervised sessions, JNI and the Ultra SDK adapters | MapleSU adapters in `runtime/src` and `runtime/pro`, over pinned inputs in `runtime/upstream` and `runtime/upstream-pro` |
 | `patch-engine/` | Native kernel analysis and the Lite patch-plan path, with per-kernel release assets | MapleSU, over a pinned patch core in `patch-engine/upstream` |
 | `native-inputs/` | Retained kernel Images, symbols, policy payloads, BTF, configurations and compatibility contracts | Fixed inputs indexed in `release/native-inputs.json` |
-| `jailbreak-providers/` | Temporary-root providers, authenticated leases and kernel adaptation contracts | Per provider; each records its own source and artifacts |
+| `jailbreak-providers/` | Ultra kernel-side inputs only: boot SDK and policy hook ABI, kernel adaptation contracts, module sources and the UMH canary. The directory name is historical; no provider, lease or privilege-escalation code remains | MapleSU; see [its README](../jailbreak-providers/README.md) |
 | `module-policy/` | Module policy parsing, loading and optional backend preparation | MapleSU, over pinned Magisk and libsepol sources that keep their licenses |
 | `module-tools/` | Multicall property-tool entry point | MapleSU entry point over the pinned tree in `third_party/ksu_props` and a Cargo lockfile |
 | `third_party/` | Upstream source records, pinned inputs, integration patches and notices | Third party; see [Third-party boundary](#third-party-boundary) |
@@ -88,10 +88,7 @@ The Normal backend has its own machine-checked boundary: `manager/src/ksu/java` 
 | --- | --- |
 | `manager/src/main/java` | The two Kotlin namespaces described below, plus the Java entry points for native code |
 | `manager/src/ksu/java` | The Normal backend: KernelSU JNI facade, root executor and module operations |
-| `jailbreak-providers/android/src/main/java` | Provider, lease and artifact code, kept in the providers tree so provider work stays reviewable |
-| `jailbreak-providers/maplesu-93260/src/main/kotlin` | One provider's Kotlin sources |
-| `jailbreak-providers/ghostlock/profile-core/src/main/kotlin` | Vendored byte for byte; see `jailbreak-providers/ghostlock/profile-core/vendored.json` |
-| `jailbreak-providers/ghostlock/extractor/src/main/kotlin` | A host-tested JVM profile extractor |
+| `third_party/t3-sdk/src/main/java` | The pinned t3 side-channel transport used by Ultra |
 
 ### Two Kotlin namespaces
 
@@ -105,12 +102,11 @@ Imports run in both directions today, so treat the split as origin, not as layer
 | Package | Responsibility | Start reading at |
 | --- | --- | --- |
 | `workmode/` | Mode model, detection, routing and switching; per-mode settings storage; snapshots; work-mode screens | `workmode/detect/DetectionRules.kt`, `workmode/switch/ModeSwitchPreflight.kt`, `workmode/storage/ModePaths.kt` |
-| `runtime/` | Native SU execution, supervised sessions, the credential store and app authorization; `runtime/pro/` is the Ultra Pro adapter | `runtime/NativeSu.kt`, `runtime/MapleSuCredentialStore.kt`, `runtime/pro/ProRuntimeClient.kt` |
+| `runtime/` | Native SU execution, supervised sessions, the credential store and app authorization; `runtime/ultra/` is the Ultra adapter | `runtime/MapleSuRuntime.kt`, `runtime/MapleSuCredentialStore.kt`, `runtime/ultra/UltraRuntimeClient.kt` |
 | `installer/` | Root-side installer service, block-device access, baseline provisioning, stock backup resolution | `installer/BlockPartitionAccess.kt` |
 | `modules/` | Module routing, archive inspection and compatibility records | `modules/ModuleModeRouter.kt`, `modules/compat/ProModuleCompatibilityRegistry.kt` |
 | `prokernel/` | Ultra kernel preparation | `prokernel/ProKernelFlow.kt`, `prokernel/KernelSeries.kt` |
 | `patching/` | The Lite boot patcher | `patching/LiteBootPatcher.kt` |
-| `jailbreak/` | Temporary-root provider orchestration | `jailbreak/JailbreakExecutor.kt` |
 | `liteweb/` | Lite web manager: an HTTP admin served by a root service or a standalone daemon | `liteweb/LiteWebAdminController.kt` |
 | `recovery/` | Boot-time recovery hooks shared by Pro and KSU modules | `recovery/BootHookModule.kt` |
 | `market/` | Signed-catalog client for the module market | `market/MapleMarketRepository.kt` |
@@ -183,12 +179,6 @@ Module features have their own effects. Script modules can request mounts, prope
 
 The subsystem reports requested settings alongside the active backend state. Mount helpers track their own mounts for cleanup. Module policies and mounts stay separate from the core SU path.
 
-### Temporary-root providers
-
-`jailbreak-providers/` supplies an additional Ultra root path for compatible targets. The provider creates a privileged process and hands it to MapleSU through an authenticated, current-boot lease. The consumer verifies peer identity and an attempt-specific nonce, then supervises command streams and process lifetime.
-
-The provider workflow covers admission, privileged lease handover, environment restoration and daemon publication. Firmware, kernel and profile inputs and the selected provider determine the execution path. Installation and boot follow the device's partition-access, bootloader and verified-boot requirements.
-
 ### Modules and WebUI
 
 `modules/ModuleModeRouter.kt` selects the backend for the active mode. Archive inspection validates paths, limits, metadata and native entry information before installation.
@@ -207,7 +197,7 @@ WebUI routing follows the module path: KSU asset webroots, the Ultra script prox
 
 An integrating app uses `CooperativeSuClient` from `client/` to verify the installed Manager's signing certificate and explicitly bind its discovery service. The broker returns an already published root executor. An external bind does not start elevation.
 
-The root-side `runtime/NativeSuBinder.kt` reads `Binder.getCallingUid()` and resolves the caller's app identity. It checks authorization, prepares the child process and rechecks authorization before committing execution. The session owner is checked again on every later control call.
+The root-side `runtime/ManagerCallerVerifier.kt` reads `Binder.getCallingUid()` and resolves the caller's app identity. It checks authorization, prepares the child process and rechecks authorization before committing execution. The session owner is checked again on every later control call.
 
 Standard input, output and error use file descriptors. Binder carries lifecycle control, exit status, signals, terminal resize and cancellation. Sessions supervise their processes and release resources on closure or owner death. See the [SDK guide](SDK.md) and the separate-UID [example app](../consumer/).
 

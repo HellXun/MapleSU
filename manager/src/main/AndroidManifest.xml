@@ -169,32 +169,12 @@
             android:authorities="dev.maplesu.manager.soter"
             android:exported="false" />
 
-        <service
-            android:name=".magica.MagicaService"
-            android:directBootAware="true"
-            android:exported="false"
-            android:isolatedProcess="true"
-            android:useAppZygote="true" />
 
         <service
             android:name=".ui.util.DownloadService"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
 
-        <receiver
-            android:name=".magica.BootCompletedReceiver"
-            android:directBootAware="true"
-            android:enabled="false"
-            android:exported="false"
-            android:process=":magica_boot">
-            <intent-filter>
-                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-            </intent-filter>
-            <intent-filter>
-                <action android:name="com.maplesu.core.magica.LAUNCH" />
-            </intent-filter>
-        </receiver>
         <receiver
             android:name="dev.maplesu.manager.modules.LiteModuleBootReceiver"
             android:directBootAware="false"

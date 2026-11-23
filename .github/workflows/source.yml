@@ -26,8 +26,6 @@ jobs:
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: '3.12'
-      - name: Verify extractor dependency files
-        run: python jailbreak-providers/ghostlock/build_extractor.py --verify-only
       - name: Verify Normal patch definitions and exported module sources
         run: python -m unittest discover -s tools/tests -p "test_ksu_source.py" -v
       - run: python tools/check_host.py

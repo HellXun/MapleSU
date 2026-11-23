@@ -87,7 +87,6 @@ fun SettingPager(
         onSetShellSuAdbOnlyEnabled = viewModel::setShellSuAdbOnlyEnabled,
         onSetDefaultUmountModules = viewModel::setDefaultUmountModules,
         onSetEnableWebDebugging = viewModel::setEnableWebDebugging,
-        onSetAutoJailbreak = viewModel::setAutoJailbreak,
         onSetUseSoftReboot = viewModel::setUseSoftReboot,
         onOpenAbout = { navigator.push(Route.About) },
         onOpenWorkMode = {

@@ -10,7 +10,6 @@ import com.materialkolor.dynamiccolor.ColorSpec
 import com.topjohnwu.superuser.ShellUtils
 import com.maplesu.core.Natives
 import com.maplesu.core.ksuApp
-import com.maplesu.core.magica.BootCompletedReceiver
 import com.maplesu.core.ui.UiMode
 import com.maplesu.core.ui.screen.modulerepo.RepoSort
 import com.maplesu.core.ui.util.AppearancePrefsPolicy
@@ -357,23 +356,6 @@ class SettingsRepositoryImpl : SettingsRepository {
     override var suLogFilters: Set<String>?
         get() = prefs.getStringSet("sulog_filters", null)?.toSet()
         set(filters) = prefs.edit { putStringSet("sulog_filters", filters) }
-
-    override var autoJailbreak: Boolean
-        get() = prefs.getBoolean("auto_jailbreak", false)
-        set(value) {
-            runCatching {
-                ksuApp.packageManager.setComponentEnabledSetting(
-                    ComponentName(ksuApp, BootCompletedReceiver::class.java),
-                    if (value) PackageManager.COMPONENT_ENABLED_STATE_ENABLED else PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
-                    PackageManager.DONT_KILL_APP
-                )
-            }.onFailure {
-                Log.e("Settings", "failed to change boot receiver state to $value", it)
-            }
-            prefs.edit {
-                putBoolean("auto_jailbreak", value)
-            }
-        }
 
     override var useSoftReboot: Boolean
         get() = prefs.getBoolean(KEY_USE_SOFT_REBOOT, false)

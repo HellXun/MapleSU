@@ -7425,12 +7425,9 @@ def run_evidence(args) -> int:
                   "--out-dir", str(out_dir), "--contract", str(contract_path),
                   "--image", str(image_path), "--ndk-dir", str(ndk)], PROJECT_ROOT)])
 
-    add("s2", "check_traceless_invariants.py (production gate: checks=26)",
-        [capture([sys.executable, str(TRACELESS)], PROJECT_ROOT)])
-
-    add("s3", "unittest discover -s jailbreak-providers/ir-loader/tests",
-        [capture([sys.executable, "-m", "unittest", "discover",
-                  "-s", str(IR_TESTS), "-v"], PROJECT_ROOT)])
+    # s2/s3 used to gate the removed provider trees (check_traceless_invariants.py,
+    # ir-loader/tests). Ultra-only keeps the kernel module gates above; the provider
+    # acceptance record no longer exists, so both steps are gone.
 
     # s4 is self-referential: test_root_build.test_03 asserts that *this file*
     # describes the committed .ko and says OVERALL: PASS, so the suite cannot pass

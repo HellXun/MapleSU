@@ -27,7 +27,7 @@ The application AAR and Ultra native module ABI have separate versioning. Native
 | Kernel images and symbols | `native-inputs/kernels/` | Provider contracts and retained-input hashes |
 | Policy payloads, BTF and configuration | `native-inputs/policy/` | Bundle manifest and compatibility contracts |
 | SDK maintenance baseline and entry | `runtime/maplesu-sdk/maintenance/` | Archive member comparison and paired entry identity |
-| Normal tools and providers | `third_party/`, `jailbreak-providers/` | Component source and build manifests |
+| Normal tools and Ultra kernel inputs | `third_party/`, `jailbreak-providers/root-loader` | Component source and build manifests |
 | SELinux / libsepol | `.deps/selinux/` | `module-policy/upstream/selinux-source.json` |
 
 `release/native-inputs.json` records the files, sizes and SHA-256 values required by the complete source export. The export checker verifies those bytes in the actual archive, including inputs that have binary extensions. Build caches, previous backend generations and research records are excluded.

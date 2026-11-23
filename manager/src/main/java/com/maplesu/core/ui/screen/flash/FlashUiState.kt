@@ -14,7 +14,8 @@ data class FlashUiState(
     val showLog: Boolean = true,
     val showRebootAction: Boolean,
     val flashingStatus: FlashingStatus,
-    val showJailbreakWarning: Boolean,
+    /** Ultra-only：越狱警告已停用，恒为 false（保留字段避免布局大改）。 */
+    val showJailbreakWarning: Boolean = false,
     @param:StringRes val rebootLabelRes: Int,
     /**
      * S5：当前粗粒度阶段（修补中 / 写入中 / 待重启）。`null` = 该入口不报阶段（模块/还原）。
@@ -56,8 +57,6 @@ data class FlashScreenActions(
     val onReboot: () -> Unit,
     /** 步骤 ④ 的「保存 boot」：把修补后的 boot.img 导出到下载目录。 */
     val onSaveBoot: () -> Unit,
-    val onConfirmJailbreakWarning: () -> Unit,
-    val onDismissJailbreakWarning: () -> Unit,
     val onRestore: () -> Unit = {},
     val onClose: () -> Unit = {},
 )

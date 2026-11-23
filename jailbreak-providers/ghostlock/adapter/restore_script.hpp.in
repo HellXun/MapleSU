@@ -1,2 +1,0 @@
-#pragma once
-inline constexpr char maplesu_ghostlock_restore_script[] = R"MSURESTORE(@MAPLESU_GHOSTLOCK_RESTORE_SCRIPT@)MSURESTORE";

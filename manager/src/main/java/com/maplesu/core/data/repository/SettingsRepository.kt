@@ -40,7 +40,6 @@ interface SettingsRepository {
     var superuserShowOnlyPrimaryUserApps: Boolean
     var superuserSortOption: Int
     var suLogFilters: Set<String>?
-    var autoJailbreak: Boolean
     var useSoftReboot: Boolean
     // 个性化:壁纸
     /**

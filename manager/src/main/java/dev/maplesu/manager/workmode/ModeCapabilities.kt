@@ -24,8 +24,6 @@ data class ModeCapabilities(
     val supportsStealth: Boolean,
     val supportsWebAdmin: Boolean,
     val supportsAppLock: Boolean,
-    val supportsMagica: Boolean,
-    val supportsJailbreak: Boolean,
     val supportsUltraEnvironment: Boolean,
     val supportsUltraModules: Boolean,
 ) {
@@ -42,8 +40,6 @@ data class ModeCapabilities(
             supportsStealth = false,
             supportsWebAdmin = false,
             supportsAppLock = false,
-            supportsMagica = false,
-            supportsJailbreak = false,
             supportsUltraEnvironment = false,
             supportsUltraModules = false,
         )
@@ -60,8 +56,6 @@ data class ModeCapabilities(
                 supportsStealth = false,        // Natives.kt:55 stealthState() 恒 -1
                 supportsWebAdmin = false,
                 supportsAppLock = false,        // Natives.kt:52-54 桩
-                supportsMagica = false,         // 01 §10 C3 裁决：magica 属 KSU
-                supportsJailbreak = true,       // jailbreak/* 仅 A 使用
                 supportsUltraEnvironment = true,
                 supportsUltraModules = true,
             )
@@ -76,8 +70,6 @@ data class ModeCapabilities(
                 supportsStealth = true,
                 supportsWebAdmin = true,
                 supportsAppLock = true,
-                supportsMagica = true,
-                supportsJailbreak = false,
                 supportsUltraEnvironment = false,
                 supportsUltraModules = false,
             )

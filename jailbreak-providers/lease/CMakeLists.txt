@@ -1,5 +1,0 @@
-add_executable(maplesu-root-consumer src/root_consumer.cpp src/lease_contract.c)
-target_compile_features(maplesu-root-consumer PRIVATE cxx_std_20)
-target_compile_options(maplesu-root-consumer PRIVATE -Wall -Wextra -Werror -fstack-protector-strong)
-target_link_options(maplesu-root-consumer PRIVATE -Wl,-z,relro,-z,now -Wl,-z,max-page-size=16384)
-set_target_properties(maplesu-root-consumer PROPERTIES OUTPUT_NAME libmaplesu_root_consumer.so)

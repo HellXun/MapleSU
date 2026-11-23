@@ -20,10 +20,6 @@ object ModeComponentIds {
     const val RECEIVER_MODE_BOOT = "receiver.mode_boot"
     const val RECEIVER_LITE_MODULE_BOOT = "receiver.lite_module_boot"
     const val SERVICE_LITE_MODULE_BOOT = "service.lite_module_boot"
-    const val RECEIVER_MAGICA_BOOT = "receiver.magica_boot"
-    const val SERVICE_MAGICA = "service.magica"
-    const val SERVICE_NATIVE_SU_BROKER = "service.native_su_broker"
-    const val PROVIDER_NATIVE_SU_DIR = "provider.native_su_dir"
 
     // L0 facade
     const val NATIVES_IS_MANAGER = "natives.is_manager"
@@ -35,22 +31,12 @@ object ModeComponentIds {
     const val UI_SETTINGS_KSU_ROWS = "ui.settings.ksu_rows"
 
     /** 受 ModeComponentSwitcher 管控的组件（Manifest 里的类名）。 */
-    const val COMPONENT_MAGICA_SERVICE = "com.maplesu.core.magica.MagicaService"
-    const val COMPONENT_MAGICA_BOOT_RECEIVER = "com.maplesu.core.magica.BootCompletedReceiver"
     const val COMPONENT_LITE_MODULE_BOOT_RECEIVER = "dev.maplesu.manager.modules.LiteModuleBootReceiver"
     const val COMPONENT_LITE_MODULE_BOOT_SERVICE = "dev.maplesu.manager.modules.LiteModuleBootService"
-    const val COMPONENT_NATIVE_SU_DIRECTORY_PROVIDER = "dev.maplesu.manager.runtime.NativeSuDirectoryProvider"
-    const val COMPONENT_NATIVE_SU_BROKER_SERVICE = "dev.maplesu.manager.runtime.NativeSuBrokerService"
-    const val COMPONENT_HOOK_SU_KEEPER_SERVICE = "dev.maplesu.manager.runtime.HookSuKeeperService"
 
     /** B（KSU）下必须禁用的 A 专属组件；A 下不主动 enable（防误开用户手动禁用的组件）。 */
     val KSU_DISABLED_COMPONENTS: List<String> = listOf(
-        COMPONENT_MAGICA_SERVICE,
-        COMPONENT_MAGICA_BOOT_RECEIVER,
         COMPONENT_LITE_MODULE_BOOT_RECEIVER,
         COMPONENT_LITE_MODULE_BOOT_SERVICE,
-        COMPONENT_NATIVE_SU_DIRECTORY_PROVIDER,
-        COMPONENT_NATIVE_SU_BROKER_SERVICE,
-        COMPONENT_HOOK_SU_KEEPER_SERVICE,
     )
 }

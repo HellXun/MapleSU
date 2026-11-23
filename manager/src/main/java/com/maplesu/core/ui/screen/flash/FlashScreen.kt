@@ -70,10 +70,9 @@ fun FlashScreen(flashIt: FlashIt, onBackEnabledChange: (Boolean) -> Unit) {
     var bootCandidate by remember { mutableStateOf<InstallCandidateImage?>(null) }
     var canRestore by remember { mutableStateOf(false) }
     var restoreAction: (() -> Unit)? = null
-    val needJailbreakWarning = flashIt is FlashIt.FlashBoot && !patchOnly && Natives.isLateLoadMode
-    // Soft reboot keeps the jailbreak and still applies modules
+    // Ultra-only：越狱 late-load 运行时已移除，刷机不再需要「会破坏越狱」的确认门。
     val softReboot = flashIt is FlashIt.FlashModules && isSoftRebootPreferred()
-    var flashingEnabled by rememberSaveable { mutableStateOf(!needJailbreakWarning) }
+    var flashingEnabled by rememberSaveable { mutableStateOf(true) }
     val uiMode = LocalUiMode.current
     val snackbarHost = remember { SnackbarHostState() }
     val moduleTypeDialog = rememberConfirmDialog()
@@ -279,7 +278,7 @@ fun FlashScreen(flashIt: FlashIt, onBackEnabledChange: (Boolean) -> Unit) {
         showLog = showLog,
         showRebootAction = showRebootAction,
         flashingStatus = flashingStatus,
-        showJailbreakWarning = needJailbreakWarning && !flashingEnabled,
+        showJailbreakWarning = false,
         rebootLabelRes = if (softReboot) R.string.reboot_soft else R.string.reboot,
         showCloseAction = dev.maplesu.manager.workmode.ModeRuntime.active ==
             dev.maplesu.manager.workmode.WorkMode.KSU &&
@@ -334,8 +333,6 @@ fun FlashScreen(flashIt: FlashIt, onBackEnabledChange: (Boolean) -> Unit) {
             }
         },
         onClose = dropUnlessResumed { navigator.pop() },
-        onConfirmJailbreakWarning = { flashingEnabled = true },
-        onDismissJailbreakWarning = dropUnlessResumed { navigator.pop() },
         onRestore = {
             scope.launch {
                 val confirmed = restoreDialog.awaitConfirm(

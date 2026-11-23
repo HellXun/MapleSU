@@ -36,7 +36,6 @@ python -m unittest discover -s tools/tests -p "test_check_architecture.py" -v
 python -m unittest discover -s tools/tests -p "test_native_inputs.py" -v
 ```
 
-准备 stock provider 输入后可运行 `python jailbreak-providers/check_traceless_invariants.py`。它验证实际派生源码形状和 `jailbreak-providers/contracts/detection-baseline.json` 的覆盖范围，历史单设备观察不代表当前二进制或其他设备的验收结果。
 
 ## Android 单元与资源检查
 

@@ -1,74 +1,45 @@
-# MapleSU provider build and lease boundary
+# Ultra kernel-side inputs (historical directory name)
 
-This directory contains pinned provider inputs, derived adapters and the MapleSU
-root-shell consumer. Manager includes the Android adapter source set and uses
-`checkProviderTracelessInvariants`, `buildJailbreakProviders` and
-`packageJailbreakProviders` to verify, build and package the native artifacts.
-Build integration and device acceptance are separate requirements.
+This directory used to hold the temporary-root provider edge: Ghostlock and
+DirtyFrag providers, the authenticated raw-root lease, the Android lease adapter
+and the 93260 port. **All of it has been removed**; MapleSU ships Ultra only.
+
+What remains is the kernel-side input tree Ultra cannot work without. The
+directory keeps its old name so the pinned contracts, the policy-hook packaging
+scripts and `module-policy` keep resolving the same paths; it no longer contains
+any provider, lease or privilege-escalation code.
 
 ## Layout
 
-- `ghostlock/upstream`: pinned native/profile sources and original notices.
-- `dirtyfrag/upstream`: pinned native/App sources, with stock KO files separated.
-- `lease`: MapleSU-owned consumer and exact production argument tests.
-- `android`: App-side lease adapter included by Manager.
-- `root-loader`: kernel ABI contracts, module sources and handover checks.
-- `maplesu-93260`: additional provider adapter and its separately recorded inputs.
+- `root-loader/` — boot SDK and policy hook ABI, kernel adaptation contracts,
+  module sources and the UMH canary.
+  - `boot_sdk_abi.h`, `policy_hook_abi.h`, `selinux_hide_abi.h`: the ABIs the
+    Ultra payload and `module-policy` are built against.
+  - `contracts/`: per-kernel-family symbol/offset contracts consumed by
+    `:manager:packagePolicyHooks`.
+  - `module/`: L2/L3 sources, policy hook and boot SDK allocator.
+  - `canary/`: UMH canary helper and its packaging test.
+  - `tests/`: host-side contract checks for the above.
+- `contracts/kmi-matrix.json` — KMI matrix the Ultra kernel builder selects from.
 
-Default CMake builds only `libmaplesu_root_consumer.so`. Configure
-`MAPLESU_BUILD_UPSTREAM_REVIEW=ON` to make the two upstream targets available,
-then explicitly request their target names. They retain original downstream
-behavior and are build-review artifacts, not ready-to-package MapleSU providers.
-No build obtains code, profiles, modules or binaries from `.research` or a network.
+## Build integration
 
-## Consumer channel (MJBL version 1)
+`manager/build.gradle.kts` reads this tree in exactly two places:
 
-A fresh provider worker execs the fixed native consumer with five arguments:
-`ENDPOINT NONCE_HEX MANAGER_UID BOOT_ID ghostlock|dirtyfrag`.
-The consumer does not create identity or grant privileges. It requires real UID,
-effective UID, GID and effective GID zero. It reads its own boot ID, current
-context and enforcing value and connects to a pending App listener. Peer UID
-must match the expected Manager UID. The App independently checks kernel peer
-credentials and the one-attempt nonce; announced PID/UID is not accepted alone.
+- `buildModulePolicy` takes `policy_hook_abi.h`, `boot_sdk_abi.h` and
+  `selinux_hide_abi.h` as declared inputs of the `maplesu-policy` module build.
+- `packagePolicyHooks` turns `root-loader/contracts/*.json` into the packaged
+  policy-hook bundles.
 
-All integers are 32-bit big-endian. Consumer sends:
+There is no provider build, no `buildJailbreakProviders`, no
+`packageJailbreakProviders` and no traceless-invariant gate any more. Nothing
+here runs at build time on a device, fetches from the network, or produces a
+privilege-granting binary.
 
-```text
-MJBL | version=1 | provider=1/2 | pid | uid | nonce[32]
-     | boot_id_length | boot_id
-     | context_length | context
-     | enforcing | seccomp_mode
-```
+## Verification limits
 
-App accepts with one `A` byte and exactly three SCM_RIGHTS descriptors: stdin
-read, stdout write and stderr write. Those pipes are independent of provider
-profile/ACK stdin and provider logs. A fresh shell receives only these three
-standard descriptors. Consumer sends `R | child_pid` only after shell exec has
-completed successfully, then `X | exit_code` when the supervised shell ends.
-EOF, malformed handshake or a dropped control channel is an error, not success.
-Any inbound control byte or owner disconnect terminates the shell process group.
-
-This result is only `RAW_ROOT_LEASE`. It is not policy restoration, daemon health,
-authorization, PTY support, installation state or full-feature acceptance.
-Final restoration is separately checked before enabling product capabilities.
-No consumer code writes policy, changes enforcing/context, opens block devices,
-loads an external downstream service, or invokes an installer transaction.
-
-## Ownership
-
-Pending listener and nonce: App, one attempt only. Connected control and three
-local pipe ends: returned lease Process. Remote pipe ends: native supervisor
-until fork, then closed; shell owns duplicated stdio. Native supervisor owns
-shell group cancellation and reaping. The provider's raw-credential anchor is
-outside this consumer and retains upstream lifetime semantics.
-
-## Current verification limits
-
-Native compilation and host validators do not exercise Android socket permissions,
-FD transfer, restoration or runtime ownership. Each release must record its actual
-device checks. A raw lease alone does not establish product readiness.
-
-The public candidate excludes provider binaries whose distribution records are
-incomplete. The current clean Manager build also requires those inputs; see the
-[build guide](../docs/BUILD.md) and [integration contract](INTEGRATION.md).
-Keep upstream notices and manifests with their corresponding sources.
+Native compilation and the host validators do not exercise device sockets, FD
+transfer or runtime ownership. Each release records its own device checks. See
+the [build guide](../docs/BUILD.md) for the toolchain and
+[`docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md) for where these inputs sit in
+the Ultra pipeline.

@@ -88,19 +88,11 @@ jobs:
           }
           python tools/check_source_export.py
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          python jailbreak-providers/ghostlock/build_extractor.py --verify-only
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
           python tools/prepare_native_inputs.py --check
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           python scripts/sync-ultra-sdk-identity.py --check
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           python tools/build_module_policy.py --prepare-only --offline
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
-      - name: Fetch locked extractor dependencies
-        run: |
-          # Fetch host-graph dependencies too: extractor-native builds with --offline,
-          # and a target-only fetch leaves Windows-only crates (anstyle-wincon) missing.
-          cargo +1.99.1-x86_64-pc-windows-gnu fetch --locked --manifest-path jailbreak-providers/ghostlock/extractor-native/Cargo.toml
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Build SDK and consumer
         run: ./gradlew.bat :maplesu-client:assembleRelease :maplesu-consumer:assembleDebug --no-daemon --no-build-cache --no-configuration-cache --max-workers=2
