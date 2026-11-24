@@ -798,6 +798,14 @@ private fun CheckingStatusCard(
                         color = colorScheme.onSurfaceVariantSummary,
                     )
                 }
+                if (failure != null) {
+                    Text(
+                        text = stringResource(R.string.network_retry),
+                        fontSize = 13.sp,
+                        color = colorScheme.primary,
+                        modifier = Modifier.padding(start = 12.dp).clickable(onClick = onRetry),
+                    )
+                }
             }
         },
     )

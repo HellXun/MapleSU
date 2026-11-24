@@ -56,6 +56,7 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.rememberTopAppBarState
@@ -297,7 +298,11 @@ internal fun MaterialStatusCard(
     // P0（冷启动闪烁修复）：模式还在判定中、且没有种子/证据 → 画 loading 占位。
     // 这里**绝不**回落到下面的「未安装」分支 —— 那正是用户看到的"进 App 先闪一下未安装"。
     if (state.showEnvironmentStatusCard) {
-        CheckingStatusCard(state.environmentFailure, actions.onEnvironmentRetry)
+        // 2026-11-24 用户真机反馈：检查中/失败时整页提前 return，首页没有任何可点的
+        // 安装入口（修补 boot.img 也从这里进）。卡本体改为**始终**可点进安装页；
+        // 失败时的重试保留为卡内右侧小按钮。
+        CheckingStatusCard(state.environmentFailure, actions.onEnvironmentRetry,
+            onOpenInstall = actions.onInstallClick)
         return
     }
     val themeArt = statusThemeArt()
@@ -503,12 +508,15 @@ internal fun MaterialStatusCard(
  * 只是画法不同。判定落定后由状态驱动换成绿卡 / 未安装卡，两个方向都会纠正。
  */
 @Composable
-private fun CheckingStatusCard(failure: HomeEnvironmentFailure? = null, onRetry: () -> Unit = {}) {
+private fun CheckingStatusCard(
+    failure: HomeEnvironmentFailure? = null,
+    onRetry: () -> Unit = {},
+    onOpenInstall: () -> Unit = {},
+) {
     val containerColor = MaterialTheme.colorScheme.secondaryContainer
     val contentColor = MaterialTheme.colorScheme.onSecondaryContainer
     Surface(
-        modifier = Modifier.fillMaxWidth().then(
-            if (failure != null) Modifier.clickable(onClick = onRetry) else Modifier),
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onOpenInstall),
         color = containerColor,
         contentColor = contentColor,
         shape = MaterialTheme.shapes.large,
@@ -542,6 +550,11 @@ private fun CheckingStatusCard(failure: HomeEnvironmentFailure? = null, onRetry:
                     style = MaterialTheme.typography.bodyMedium,
                     color = contentColor,
                 )
+            }
+            if (failure != null) {
+                TextButton(onClick = onRetry) {
+                    Text(stringResource(R.string.network_retry))
+                }
             }
         }
     }
