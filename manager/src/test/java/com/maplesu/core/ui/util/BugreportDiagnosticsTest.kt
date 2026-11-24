@@ -19,19 +19,11 @@ class BugreportDiagnosticsTest {
             "maplesu-hook-attest.json", "maplesu-hook-unload.json", "maplesu-hook-daemon.json",
             "maplesu-handover.json", "maplesu-handover-env", "maplesu-93260-source.json")
         names.forEach { File(protected, it).writeText("evidence:$it") }
-        File(files, "jailbreak").mkdir()
-        File(files, "jailbreak/status.json").writeText("{\"failure\":\"JAILBREAK_OWNER_EXITED\"}")
-        File(files, "jailbreak/degraded.jsonl").writeText("{\"event\":\"attest_worker_missing\"}\n")
-
         BugreportDiagnostics.collect(protected, files, destination)
 
-        assertEquals((names + listOf("jailbreak-status.json", "degraded.jsonl", "diagnostics-collection.log")).toSet(),
+        assertEquals((names + listOf("diagnostics-collection.log")).toSet(),
             destination.list()!!.toSet())
         names.forEach { assertEquals("evidence:$it", File(destination, it).readText()) }
-        assertEquals(File(files, "jailbreak/status.json").readText(),
-            File(destination, "jailbreak-status.json").readText())
-        assertEquals(File(files, "jailbreak/degraded.jsonl").readText(),
-            File(destination, "degraded.jsonl").readText())
     }
 
     @Test fun recordsPersistedEvidenceProvenanceWithoutClaimingCurrentBoot() {
@@ -90,26 +82,24 @@ class BugreportDiagnosticsTest {
         val token = "12abcdef34abcdef"
         val key = "Ab9_".repeat(12)
         val original = linkedMapOf(
-            "stage-marks" to "prepare:failed:JAILBREAK_OWNER_EXITED $token\n",
+            "stage-marks" to "prepare:failed:HELPER_STAGE_FAILED $token\n",
             "launcher-output" to "launcher-err: argument $key $token\n",
             "su-audit.log" to "{\"event\":\"exit\",\"exitCode\":126,\"detail\":\"$key\"}\n",
             "su-audit.log.1" to "rootKey=$key suToken=$token\n",
         )
         original.forEach { (name, text) -> File(protected, name).writeText(text) }
-        File(files, "jailbreak").mkdir()
-        File(files, "jailbreak/status.json").writeText("{\"suToken\":\"$token\"}")
         BugreportDiagnostics.collect(protected, files, destination)
 
         val report = BugreportArchive.pack(destination, File(temporary.root, "private.tar.gz"))
         val entries = unpack(report)
 
         assertEquals(setOf("stage-marks.log", "launcher-output.log", "su-audit.log",
-            "su-audit.1.log", "jailbreak-status.json", "diagnostics-collection.log"), entries.keys)
+            "su-audit.1.log", "diagnostics-collection.log"), entries.keys)
         entries.values.forEach { text ->
             assertFalse(text.contains(key))
             assertFalse(text.contains(token))
         }
-        assertTrue(entries.getValue("stage-marks.log").contains("JAILBREAK_OWNER_EXITED"))
+        assertTrue(entries.getValue("stage-marks.log").contains("HELPER_STAGE_FAILED"))
         assertTrue(entries.getValue("su-audit.log").contains("\"exitCode\":126"))
         original.forEach { (name, text) -> assertEquals(text, File(protected, name).readText()) }
     }
@@ -127,24 +117,14 @@ class BugreportDiagnosticsTest {
         assertTrue(File(destination, "diagnostics-collection.log").readText().contains("MISSING_OR_UNREADABLE"))
     }
 
-    @Test fun exportsFullNativePreparationAndWorkerLogsForBothProvidersAndModes() {
-        val protected = temporary.newFolder("all-protected")
-        val files = temporary.newFolder("all-files")
-        val destination = temporary.newFolder("all-report")
-        val expected = linkedMapOf<String, String>()
-        for (method in listOf("dirtyfrag", "ghostlock")) for (backend in listOf("hook", "ksu")) {
-            val prefix = "jailbreak/attempts/$method-$backend"
-            expected["$prefix/request.json"] = """{"method":"$method","rootBackend":"$backend"}"""
-            expected["$prefix/progress.jsonl"] = """{"step":"staged","message":"configuration ready"}""" + "\n"
-            expected["$prefix/$method-native.log"] = "detail $method $backend\n".repeat(10_000) + "[+] final output\n"
-            expected["$prefix/worker/root-worker.log"] = "[*] worker cleanup\n"
-        }
-        expected.forEach { (name, text) ->
-            File(files, name).apply { parentFile!!.mkdirs(); writeText(text) }
-        }
-        BugreportDiagnostics.collect(protected, files, destination)
-        val entries = unpack(BugreportArchive.pack(destination, File(temporary.root, "all.tar.gz")))
-        expected.forEach { (name, text) -> assertEquals(name, text, entries[name]) }
+    @Test fun legacyAttemptDirectoriesDoNotEnterTheReport() {
+        val files = temporary.newFolder("legacy-files")
+        val destination = temporary.newFolder("legacy-report")
+        File(files, "attempts/dirtyfrag/request.json").apply { parentFile!!.mkdirs(); writeText("{}") }
+        BugreportDiagnostics.collect(temporary.newFolder("legacy-protected"), files, destination)
+        val entries = unpack(BugreportArchive.pack(destination, File(temporary.root, "legacy.tar.gz")))
+        assertTrue(entries.keys.none { it.startsWith("attempts/") })
+        assertEquals(setOf("diagnostics-collection.log"), entries.keys)
     }
 
     private fun unpack(report: File): Map<String, String> {

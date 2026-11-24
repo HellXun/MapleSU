@@ -14,29 +14,12 @@ class HomeEnvironmentInheritanceDisplayTest {
         managerUAPIVersion = 1, kernelUAPIVersion = null, lkmMode = null,
         isLkmBundled = false, isManager = false, isManagerPrBuild = false,
         isKernelPrBuild = false, requiresNewKernel = false, requiresNewManager = false,
-        isRootAvailable = false, isSafeMode = false, isLateLoadMode = false,
+        isRootAvailable = false, isSafeMode = false,
         checkUpdateEnabled = false, latestVersionInfo = LatestVersionInfo(),
         currentManagerVersionCode = 50003,
         systemInfo = SystemInfo("6.6.89", "5.0.3", "device", "fixture", "Unknown", 0),
         environmentMode = mode, environmentChecking = true,
     )
-
-    @Test fun safeModeKeepsUltraBrandAndRecoveryBannerWithoutGrantingRoot() {
-        val safe = state(WorkMode.LITE).copy(isSafeMode = true, liteInstalled = true,
-            liteRootFailure = true, rootReadiness = dev.maplesu.manager.workmode.detect.SuReadiness.NOT_USABLE)
-            .withHiddenFacts(HomeHiddenFacts(false, false))
-        assertEquals(WorkMode.LITE, safe.environmentMode)
-        assertTrue(safe.showInstalledStatus)
-        assertTrue(safe.showSafeModeBanner)
-        assertFalse(safe.showLiteRootFailure)
-        assertFalse(safe.showRootWarning)
-        assertFalse(safe.showEnvironmentStatusCard)
-        assertFalse(safe.isRootAvailable)
-        assertFalse(safe.copy(isSafeMode = false).showSafeModeBanner)
-        assertFalse(safe.copy(environmentMode = WorkMode.LITE).showSafeModeBanner)
-        assertFalse(safe.withHiddenFacts(HomeHiddenFacts(true, false)).showSafeModeBanner)
-        assertFalse(safe.withHiddenFacts(HomeHiddenFacts(false, true)).showSafeModeBanner)
-    }
 
     @Test fun ultraSafeModeKeepsTheModuleListButHidesInstallation() {
         val modules = com.maplesu.core.ui.screen.module.ModuleUiState(isUltra = true, isSafeMode = true)

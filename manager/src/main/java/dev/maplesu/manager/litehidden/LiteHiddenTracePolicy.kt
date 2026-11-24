@@ -17,7 +17,6 @@ object LiteHiddenTracePolicy {
 
     /** 允许删除的 App 私有子目录（相对 filesDir）。 */
     val ALLOWED_RELATIVE_DIRS: Set<String> = setOf(
-        "jailbreak",
         "diagnostics",
         "debug-exports",
         "logs",
@@ -29,7 +28,6 @@ object LiteHiddenTracePolicy {
     val ITEMS: List<LiteHiddenTraceSpec> = listOf(
         // 首页"最近安装"来自 PackageManager 实时计算，无持久化 JSON/日志。
         LiteHiddenTraceSpec(LiteHiddenTraceItem.RECENT_INSTALL_LOG, hasPersistentArtifact = false),
-        LiteHiddenTraceSpec(LiteHiddenTraceItem.JAILBREAK_LOG),
         LiteHiddenTraceSpec(LiteHiddenTraceItem.LOGCAT_TAGS, requiresRoot = true),
         LiteHiddenTraceSpec(LiteHiddenTraceItem.DEBUG_EXPORTS),
         // 当前 Manifest 只有一个 LauncherAlias（桌面图标）；"不做图标禁用" ⇒ 无可操作别名。

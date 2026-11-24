@@ -15,7 +15,7 @@ class SharedAppearancePolicyTest {
     }
 
     @Test fun functionalAndSensitivePreferencesStayOut() {
-        for (key in listOf("intent_token", "stealth_code", "web_terminal_enabled", "enable_web_debugging", "auto_jailbreak", "soft_reboot", "su_compat_mode")) {
+        for (key in listOf("intent_token", "stealth_code", "web_terminal_enabled", "enable_web_debugging", "soft_reboot", "su_compat_mode")) {
             assertFalse(key, key in AppearancePreferences.keys)
         }
     }
@@ -38,7 +38,7 @@ class SharedAppearancePolicyTest {
         assertTrue(first.values.isEmpty())
         val resolved = AppearancePreferences.migrationPlan(
             existing = first.values,
-            legacy = mapOf("ui_mode" to "material", "color_mode" to 2, "auto_jailbreak" to true),
+            legacy = mapOf("ui_mode" to "material", "color_mode" to 2, "intent_token" to "x"),
             modeResolved = true,
         )
         assertTrue(resolved.complete)

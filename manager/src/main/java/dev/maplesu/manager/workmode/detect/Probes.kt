@@ -33,9 +33,6 @@ fun interface UltraEnvironmentPort {
  */
 fun interface LiteHandshakeProbe { fun handshake(): Boolean? }
 
-/** 越狱租约（仅当前 boot 有效）；默认 false。 */
-fun interface JailbreakLeaseProbe { fun valid(): Boolean }
-
 fun interface BootIdSource { fun read(): String }
 
 fun interface Clock { fun nowMillis(): Long }
@@ -91,8 +88,6 @@ data class DetectionRequest(
     val allowRootProbe: Boolean,
     /** 未排除 KSU 冲突前必须 false。 */
     val allowLiteExecutor: Boolean,
-    /** 越狱只能由用户显式动作触发（主文档:263、05:844）。 */
-    val allowJailbreakProbe: Boolean = false,
     val timeoutMillis: Long = 8_000,
 )
 

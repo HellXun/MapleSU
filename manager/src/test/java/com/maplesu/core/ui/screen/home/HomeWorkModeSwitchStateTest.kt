@@ -20,21 +20,10 @@ import org.junit.Test
  */
 class HomeWorkModeSwitchStateTest {
 
-    @Test fun jailbreakKeepsBothModeCardsVisibleButBlocksSwitching() {
-        for (mode in WorkMode.entries) {
-            val state = homeWorkModeSwitchState(HomeWorkModeSwitchFacts(
-                active = mode, installed = HomeInstallSignal.INSTALLED, jailbreak = true))
-            assertTrue(state.visible)
-            assertFalse(state.enabled)
-            assertEquals(mode, state.current)
-            assertEquals(HomeWorkModeSwitchBlock.JAILBREAK_ACTIVE, state.blocked)
-        }
-    }
-
-    @Test fun jailbreakDoesNotExposeHiddenModeInformation() {
+    @Test fun hiddenSignalDoesNotExposeHiddenModeInformation() {
         val state = homeWorkModeSwitchState(HomeWorkModeSwitchFacts(
             active = WorkMode.LITE, installed = HomeInstallSignal.INSTALLED,
-            liteHidden = HomeHiddenSignal.ON, jailbreak = true))
+            liteHidden = HomeHiddenSignal.ON))
         assertFalse(state.visible)
         assertNull(state.current)
     }

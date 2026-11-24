@@ -97,7 +97,7 @@ class HomeReleaseBannerRenderTest(private val mode: UiMode, private val dark: Bo
         kernelVersion = KernelVersion(6, 1, 0), ksuVersion = null, lkmMode = null,
         isLkmBundled = false, isManager = false, isManagerPrBuild = false, isKernelPrBuild = false,
         requiresNewKernel = false, requiresNewManager = false, isRootAvailable = false,
-        isSafeMode = false, isLateLoadMode = false, checkUpdateEnabled = true,
+        isSafeMode = false,  checkUpdateEnabled = true,
         latestVersionInfo = LatestVersionInfo(50110, DOWNLOAD), currentManagerVersionCode = 50109,
         kernelUAPIVersion = null, managerUAPIVersion = 1,
         systemInfo = SystemInfo("6.1.0", "5.1.9 (50109)", "fixture", "fixture", "Enforcing", 0),

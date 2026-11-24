@@ -54,9 +54,9 @@ class InstallerModeSwitchAndroidTest {
 
     @Test
     fun gateRefusalCodesAreStable() {
-        assertEquals("INSTALLER_JAILBREAK_PARTITION_WRITE_REFUSED", InstallerModeGate.REFUSED)
+        assertEquals("INSTALLER_UNTRUSTED_PARTITION_WRITE_REFUSED", InstallerModeGate.REFUSED)
         // The origin/kernel-proof codes were deleted together with the checks that produced them;
-        // only the jailbreak refusal survives (see InstallerModeGatePolicyTest).
+        // only the untrusted refusal survives (see InstallerModeGatePolicyTest).
     }
 
     @Test

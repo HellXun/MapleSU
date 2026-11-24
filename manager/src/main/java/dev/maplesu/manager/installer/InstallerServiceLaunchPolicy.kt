@@ -2,7 +2,7 @@ package dev.maplesu.manager.installer
 
 import dev.maplesu.manager.workmode.WorkMode
 
-/** Ultra-only：越狱 Hook 安装路线已移除，只剩内核/环境 root 与 shell 两条。 */
+/** Ultra-only：只剩内核/环境 root 与 shell 两条启动路线。 */
 internal enum class InstallerServiceLaunchRoute { ROOT_EXEC, SHELL }
 
 internal fun installerServiceLaunchRoute(

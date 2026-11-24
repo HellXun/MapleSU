@@ -41,9 +41,6 @@ object Natives {
 
     val isLkmBundled: Boolean get() = false
 
-    // Ultra-only：越狱 late-load 运行时已从本构建移除，该状态恒为 false。
-    val isLateLoadMode: Boolean get() = false
-
     // Readiness follows the transport that actually exists: the live root channel of this boot.
     //
     // Ultra 兜底（2026-10-29）：另一条真实存在的传输是 MapleSU Ultra 环境。它在 Ultra 内核上

@@ -66,7 +66,7 @@ object Stealth {
      * 以前只有 [isEnabled] 一个布尔(`kernelState() == 1`),把
      * 「明确读到 0(关着)」和「读失败 / 内核不支持」**压成了同一个 false**。
      * 后果很危险:一次 ioctl 读失败 → 界面以为"隐身没开" → 把
-     * 「直接安装」「越狱」这些**只有 root 管理器才有的东西**露出来 → 隐身当场穿帮。
+     * 「直接安装」等**只有 root 管理器才有的东西**露出来 → 隐身当场穿帮。
      */
     enum class State {
         /** 明确读到 1:隐身开着 */
@@ -93,7 +93,7 @@ object Stealth {
     }
 
     /**
-     * 界面上要不要**藏起 root 特征**(安装页的「直接安装」、越狱按钮、SELinux 卡…)。
+     * 界面上要不要**藏起 root 特征**(安装页的「直接安装」、环境卡…)。
      *
      * =「KSU 内核 stealth 不是明确读到 0」**或**「Lite 模式隐藏生效」。
      * 两者后端**完全独立**：KSU 走内核 ioctl，Lite 走 `/data/adb/maplesu/lite_hidden`

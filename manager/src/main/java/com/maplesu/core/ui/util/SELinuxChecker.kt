@@ -13,7 +13,7 @@ import java.util.concurrent.CountDownLatch
  * SDK systemStatus can also use an app-domain file read; Unknown is preserved.
  */
 fun getSELinuxStatusRaw(): String {
-    // Ultra-only：越狱 hook 探测器已移除，状态优先从 Ultra 环境读取。
+    // Ultra-only：状态优先从 Ultra 环境读取。
     if (usesUltraEnvironment()) {
         val scope = currentUltraScope() ?: return "Unknown"
         return readUltraStatus(scope)

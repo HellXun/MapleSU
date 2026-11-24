@@ -5,13 +5,12 @@ package dev.maplesu.manager.runtime.authorization
  * §1.2 / §4.4).
  *
  * <p>Why this file exists. Before it, four stores answered "may this uid run su?" with
- * four different rules: `JailbreakGrantStore` (uid list, app-private, lease route only),
- * `RootAuthorizationStore` (uid + full install identity, root 0600, Normal's restricted
- * Binder), the Pro SDK's `su_auth` list (package names) and the KSU kernel allowlist
- * (package names). The user's decision is that **the Manager's list is the authority**;
- * so there is exactly one decision function now, and every entry point - the Ultra
- * `HookSuEndpoint`, the lease `JailbreakSuEndpoint`/`JailbreakLeaseProxy`, and Normal's
- * `NativeSuBinder` (through `AuthorizationPolicy`) - calls it.
+ * four different rules: `RootAuthorizationStore` (uid + full install identity, root 0600,
+ * restricted Binder), the Pro SDK's `su_auth` list (package names) and the KSU kernel
+ * allowlist (package names). The user's decision is that **the Manager's list is the
+ * authority**; so there is exactly one decision function now, and every entry point -
+ * the Ultra supervised endpoints and the legacy Binder (through `AuthorizationPolicy`)
+ * - calls it.
  *
  * <p>Order is load-bearing and is the same order the design fixes:
  * corrupt store → deny; master switch off → `AUTH_DISABLED`; revoked (tombstone newer

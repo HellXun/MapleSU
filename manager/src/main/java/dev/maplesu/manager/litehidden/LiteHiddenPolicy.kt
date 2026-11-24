@@ -21,7 +21,6 @@ object LiteHiddenPolicy {
         showModuleEntry = true,
         showRootSettings = true,
         showDirectInstall = true,
-        showJailbreakEntry = true,
         showUltraEnvironment = true,
         showModuleActions = true,
         showRecoveryEntry = true,
@@ -44,7 +43,6 @@ object LiteHiddenPolicy {
             showModuleEntry = false,
             showRootSettings = false,
             showDirectInstall = false,
-            showJailbreakEntry = false,
             showUltraEnvironment = false,
             showModuleActions = false,
             showRecoveryEntry = false,
@@ -52,7 +50,7 @@ object LiteHiddenPolicy {
         )
     }
 
-    /** ON 时是否允许某功能（用于安装/越狱/模块/Ultra/恢复页等入口的 gating）。 */
+    /** ON 时是否允许某功能（用于安装/模块/Ultra/恢复页等入口的 gating）。 */
     fun allowsRootFeature(mode: WorkMode?, state: LiteHiddenState, feature: RootFeature): Boolean {
         val visibility = evaluate(mode, state)
         if (!visibility.disguisedAsNotInstalled) return true
@@ -61,7 +59,6 @@ object LiteHiddenPolicy {
             RootFeature.MODULES -> visibility.showModuleEntry
             RootFeature.ROOT_SETTINGS -> visibility.showRootSettings
             RootFeature.DIRECT_INSTALL -> visibility.showDirectInstall
-            RootFeature.JAILBREAK -> visibility.showJailbreakEntry
             RootFeature.ULTRA_ENVIRONMENT -> visibility.showUltraEnvironment
             RootFeature.MODULE_ACTIONS -> visibility.showModuleActions
             RootFeature.RECOVERY -> visibility.showRecoveryEntry
@@ -78,7 +75,6 @@ enum class RootFeature {
     MODULES,
     ROOT_SETTINGS,
     DIRECT_INSTALL,
-    JAILBREAK,
     ULTRA_ENVIRONMENT,
     MODULE_ACTIONS,
     RECOVERY,

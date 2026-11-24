@@ -39,7 +39,6 @@ data class HomeUiState(
     /** Null/UNKNOWN is not a failed command; only an actual SU verdict may raise a warning. */
     val rootReadiness: SuReadiness? = null,
     val isSafeMode: Boolean,
-    val isLateLoadMode: Boolean,
     val checkUpdateEnabled: Boolean,
     val latestVersionInfo: LatestVersionInfo,
     val currentManagerVersionCode: Long,
@@ -150,7 +149,7 @@ data class HomeUiState(
      *
      * 2026-11-02 用户裁决：没有 su 且没有 Ultra 环境就是**未安装**，不能因为
      * "隐藏态还没读到"（[hiddenConfirming]，无 root 时永远为真）就一直转圈/回退成
-     * "环境检查未完成"——那正是把用户锁在首页、连越狱入口都点不到的那个 bug。
+     * "环境检查未完成"——那正是把用户锁在首页、进不了环境检查的那个 bug。
      *
      * 因此进度态只由**本次真的在跑**（[environmentChecking]）或 Ultra 已确认为在装
      * （[litePending] 且未 [liteInstalled]）触发；[hiddenConfirming] 不再单独拉出进度态。
@@ -268,7 +267,6 @@ fun HomeUiState.asStealthKernelNotReady(): HomeUiState = copy(
     isRootAvailable = false,
     rootReadiness = null,
     isSafeMode = false,
-    isLateLoadMode = false,
     // 隐身时不检查更新:更新卡会写版本号 + 下载链接,还多一次联网(伪装期越安静越好)
     checkUpdateEnabled = false,
     latestVersionInfo = LatestVersionInfo(),

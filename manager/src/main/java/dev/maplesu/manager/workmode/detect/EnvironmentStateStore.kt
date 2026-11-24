@@ -18,7 +18,7 @@ import dev.maplesu.manager.workmode.WorkMode
  * @param ultraEnvFingerprint 上次 Ultra 环境指纹（凭据/Ultra/私有目录，具体取值见适配器）。
  * @param bootId 上次判定时的 `/proc/sys/kernel/random/boot_id`；与本 boot 不同 ⇒ 状态**失效**
  *   （用户可能绕过管理器在 recovery/fastboot 刷过内核，必须重判一次）。
- * @param dirty 显式失效位：模式切换 / 刷写 / 越狱完成 / 用户强制重试时置位。
+ * @param dirty 显式失效位：模式切换 / 刷写 / 用户强制重试时置位。
  */
 data class EnvironmentSnapshot(
     val mode: WorkMode?,
@@ -46,9 +46,6 @@ enum class EnvironmentInvalidation(val code: String) {
 
     /** 分区/镜像刷写完成。 */
     FLASHED("ENV_DIRTY_FLASHED"),
-
-    /** 越狱流程完成（租约可能已建立/失效）。 */
-    JAILBREAK_COMPLETED("ENV_DIRTY_JAILBREAK_COMPLETED"),
 
     /** 安装器任务完成（可能改变 root 通道）。 */
     INSTALLER_COMPLETED("ENV_DIRTY_INSTALLER_COMPLETED"),
@@ -190,7 +187,7 @@ object EnvironmentInheritancePolicy {
      * - **继承要保留**：冷启动优先沿用上次**已确定**的状态，检查在后台**静默**做；
      * - **不继承"未完成"**：`EnvironmentSnapshot` 只由终态写入（`EnvironmentResolver`
      *   对 `ENV_UNKNOWN_TIMEOUT` 明确不落盘）；未安装也不继承，每次快速检查 SU 与 Key；
-     * - 状态被显式标脏（刷写 / 换模式 / 越狱完成 / 用户强制重试）或 bootId 变化 → 必须重判。
+     * - 状态被显式标脏（刷写 / 换模式 / 用户强制重试）或 bootId 变化 → 必须重判。
      */
     fun triggerFor(snapshot: EnvironmentSnapshot?, currentBootId: String): EnvironmentCheckTrigger? =
         when {

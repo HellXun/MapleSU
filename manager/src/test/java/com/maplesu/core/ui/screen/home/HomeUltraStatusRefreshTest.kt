@@ -45,7 +45,6 @@ class HomeUltraStatusRefreshTest {
         requiresNewManager = false,
         isRootAvailable = root,
         isSafeMode = false,
-        isLateLoadMode = false,
         checkUpdateEnabled = false,
         latestVersionInfo = LatestVersionInfo(),
         currentManagerVersionCode = 1,
@@ -127,18 +126,6 @@ class HomeUltraStatusRefreshTest {
         }
     }
 
-    @Test fun newBootOrModeChangeDoesNotReuseThePreviousUltraResult() {
-        val failed = project(state().copy(environmentFailure = HomeEnvironmentFailure.FAILED))
-        assertTrue(failed.showInstalledStatus)
-        for (mode in listOf(null, WorkMode.LITE)) {
-            val changed = project(failed, mode = mode)
-            assertFalse(changed.ultraBrandVisible)
-            assertFalse(changed.showInstalledStatus)
-            assertTrue(changed.showEnvironmentStatusCard)
-            assertFalse(changed.showEnvironmentRefreshWarning)
-        }
-    }
-
     @Test fun hiddenConfirmationAndNormalizationRemainHigherPriority() {
         val installed = project(state())
         val confirming = project(installed.copy(hiddenConfirming = true, environmentChecking = true))
@@ -158,14 +145,6 @@ class HomeUltraStatusRefreshTest {
         assertTrue(pending.showInstalledStatus)
         assertFalse(pending.showEnvironmentStatusCard)
         assertFalse(pending.isRootAvailable)
-    }
-
-    @Test fun normalKsuKeepsItsOriginalInstalledBranch() {
-        val normal = project(state(root = true).copy(ksuVersion = 123), mode = WorkMode.LITE)
-        assertFalse(normal.ultraBrandVisible)
-        assertTrue(normal.showInstalledStatus)
-        assertFalse(normal.showEnvironmentStatusCard)
-        assertTrue(normal.isRootAvailable)
     }
 
     @Test fun indeterminateAfterReinstallKeepsIdentityUnconfirmed() {

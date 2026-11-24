@@ -102,7 +102,7 @@ class AdvisorRosterTest {
     @Test fun bothAboutDialogsShowTheWallAfterTheSpecialThanksLine() {
         for ((skin, call) in listOf("Miuix" to "AdvisorWallMiuix(", "Material" to "AdvisorWallMaterial(")) {
             val source = File("src/main/java/com/maplesu/core/ui/screen/home/AboutMapleDialog$skin.kt").readText()
-            val thanks = source.indexOf("JailbreakSpecialThanks(textRes = R.string.about_maple_special_thanks)")
+            val thanks = source.indexOf("specialThanksText(stringResource(R.string.about_maple_special_thanks)")
             assertTrue(thanks >= 0 && source.indexOf(call) > thanks)
         }
     }

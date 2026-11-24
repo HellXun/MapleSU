@@ -9,7 +9,6 @@ import dev.maplesu.manager.workmode.detect.DefaultModeDetector
 import dev.maplesu.manager.workmode.detect.DetectionOrigin
 import dev.maplesu.manager.workmode.detect.DetectionRequest
 import dev.maplesu.manager.workmode.detect.DetectionResult
-import dev.maplesu.manager.workmode.detect.JailbreakLeaseProbe
 import dev.maplesu.manager.workmode.detect.KsuFacts
 import dev.maplesu.manager.workmode.detect.KsuKernelProbe
 import dev.maplesu.manager.workmode.detect.LiteCredentialProbe
@@ -53,7 +52,6 @@ class ModeBootstrapCoordinatorTest {
             liteProbe = LiteCredentialProbe { credentialPresent to null },
             liteHandshakeProbe = counter,
             ultraPort = UltraEnvironmentPort { UltraState.UNKNOWN },
-            jailbreakLease = JailbreakLeaseProbe { false },
             bootIdSource = BootIdSource { "boot-1" },
             rootEvidenceReader = UnavailableRootEvidenceReader,
         )
@@ -161,23 +159,6 @@ class ModeBootstrapCoordinatorTest {
         assertEquals(DetectionOrigin.AFTER_ROOT_GRANTED, seen[1].origin)
         assertTrue(seen[1].allowRootProbe)
         assertTrue(seen[1].allowLiteExecutor)
-        assertTrue(seen[1].allowJailbreakProbe)
-    }
-
-    @Test
-    fun phaseTwoRecognizesAnExistingHookWithoutCredentials() = runBlocking {
-        ModeRuntime.installBootIdProviderForTest { "boot-1" }
-        var hookReads = 0
-        val detector = DefaultModeDetector(
-            jailbreakLease = JailbreakLeaseProbe { hookReads++; true },
-            bootIdSource = BootIdSource { "boot-1" },
-        )
-        val coordinator = productionCoordinator(detector)
-        assertTrue(coordinator.runPhaseOne() is BootstrapOutcome.Unresolved)
-        assertEquals(0, hookReads)
-        assertTrue(coordinator.runPhaseTwo() is BootstrapOutcome.Activated)
-        assertEquals(1, hookReads)
-        assertEquals(WorkMode.LITE, ModeRuntime.active)
     }
 
     @Test
@@ -203,7 +184,6 @@ class ModeBootstrapCoordinatorTest {
             liteProbe = LiteCredentialProbe { true to null },
             liteHandshakeProbe = LiteHandshakeProbe { ++handshakeCalls > 1 },
             ultraPort = UltraEnvironmentPort { UltraState.UNKNOWN },
-            jailbreakLease = JailbreakLeaseProbe { false },
             bootIdSource = BootIdSource { "boot-1" },
             rootEvidenceReader = UnavailableRootEvidenceReader,
         )

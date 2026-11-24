@@ -29,7 +29,6 @@ class HomeUiStateLiteHiddenNormalizationTest {
         requiresNewManager = false,
         isRootAvailable = true,
         isSafeMode = false,
-        isLateLoadMode = false,
         checkUpdateEnabled = true,
         latestVersionInfo = LatestVersionInfo(),
         currentManagerVersionCode = 2L,

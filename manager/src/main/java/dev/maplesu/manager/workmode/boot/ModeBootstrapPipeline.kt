@@ -101,7 +101,7 @@ class ModeBootstrapPipeline(
         } else null
         // A quick SU failure can be cached while a Hook becomes ready. Phase two
         // must still check the existing channel; it never starts a new attempt.
-        val checkExistingChannel = overridden?.state == ModeState.NOT_INSTALLED && request.allowJailbreakProbe
+        val checkExistingChannel = overridden?.state == ModeState.NOT_INSTALLED
         val result = overridden?.takeUnless { checkExistingChannel } ?: run {
             val checked = probeRunner.run(request.timeoutMillis) {
                 runBlocking { detector.detect(request) }
@@ -146,12 +146,11 @@ class ModeBootstrapPipeline(
             DetectionRules.Rule.R6_A_ULTRA -> "ultra:running"
             DetectionRules.Rule.R6_A_ULTRA_SAFE_MODE -> "ultra:fault"
             DetectionRules.Rule.R6_A_ULTRA_KERNEL_ONLY -> "ultra:kernel"
-            DetectionRules.Rule.R7_A_JAILBREAK -> "hook:ready"
             else -> null
         }
         if (ultraFingerprint != null) {
             val suAvailable = when (result.rule) {
-                DetectionRules.Rule.R5_A_HANDSHAKE, DetectionRules.Rule.R7_A_JAILBREAK -> true
+                DetectionRules.Rule.R5_A_HANDSHAKE -> true
                 DetectionRules.Rule.R6_A_ULTRA -> environmentStore?.snapshot()
                     ?.takeIf { it.bootId == result.bootId }?.suAvailable == true
                 else -> false

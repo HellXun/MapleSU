@@ -64,11 +64,6 @@ class HomeInstallSignalTest {
             HomeInstallSignal.INSTALLED,
             signal(active = WorkMode.LITE, liteEvidence = true),
         )
-        assertEquals(
-            "KSU 下残留的 Lite 凭据不得翻成已安装",
-            HomeInstallSignal.NOT_INSTALLED,
-            signal(active = WorkMode.LITE, liteEvidence = true),
-        )
     }
 
     @Test
@@ -80,11 +75,6 @@ class HomeInstallSignalTest {
         assertEquals(
             HomeInstallSignal.INSTALLED,
             signal(active = WorkMode.LITE, lastKnown = true),
-        )
-        assertEquals(
-            "KSU 不认 Lite 判定痕迹",
-            HomeInstallSignal.NOT_INSTALLED,
-            signal(active = WorkMode.LITE, detectedA = true, lastKnown = true),
         )
     }
 

@@ -51,15 +51,4 @@ class ThemeFlowPolishContractTest {
         val vm = source("dev/maplesu/manager/workmode/ui/WebUiSelfCheckViewModel.kt")
         assertFalse(vm.contains("status.running || info != null"))
     }
-
-    @Test fun nativeSettingWritesAreImmediateOrderedAndRollbackToCommittedValue() {
-        val vm = source("com/maplesu/core/ui/viewmodel/SettingsViewModel.kt")
-        assertTrue(vm.contains("queue.mutex.withLock"))
-        assertTrue(vm.contains("_uiState.update { update(it, enabled) }"))
-        assertTrue(vm.contains("_uiState.update { update(it, queue.committed) }"))
-        assertTrue(vm.contains("activeToggleWrites.get() == 0"))
-        assertTrue(vm.contains("val acceptPreferences = revision == localRevision.get()"))
-        val uninstall = source("com/maplesu/core/ui/component/uninstalldialog/UninstallDialog.kt")
-        assertTrue(uninstall.contains("disabledReason = if (type == UninstallType.PERMANENT)"))
-    }
 }

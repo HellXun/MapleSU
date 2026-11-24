@@ -497,9 +497,9 @@ internal fun StatusCard(
                         ),
                         onClick = {
                             if (state.isSafeMode) actions.onManageModules()
-                            else if (!state.isLateLoadMode) actions.onInstallClick()
+                            else actions.onInstallClick()
                         },
-                        showIndication = !state.isLateLoadMode,
+                        showIndication = true,
                         pressFeedbackType = PressFeedbackType.Tilt,
                         modifier = Modifier.fillMaxWidth().then(
                             if (decorPrefs.largeCard) Modifier.aspectRatio(StatusDecoration.CARD_ASPECT_RATIO) else Modifier
@@ -582,7 +582,7 @@ internal fun StatusCard(
                                 verticalArrangement = Arrangement.SpaceBetween,
                             ) {
                                 Column {
-                                    if (workingText.isNotBlank() && (!state.showInstalledStatus || !themeArt.hideText || state.showSafeModeBanner || state.isSafeMode || state.isLateLoadMode)) {
+                                    if (workingText.isNotBlank() && (!state.showInstalledStatus || !themeArt.hideText || state.showSafeModeBanner || state.isSafeMode)) {
                                         Text(
                                             text = workingText,
                                             color = statusContentColor,
@@ -660,7 +660,6 @@ internal fun StatusCard(
                     //    "真·没 root 的设备"该有的样子(没有「直接安装(推荐)」/「安装到未使用槽位」,
                     //    只有「选择文件并修补 / 下载文件并修补 / 使用本地 LKM 文件」),
                     //    所以不露馅;反倒是"点不了"本身就可疑(v0.13.149 的教训)。
-                    //    ⚠️ 唯一保留的隐身差异:右边的「越狱」按钮不画(见下面 endActions)。
                     //
                     // ⚠️ v0.13.157:隐身时**不再是特例**。v0.13.156 曾在这里插一个
                     //    `stealthOn ->` 首选分支,只弹一句「暂时无法处理，请稍后再试」、
@@ -669,12 +668,11 @@ internal fun StatusCard(
                     //    所以隐身时必须弹它(而不是弹一句"什么都不漏"的自造提示)。
                     onClick = {
                         when {
-                            state.isLateLoadMode -> Unit
                             else -> actions.onInstallClick()
                         }
                     },
                     // 有按压反馈才像个能点的东西(以前这里也是 false,点了彻底没动静)
-                    showIndication = !state.isLateLoadMode,
+                    showIndication = true,
                     pressFeedbackType = PressFeedbackType.Tilt,
                     colors = if (flat) CardDefaults.defaultColors(color = Color.Transparent)
                              else CardDefaults.defaultColors(),
@@ -702,7 +700,7 @@ internal fun StatusCard(
                             )
                         },
                         endActions = {
-                            // Ultra-only：未安装时的主动作是安装 Ultra（越狱入口已移除）。
+                            // Ultra-only：未安装时的主动作是安装 Ultra。
                             TextButton(
                                 text = stringResource(R.string.home_click_to_install),
                                 onClick = actions.onInstallClick,
@@ -723,11 +721,9 @@ internal fun StatusCard(
                     // 安装页本身已经显示成"真·没 root"的样子(见 InstallScreen 里的说明)
                     // ⚠️ v0.13.157:隐身时**不再是特例**(v0.13.156 加在这里的 stealthOn 堵法已撤)。
                     onClick = {
-                        if (!state.isLateLoadMode) {
-                            actions.onInstallClick()
-                        }
+                        actions.onInstallClick()
                     },
-                    showIndication = !state.isLateLoadMode,
+                    showIndication = true,
                     pressFeedbackType = PressFeedbackType.Tilt,
                     colors = if (flat) CardDefaults.defaultColors(color = Color.Transparent)
                              else CardDefaults.defaultColors(),
@@ -1005,15 +1001,6 @@ private fun StatusCardPermissivePreview() {
     )
 }
 
-@Preview(name = "Jailbreak")
-@Composable
-private fun StatusCardJailbreakPreview() {
-    StatusCard(
-        state = previewHomeScreenState(ksuVersion = 12345, lkmMode = true, isLateLoadMode = true),
-        actions = HomeActions({}, {})
-    )
-}
-
 private val previewSystemInfo = SystemInfo(
     kernelVersion = "6.12.23-android16-5-g123456789000-abogki123456789-4k",
     managerVersion = "3.0.0 (30000)",
@@ -1032,7 +1019,6 @@ private fun HomeScreenPreviewContent(
     ksuVersion: Int?,
     lkmMode: Boolean?,
     isSafeMode: Boolean = false,
-    isLateLoadMode: Boolean = false,
     selinuxStatus: String = "Enforcing",
 ) {
     CompositionLocalProvider(LocalUriHandler provides previewUriHandler) {
@@ -1047,7 +1033,6 @@ private fun HomeScreenPreviewContent(
                     ksuVersion = ksuVersion,
                     lkmMode = lkmMode,
                     isSafeMode = isSafeMode,
-                    isLateLoadMode = isLateLoadMode,
                     selinuxStatus = selinuxStatus,
                 ),
                 actions = actions
@@ -1078,17 +1063,10 @@ private fun HomeScreenPermissivePreview() {
     HomeScreenPreviewContent(ksuVersion = null, lkmMode = null, selinuxStatus = "Permissive")
 }
 
-@Preview(name = "Home Jailbreak", showBackground = true)
-@Composable
-private fun HomeScreenJailbreakPreview() {
-    HomeScreenPreviewContent(ksuVersion = 12345, lkmMode = true, isLateLoadMode = true)
-}
-
 private fun previewHomeScreenState(
     ksuVersion: Int?,
     lkmMode: Boolean?,
     isSafeMode: Boolean = false,
-    isLateLoadMode: Boolean = false,
     selinuxStatus: String = "Enforcing",
 ) = HomeUiState(
     kernelVersion = KernelVersion(6, 1, 0),
@@ -1102,7 +1080,6 @@ private fun previewHomeScreenState(
     requiresNewManager = false,
     isRootAvailable = ksuVersion != null,
     isSafeMode = isSafeMode,
-    isLateLoadMode = isLateLoadMode,
     checkUpdateEnabled = false,
     latestVersionInfo = LatestVersionInfo(),
     currentManagerVersionCode = 10000,

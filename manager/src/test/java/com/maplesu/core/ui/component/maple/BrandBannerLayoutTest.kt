@@ -28,8 +28,7 @@ class BrandBannerLayoutTest {
         assertEquals(2, brandBannerGrid(widthPx = 100, heightPx = 100, pitchPx = 0).pitch)
     }
 
-    @Test fun eachWorkModeHasItsOwnBanner() {
+    @Test fun ultraHasItsOwnBanner() {
         assertEquals(BrandBannerKind.ULTRA, brandBannerKind(WorkMode.LITE))
-        assertEquals(BrandBannerKind.NORMAL, brandBannerKind(WorkMode.LITE))
     }
 }

@@ -32,8 +32,5 @@
 -keep class dev.maplesu.manager.runtime.authorization.SuperuserTool {
     public static void main(java.lang.String[]);
 }
--keep class dev.maplesu.manager.runtime.JailbreakDaemonMain {
-    public static void main(java.lang.String[]);
-}
 -keep class rikka.shizuku.** { *; }
 -keep class moe.shizuku.server.** { *; }

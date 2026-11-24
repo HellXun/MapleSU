@@ -22,7 +22,6 @@ object DetectionRules {
         R6_A_ULTRA_SAFE_MODE,
         R6_A_ULTRA_KERNEL_ONLY,
         R6_A_ULTRA_OWNER_ONLY,
-        R7_A_JAILBREAK,
         R8_A_DISK_STRONG_UNBOUND,
         R9_A_DISK_WEAK_UNBOUND,
         R10_FOREIGN_ROOT,
@@ -114,11 +113,6 @@ object DetectionRules {
                 reasons = listOf("ULTRA_USERSPACE_NOT_READY")
             }
 
-            lite.jailbreakLeaseValid -> {
-                state = ModeState.MODE_A_ACTIVE
-                rule = Rule.R7_A_JAILBREAK
-                reasons = emptyList()
-            }
 
             lite.managerOwnerBound -> {
                 state = ModeState.MODE_A_INSTALLED_UNBOUND

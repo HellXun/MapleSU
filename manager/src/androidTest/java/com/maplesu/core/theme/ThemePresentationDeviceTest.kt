@@ -731,7 +731,7 @@ class ThemePresentationDeviceTest(private val initialSkin: UiMode, private val d
     private fun homeState() = HomeUiState(
         kernelVersion=KernelVersion(6,1,0),ksuVersion=12345,managerUAPIVersion=1,kernelUAPIVersion=1,
         lkmMode=true,isLkmBundled=true,isManager=true,isManagerPrBuild=false,isKernelPrBuild=false,
-        requiresNewKernel=false,requiresNewManager=false,isRootAvailable=true,isSafeMode=false,isLateLoadMode=false,
+        requiresNewKernel=false,requiresNewManager=false,isRootAvailable=true,isSafeMode=false,
         checkUpdateEnabled=false,latestVersionInfo=LatestVersionInfo(),currentManagerVersionCode=50008,
         systemInfo=SystemInfo("Theme fixture kernel","Theme fixture manager","Theme fixture device","fixture/device:1/test","Enforcing",2))
 

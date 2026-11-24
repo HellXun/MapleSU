@@ -58,9 +58,6 @@ class ModeDetectionRulesTest {
         "case_proFaultKeepsInstalledUltraAfterDataReset" to (
             facts(lite = TestFixtures.liteFacts(ultraState = UltraState.FAULT), ageMs = 0) to
                 (ModeState.MODE_A_ACTIVE to DetectionRules.Rule.R6_A_ULTRA_SAFE_MODE)),
-        "case8_jailbreakLease" to (
-            facts(lite = TestFixtures.liteFacts(jailbreakLeaseValid = true)) to
-                (ModeState.MODE_A_ACTIVE to DetectionRules.Rule.R7_A_JAILBREAK)),
         "case9_credentialHandshakeFailed" to (
             facts(lite = TestFixtures.liteFacts(credentialPresent = true, handshakeOk = false)) to
                 (ModeState.MODE_A_INSTALLED_UNBOUND to DetectionRules.Rule.R8_A_DISK_STRONG_UNBOUND)),

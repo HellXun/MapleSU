@@ -39,15 +39,12 @@ class ModuleTypeChoiceContractTest {
         assertTrue(source.contains("Modifier.selectableGroup()"))
     }
 
-    @Test fun ultraOffersBothExplicitTypesAndNormalOnlyOffersKernelSu() {
+    @Test fun ultraOffersBothExplicitTypes() {
         val evidence = ModuleTypeEvidence(ModuleType.AMBIGUOUS, listOf("fixture"))
         val options = ModuleTypeUi.dialogModel(evidence, WorkMode.LITE).choices
         assertEquals(setOf(ModuleType.MAPLESU, ModuleType.KERNELSU), options.filter {
             ModuleTypeUi.installEnabled(evidence, WorkMode.LITE, it)
         }.toSet())
-        assertEquals(listOf(ModuleType.KERNELSU), options.filter {
-            ModuleTypeUi.installEnabled(evidence, WorkMode.LITE, it)
-        })
         assertFalse(ModuleTypeUi.installEnabled(evidence, WorkMode.LITE, null))
     }
 }

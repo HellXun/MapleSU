@@ -58,10 +58,18 @@ class UltraKernelGenerationTest {
     }
 
     /** The port only renders for a boot image that exists; a temp file keeps that honest. */
+    /** Minimal valid boot image v3: ANDROID! magic, headerSize=1580, kernelSize=32. */
     private fun withBootFile(block: (File) -> Unit) {
         val file = File.createTempFile("ultra-kernel-boot-", ".img")
         try {
-            file.writeBytes(ByteArray(32))
+            val page = 4096
+            val image = ByteArray(page + 32)
+            "ANDROID!".toByteArray(Charsets.US_ASCII).copyInto(image, 0)
+            image[8] = 32
+            image[20] = 0x2C
+            image[21] = 0x06
+            image[40] = 3
+            file.writeBytes(image)
             block(file)
         } finally {
             file.delete()

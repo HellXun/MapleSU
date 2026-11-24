@@ -21,13 +21,13 @@ import java.security.SecureRandom
 private const val KEY_USE_SOFT_REBOOT = "soft_reboot"
 
 /**
- * Prefer soft reboot: always in jailbreak mode, or when the setting is enabled.
+ * Prefer soft reboot: always for ultra-only flows, or when the setting is enabled.
  *
  * P0 配置隔离：读取走 [SettingsPrefsRouter]（A=`settings` / B=`settings_B` /
  * 未判定按 01 §3.1 的提示与 A 证据回退，绝不默认 A）。
  */
 fun isSoftRebootPreferred(): Boolean =
-    Natives.isLateLoadMode || SettingsPrefsRouter(ksuApp).prefs()
+    SettingsPrefsRouter(ksuApp).prefs()
         .getBoolean(KEY_USE_SOFT_REBOOT, false)
 
 class SettingsRepositoryImpl : SettingsRepository {

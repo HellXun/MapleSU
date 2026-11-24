@@ -53,6 +53,11 @@ internal fun AboutMapleDialogMiuix(show: Boolean, showModes: Boolean, onDismiss:
             color = colorScheme.onSurface,
         )
         CreditsMiuix()
+        Text(
+            text = specialThanksText(stringResource(R.string.about_maple_special_thanks), colorScheme.primary),
+            modifier = Modifier.fillMaxWidth(),
+            fontSize = 14.sp,
+        )
         AdvisorWallMiuix(Modifier.padding(top = 4.dp))
     }
 }

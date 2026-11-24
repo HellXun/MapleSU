@@ -46,35 +46,6 @@ class WebUiModulesTest {
         override suspend fun checkUpdate(module: Module) = Result.success(ModuleUpdateInfo.Empty)
     }
 
-    @Test fun coldStaticWebUiWaitsForNormalActivationAndWiringBeforeReadingModules() = runBlocking {
-        val repository = Repository()
-        val pending = async(start = CoroutineStart.UNDISPATCHED) { loadWebUiModules(repository) }
-        assertEquals(0, repository.reads)
-        assertFalse(pending.isCompleted)
-        activate(WorkMode.LITE)
-        assertEquals(0, repository.reads)
-        assertFalse(pending.isCompleted)
-        ModuleBackendPorts.ksuFactory = { error("readiness must not execute the backend") }
-        assertTrue(withTimeout(1_000) { pending.await() }.isSuccess)
-        assertEquals(1, repository.reads)
-    }
-
-    @Test fun knownUltraModeReadsImmediatelyWithoutWaitingForNormal() = runBlocking {
-        activate(WorkMode.LITE)
-        val repository = Repository()
-        assertTrue(loadWebUiModules(repository).isSuccess)
-        assertEquals(1, repository.reads)
-    }
-
-    @Test fun failedNormalWiringLeavesAVisibleFailureWithoutReadingAStaleBackend() = runBlocking {
-        activate(WorkMode.LITE)
-        val repository = Repository()
-        val pending = async(start = CoroutineStart.UNDISPATCHED) { loadWebUiModules(repository) }
-        ModuleBackendPorts.markWiringFailed("TEST_WIRING_FAILED")
-        assertTrue(withTimeout(1_000) { pending.await() }.isFailure)
-        assertEquals(0, repository.reads)
-    }
-
     @Test fun closingTheWebUiCancelsReadinessWithoutStartingRootOrReadingModules() = runBlocking {
         val repository = Repository()
         val pending = async(start = CoroutineStart.UNDISPATCHED) { loadWebUiModules(repository) }

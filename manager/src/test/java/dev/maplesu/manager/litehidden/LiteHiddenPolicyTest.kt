@@ -35,7 +35,7 @@ class LiteHiddenPolicyTest {
         assertTrue("A 显示隐藏卡", ui.cardVisible)
         assertFalse(ui.disguisedAsNotInstalled)
         assertTrue(ui.showSuperUserEntry && ui.showModuleEntry && ui.showRootSettings)
-        assertTrue(ui.showDirectInstall && ui.showJailbreakEntry && ui.showUltraEnvironment)
+        assertTrue(ui.showDirectInstall && ui.showUltraEnvironment)
         assertTrue(ui.showModuleActions && ui.showRecoveryEntry)
         assertFalse("桌面图标永不隐藏", ui.allowLauncherAliasToggle)
         assertEquals(LiteHiddenPolicy.BASELINE.copy(cardVisible = true), ui)
@@ -49,7 +49,6 @@ class LiteHiddenPolicyTest {
         assertFalse(ui.showModuleEntry)
         assertFalse(ui.showRootSettings)
         assertFalse(ui.showDirectInstall)
-        assertFalse(ui.showJailbreakEntry)
         assertFalse(ui.showUltraEnvironment)
         assertFalse(ui.showModuleActions)
         assertFalse(ui.showRecoveryEntry)
@@ -215,13 +214,13 @@ class LiteHiddenPolicyTest {
     @Test
     fun traceWireRoundTrip() {
         val selection = LiteHiddenTracePolicy.selectionFromWire(
-            setOf(LiteHiddenTraceItem.JAILBREAK_LOG.wire, LiteHiddenTraceItem.DEBUG_EXPORTS.wire, "unknown"),
+            setOf(LiteHiddenTraceItem.LOGCAT_TAGS.wire, LiteHiddenTraceItem.DEBUG_EXPORTS.wire, "unknown"),
         )
-        assertTrue(selection[LiteHiddenTraceItem.JAILBREAK_LOG] == true)
+        assertTrue(selection[LiteHiddenTraceItem.LOGCAT_TAGS] == true)
         assertTrue(selection[LiteHiddenTraceItem.DEBUG_EXPORTS] == true)
-        assertFalse(selection[LiteHiddenTraceItem.LOGCAT_TAGS] == true)
+        assertFalse(selection[LiteHiddenTraceItem.RECENT_INSTALL_LOG] == true)
         assertEquals(
-            setOf(LiteHiddenTraceItem.JAILBREAK_LOG.wire, LiteHiddenTraceItem.DEBUG_EXPORTS.wire),
+            setOf(LiteHiddenTraceItem.LOGCAT_TAGS.wire, LiteHiddenTraceItem.DEBUG_EXPORTS.wire),
             LiteHiddenTracePolicy.toWire(selection),
         )
     }
@@ -229,7 +228,7 @@ class LiteHiddenPolicyTest {
     @Test
     fun canDeleteOnlyAppPrivateWhitelistDirs() {
         val root = "/data/user/0/com.maplesu.core/files"
-        assertTrue(LiteHiddenTracePolicy.canDelete(root, "$root/jailbreak/status.json"))
+        assertTrue(LiteHiddenTracePolicy.canDelete(root, "$root/logs/a.log"))
         assertTrue(LiteHiddenTracePolicy.canDelete(root, "$root/diagnostics/a.json"))
         assertTrue(LiteHiddenTracePolicy.canDelete(root, "$root/debug-exports/x.txt"))
         assertFalse("模块实体禁止", LiteHiddenTracePolicy.canDelete(root, "$root/module-catalog/a"))
@@ -246,16 +245,14 @@ class LiteHiddenPolicyTest {
         assertTrue(LiteHiddenTracePolicy.isForbidden("/data/adb/maplesu/authorization"))
         assertTrue(LiteHiddenTracePolicy.isForbidden("/x/backup/b.tar"))
         assertTrue(LiteHiddenTracePolicy.isForbidden("/x/modules/m"))
-        assertFalse(LiteHiddenTracePolicy.isForbidden("/x/jailbreak/status.json"))
+        assertFalse(LiteHiddenTracePolicy.isForbidden("/x/diagnostics/a.json"))
     }
 
     @Test
     fun traceItemsHonestlyReportArtifactsAndRootNeeds() {
         assertFalse("最近安装无持久化痕迹", LiteHiddenTracePolicy.hasPersistentArtifact(LiteHiddenTraceItem.RECENT_INSTALL_LOG))
         assertFalse("只存在 LauncherAlias，图标永不禁用", LiteHiddenTracePolicy.hasPersistentArtifact(LiteHiddenTraceItem.INTENT_ALIASES))
-        assertTrue(LiteHiddenTracePolicy.hasPersistentArtifact(LiteHiddenTraceItem.JAILBREAK_LOG))
         assertTrue(LiteHiddenTracePolicy.hasPersistentArtifact(LiteHiddenTraceItem.DEBUG_EXPORTS))
         assertTrue(LiteHiddenTracePolicy.requiresRoot(LiteHiddenTraceItem.LOGCAT_TAGS))
-        assertFalse(LiteHiddenTracePolicy.requiresRoot(LiteHiddenTraceItem.JAILBREAK_LOG))
     }
 }

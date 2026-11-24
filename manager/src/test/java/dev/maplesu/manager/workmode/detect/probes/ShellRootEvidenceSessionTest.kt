@@ -157,6 +157,5 @@ class ShellRootEvidenceSessionTest {
     fun adapterOpenerThrowIsUnknown() {
         val adapter = RootEvidenceReaderAdapter { error("no channel") }
         assertNull(adapter.open(RootChannelKind.LITE_ULTRA))
-        assertNull(adapter.open(RootChannelKind.JAILBREAK))
     }
 }

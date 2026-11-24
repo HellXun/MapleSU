@@ -145,7 +145,7 @@ class ThemeStartupDeviceTest {
         val state = HomeUiState(kernelVersion=KernelVersion(6,1,0),ksuVersion=null,
             managerUAPIVersion=1,kernelUAPIVersion=null,lkmMode=null,isLkmBundled=true,
             isManager=false,isManagerPrBuild=false,isKernelPrBuild=false,requiresNewKernel=false,
-            requiresNewManager=false,isRootAvailable=false,isSafeMode=false,isLateLoadMode=false,
+            requiresNewManager=false,isRootAvailable=false,isSafeMode=false,
             checkUpdateEnabled=false,latestVersionInfo=LatestVersionInfo(),currentManagerVersionCode=50100,
             systemInfo=SystemInfo("fixture","fixture","fixture","fixture","Enforcing",2),environmentChecking=true)
         assertTrue(state.showEnvironmentStatusCard)

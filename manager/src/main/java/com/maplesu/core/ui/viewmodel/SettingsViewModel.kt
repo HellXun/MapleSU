@@ -309,7 +309,6 @@ class SettingsViewModel(
                     colorStyle = if (acceptPreferences) colorStyle else it.colorStyle,
                     colorSpec = if (acceptPreferences) colorSpec else it.colorSpec,
                     useSoftReboot = if (acceptPreferences) useSoftReboot else it.useSoftReboot,
-                    isLateLoadMode = false,
                 )
             }
             SettingsSnapshotCache.store(_uiState.value)

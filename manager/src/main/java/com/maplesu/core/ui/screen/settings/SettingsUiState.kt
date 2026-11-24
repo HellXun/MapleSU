@@ -50,7 +50,6 @@ data class SettingsUiState(
 
     // Shell SU ADB Only
 
-    val isLateLoadMode: Boolean = false,
 
     // Soft Reboot
     val useSoftReboot: Boolean = false,

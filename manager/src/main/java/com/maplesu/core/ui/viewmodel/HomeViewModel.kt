@@ -662,7 +662,6 @@ class HomeViewModel(
             isRootAvailable = isRootAvailable,
             rootReadiness = liveReadiness,
             isSafeMode = ultraSafeMode || probeRoot && runCatching { Natives.isSafeMode }.getOrDefault(false),
-            isLateLoadMode = probeRoot && runCatching { Natives.isLateLoadMode }.getOrDefault(false),
             checkUpdateEnabled = runCatching { settingsRepo.checkUpdate }.getOrDefault(false),
             latestVersionInfo = LatestVersionInfo(),
             currentManagerVersionCode = managerVersion.versionCode,

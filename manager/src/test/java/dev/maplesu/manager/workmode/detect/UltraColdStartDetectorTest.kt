@@ -22,9 +22,8 @@ class UltraColdStartDetectorTest {
             },
             liteProbe = LiteCredentialProbe { true to null },
             liteHandshakeProbe = LiteHandshakeProbe { error("Ultra keys must not enter the legacy transport") },
-            jailbreakLease = JailbreakLeaseProbe { error("A verified Ultra kernel needs no Hook lease") },
             bootIdSource = BootIdSource { "boot" },
-        ).detect(request.copy(allowJailbreakProbe = true))
+        ).detect(request)
         assertTrue("Phase two must observe the live Ultra channel", refreshed)
         assertEquals(ModeState.MODE_A_ACTIVE, result.state)
         assertEquals(RootChannelKind.LITE_ULTRA, result.rootChannel)
@@ -73,45 +72,6 @@ class UltraColdStartDetectorTest {
                     },
                 ).detect(input)
             }
-        }
-    }
-
-    @Test fun runningUltraDoesNotReproveAnUnusedJailbreakLease() = runBlocking {
-        var leaseCalls = 0
-        val result = DefaultModeDetector(
-            ultraPort = UltraEnvironmentPort { UltraState.RUNNING },
-            jailbreakLease = JailbreakLeaseProbe { leaseCalls++; true },
-            bootIdSource = BootIdSource { "boot" },
-        ).detect(request.copy(allowJailbreakProbe = true))
-        assertEquals(0, leaseCalls)
-        assertEquals(DetectionRules.Rule.R6_A_ULTRA, result.rule)
-        assertEquals(RootChannelKind.LITE_ULTRA, result.rootChannel)
-        assertNull(result.trace.single { it.id == "L4" }.ok)
-    }
-
-    @Test fun faultDoesNotStartAnUnrelatedJailbreakLease() = runBlocking {
-        var leaseCalls = 0
-        val result = DefaultModeDetector(
-            ultraPort = UltraEnvironmentPort { UltraState.FAULT },
-            jailbreakLease = JailbreakLeaseProbe { leaseCalls++; true },
-            bootIdSource = BootIdSource { "boot" },
-        ).detect(request.copy(allowJailbreakProbe = true))
-        assertEquals(0, leaseCalls)
-        assertEquals(DetectionRules.Rule.R6_A_ULTRA_SAFE_MODE, result.rule)
-        assertNull(result.rootChannel)
-    }
-
-    @Test fun unconfirmedUltraStillReprovesAndUsesTheJailbreakLease() = runBlocking {
-        for (state in UltraState.entries.filterNot { it == UltraState.RUNNING || it == UltraState.FAULT }) {
-            var leaseCalls = 0
-            val result = DefaultModeDetector(
-                ultraPort = UltraEnvironmentPort { state },
-                jailbreakLease = JailbreakLeaseProbe { leaseCalls++; true },
-                bootIdSource = BootIdSource { "boot" },
-            ).detect(request.copy(allowJailbreakProbe = true))
-            assertEquals("$state", 1, leaseCalls)
-            assertEquals(DetectionRules.Rule.R7_A_JAILBREAK, result.rule)
-            assertEquals(RootChannelKind.JAILBREAK, result.rootChannel)
         }
     }
 

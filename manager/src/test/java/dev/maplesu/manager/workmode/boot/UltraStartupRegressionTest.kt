@@ -15,18 +15,16 @@ import org.junit.Test
 /** Real resolver → detector → startup → persisted home-state regression. */
 class UltraStartupRegressionTest {
     private class Fixture(
-        var hookReady: Boolean = true,
         val activate: Boolean = true,
         val readiness: SuReadiness = SuReadiness.USABLE,
         initial: EnvironmentSnapshot? = EnvironmentSnapshot(null, false, null, BOOT, 1),
         val ksuFacts: KsuFacts = KsuFacts(),
-        val ultraState: UltraState = UltraState.UNKNOWN,
+        var ultraState: UltraState = UltraState.UNKNOWN,
         val ultraKernelRootVerified: Boolean = false,
         val ultraProbeFailed: Boolean = false,
     ) {
         val store = EnvironmentStateStore(InMemoryEnvironmentStatePersistence(initial))
         var active: WorkMode? = null
-        var hookReads = 0
         private val probes = object : EnvironmentProbes {
             override fun suPresent() = readiness == SuReadiness.USABLE
             override fun suReadiness() = readiness
@@ -46,7 +44,6 @@ class UltraStartupRegressionTest {
                             override fun observe(allowRefresh: Boolean) =
                                 UltraEnvironmentObservation(ultraState, ultraKernelRootVerified)
                         },
-                        jailbreakLease = JailbreakLeaseProbe { hookReads++; hookReady },
                         bootIdSource = BootIdSource { BOOT },
                     ),
                     runtime = object : ModeRuntimePort {
@@ -71,42 +68,22 @@ class UltraStartupRegressionTest {
         }
     }
 
-    @Test fun liveHookReplacesOldNotInstalledStateAfterProcessRecreation() = runBlocking {
+    @Test fun failedActivationDoesNotPersistAnInstalledMode() = runBlocking {
+        val f = Fixture(activate = false, ultraState = UltraState.RUNNING)
+        f.start()
+        assertNull(f.active)
+        assertNull(f.store.snapshot()?.mode)
+    }
+
+    @Test fun usableForeignSuAloneDoesNotActivateUltra() = runBlocking {
         val f = Fixture()
         f.start()
-        assertEquals(WorkMode.LITE, f.active)
-        assertEquals(1, f.hookReads)
-        assertEquals(WorkMode.LITE, f.store.snapshot()?.mode)
-        assertEquals("hook:ready", f.store.snapshot()?.ultraEnvFingerprint)
-        assertFalse(EnvironmentHomeProjection.decide(
-            EnvironmentHomeProjection.Facts(f.store.snapshot(), BOOT),
-        ).confirmedNotInstalled)
-    }
-
-    @Test fun liveHookReplacesAnEarlierBootsNotInstalledState() = runBlocking {
-        val f = Fixture(initial = EnvironmentSnapshot(null, false, null, "old-boot", 1))
-        f.start()
-        assertEquals(WorkMode.LITE, f.active)
-        assertEquals(BOOT, f.store.snapshot()?.bootId)
-        assertEquals(WorkMode.LITE, f.store.snapshot()?.mode)
-    }
-
-    @Test fun failedActivationDoesNotPersistAnInstalledMode() = runBlocking {
-        val f = Fixture(activate = false)
-        f.start()
         assertNull(f.active)
         assertNull(f.store.snapshot()?.mode)
     }
 
-    @Test fun absentHookDoesNotTurnUsableForeignSuIntoUltra() = runBlocking {
-        val f = Fixture(hookReady = false)
-        f.start()
-        assertNull(f.active)
-        assertNull(f.store.snapshot()?.mode)
-    }
-
-    @Test fun noSuAndNoHookStayNotInstalled() = runBlocking {
-        val f = Fixture(hookReady = false, readiness = SuReadiness.NOT_USABLE)
+    @Test fun noSuStaysNotInstalled() = runBlocking {
+        val f = Fixture(readiness = SuReadiness.NOT_USABLE)
         f.start()
         assertNull(f.active)
         assertTrue(EnvironmentHomeProjection.decide(
@@ -114,20 +91,12 @@ class UltraStartupRegressionTest {
         ).confirmedNotInstalled)
     }
 
-    @Test fun liveHookIsCheckedEvenWhenTheQuickSuProbeReturnedNotUsable() = runBlocking {
+    @Test fun anUltraEnvironmentCompletedAfterStartupCanActivateWithoutRestartingTheProcess() = runBlocking {
         val f = Fixture(readiness = SuReadiness.NOT_USABLE)
         f.start()
-        assertEquals(WorkMode.LITE, f.active)
-        assertEquals(1, f.hookReads)
-        assertEquals("hook:ready", f.store.snapshot()?.ultraEnvFingerprint)
-    }
-
-    @Test fun aHookCompletedAfterStartupCanActivateWithoutRestartingTheProcess() = runBlocking {
-        val f = Fixture(hookReady = false, readiness = SuReadiness.NOT_USABLE)
-        f.start()
         assertNull(f.active)
-        f.hookReady = true
-        f.store.markDirty(EnvironmentInvalidation.JAILBREAK_COMPLETED)
+        f.ultraState = UltraState.RUNNING
+        f.store.markDirty(EnvironmentInvalidation.FLASHED)
         f.coordinator.runPhaseTwo()
         assertEquals(WorkMode.LITE, f.active)
         assertEquals(WorkMode.LITE, f.store.snapshot()?.mode)
@@ -135,7 +104,7 @@ class UltraStartupRegressionTest {
     }
 
     @Test fun liveUltraReplacesQuickNotInstalledBeforeHomeCanReuseIt() = runBlocking {
-        val f = Fixture(hookReady = false, readiness = SuReadiness.NOT_USABLE, ultraState = UltraState.RUNNING)
+        val f = Fixture(readiness = SuReadiness.NOT_USABLE, ultraState = UltraState.RUNNING)
         f.start()
         assertEquals(WorkMode.LITE, f.active)
         assertEquals("ultra:running", f.store.snapshot()?.ultraEnvFingerprint)
@@ -146,7 +115,7 @@ class UltraStartupRegressionTest {
     }
 
     @Test fun liveUltraReplacesEarlierBootsRecordAfterProcessRecreation() = runBlocking {
-        val f = Fixture(hookReady = false, readiness = SuReadiness.NOT_USABLE,
+        val f = Fixture(readiness = SuReadiness.NOT_USABLE,
             initial = EnvironmentSnapshot(null, false, null, "old-boot", 1), ultraState = UltraState.RUNNING)
         f.start()
         assertEquals(WorkMode.LITE, f.active)
@@ -155,7 +124,7 @@ class UltraStartupRegressionTest {
     }
 
     @Test fun currentBootProtectionPersistsUltraWithoutClaimingWorkingSu() = runBlocking {
-        val f = Fixture(hookReady = false, readiness = SuReadiness.NOT_USABLE, ultraState = UltraState.FAULT)
+        val f = Fixture(readiness = SuReadiness.NOT_USABLE, ultraState = UltraState.FAULT)
         f.start()
         assertEquals(WorkMode.LITE, f.active)
         assertEquals(WorkMode.LITE, f.store.snapshot()?.mode)
@@ -164,7 +133,7 @@ class UltraStartupRegressionTest {
     }
 
     @Test fun rejectedUltraActivationDoesNotPublishAnInstalledRecord() = runBlocking {
-        val f = Fixture(hookReady = false, activate = false,
+        val f = Fixture(activate = false,
             readiness = SuReadiness.NOT_USABLE, ultraState = UltraState.RUNNING)
         f.start()
         assertNull(f.active)
@@ -173,7 +142,7 @@ class UltraStartupRegressionTest {
 
     @Test fun earlierBootsUltraAndUnknownSdkNeverActivateThisBoot() = runBlocking {
         val previous = EnvironmentSnapshot(WorkMode.LITE, true, "ultra:running", "old-boot", 1)
-        val f = Fixture(hookReady = false, readiness = SuReadiness.UNKNOWN, initial = previous, ultraProbeFailed = true)
+        val f = Fixture(readiness = SuReadiness.UNKNOWN, initial = previous, ultraProbeFailed = true)
         f.start()
         assertNull(f.active)
         assertEquals(previous, f.store.snapshot())
@@ -183,11 +152,10 @@ class UltraStartupRegressionTest {
     }
 
     @Test fun redmiVerifiedKernelWithEmptyBootReceiptsKeepsUltraWithoutClaimingSuReady() = runBlocking {
-        val f = Fixture(hookReady = false, readiness = SuReadiness.NOT_USABLE,
+        val f = Fixture(readiness = SuReadiness.NOT_USABLE,
             ultraState = UltraState.UNKNOWN, ultraKernelRootVerified = true)
         f.start()
         assertEquals(WorkMode.LITE, f.active)
-        assertEquals(0, f.hookReads)
         assertEquals("ultra:kernel", f.store.snapshot()?.ultraEnvFingerprint)
         assertEquals(WorkMode.LITE, f.store.snapshot()?.mode)
         assertEquals(false, f.store.snapshot()?.suAvailable)
@@ -206,7 +174,7 @@ class UltraStartupRegressionTest {
 
     /** Redmagic NP06J, 2026-11-11: live SDK uid 0, NotInstalled helper, backend preparation failed. */
     @Test fun rejectedKernelOnlyActivationNeverPersistsAnInstalledRecord() = runBlocking {
-        val f = Fixture(hookReady = false, activate = false, readiness = SuReadiness.NOT_USABLE,
+        val f = Fixture(activate = false, readiness = SuReadiness.NOT_USABLE,
             ultraKernelRootVerified = true)
         f.start()
         assertNull(f.active)

@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicLong
  *  - `/data` is mode 0771, so an ordinary app can traverse it but cannot list it.
  *    Without the name, the entry is not discoverable at all.
  *  - The name is 16 hex characters derived from SHA-256 of the installed credential
- *    (or a persisted random value for a jailbreak attempt, which has no credential).
+ *    (or a persisted random value when no credential is installed).
  *    It therefore looks like any other opaque directory and leaks no key characters -
  *    unlike the baseline, whose directory name is the first 16 characters of the key.
  *  - The directory is root-owned 0755 and carries the pre-existing `system_file` type
@@ -116,9 +116,8 @@ object RuntimeDeployment {
      *
      * <p>Derived from the installed credential so it stays stable across app data
      * clearing and reboots without any stored mapping, and so it reveals nothing about
-     * the credential itself (one-way digest prefix). A jailbreak attempt has no
-     * credential, so it uses a persisted random name instead - still opaque, still not
-     * product-derived.
+     * the credential itself (one-way digest prefix). When no credential exists a
+     * persisted random name is used instead - still opaque, still not product-derived.
      */
     private fun directoryName(context: Context): String {
         runCatching { MapleSuCredentialStore(context).load() }.getOrNull()?.let { credential ->
@@ -170,7 +169,7 @@ object RuntimeDeployment {
             val publishClient = mode == SuEntryMode.Mode.TRADITIONAL_COMPAT
             Log.i("MapleSU", "SU_ENTRY_MODE:${mode.wire} publishClient=$publishClient")
             try {
-                // Ultra-only：发布走 SuAutoWire/SuPublication（越狱 hook broker 分支已删除）。
+                // Ultra-only：发布走 SuAutoWire/SuPublication。
                 if (!publicationCurrent(application, retry, expectedSession)) return@execute
                 brokerReady = false
                 current = current.copy(clientPath = null, brokerReady = false)

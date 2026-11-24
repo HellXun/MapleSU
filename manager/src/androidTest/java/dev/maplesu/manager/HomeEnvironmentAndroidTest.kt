@@ -30,7 +30,7 @@ import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** Opt-in normal startup/refresh; root expectation is explicit. No install or jailbreak is invoked. */
+/** Opt-in startup/refresh; root expectation is explicit. No install is invoked. */
 @RunWith(AndroidJUnit4::class)
 class HomeEnvironmentAndroidTest {
     @Test fun materialHomeEndsCheckingAndRetrySettles() = verify("material")
@@ -251,7 +251,6 @@ class HomeEnvironmentAndroidTest {
             putString("activeMode", ModeRuntime.active?.name)
             putString("homeMode", state.environmentMode?.name)
             putBoolean("homeRoot", state.isRootAvailable)
-            putBoolean("homeJailbreak", state.isLateLoadMode)
             putString("homeSELinux", state.systemInfo.selinuxStatus)
             putString("homeEntries", model.entryFacts.value.toString())
             putStringArrayList("visibleHomeText", ArrayList(visibleTexts()))

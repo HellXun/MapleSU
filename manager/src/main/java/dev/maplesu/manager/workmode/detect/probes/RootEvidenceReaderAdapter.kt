@@ -17,8 +17,7 @@ import dev.maplesu.manager.workmode.detect.RootEvidenceSession
  *
  * 接线（W04b）：
  * - `LITE_DIRECT` → `RootManagement.openShell`；`LITE_ULTRA` → 已 Running 的 SDK 只读命令；
- * - `KSU_NATIVE` → `InstallerRootSourceRegistry` 的 Mode B 通道（W11 注册；未注册则 null）；
- * - `JAILBREAK` → **永不**在此新起租约（越狱只能由用户显式动作触发）→ null。
+ * - `KSU_NATIVE` → `InstallerRootSourceRegistry` 的外来检测通道（未注册则 null）；
  *
  * 无会话/打开失败一律 null = "无通道"（UNKNOWN），**不是** not_installed；
  * 判定侧因此收敛到 UNBOUND / INDETERMINATE / NOT_INSTALLED 的现有规则，绝不伪造证据。
@@ -144,8 +143,6 @@ class AndroidRootShellOpener(
         RootChannelKind.KSU_NATIVE ->
             runCatching { InstallerRootSourceRegistry.require().openShell(context.applicationContext) }
                 .getOrNull()?.let(::LibsuRootShellSession)
-        // 禁止为探测新起越狱租约（主文档:263、05:844）。
-        RootChannelKind.JAILBREAK -> null
     }
 }
 

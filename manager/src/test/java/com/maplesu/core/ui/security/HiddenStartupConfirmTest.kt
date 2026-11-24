@@ -32,8 +32,6 @@ class HiddenStartupConfirmTest {
         // 冷启动首帧 mode=null：隐藏机器不能先画成运行。
         assertTrue(HiddenStartupConfirm.masksWithMode(null, hiddenOn = true))
         assertTrue(HiddenStartupConfirm.masksWithMode(WorkMode.LITE, hiddenOn = true))
-        // 明确 KSU：走内核 stealth 自己的判据，不按 Lite 隐藏。
-        assertFalse(HiddenStartupConfirm.masksWithMode(WorkMode.LITE, hiddenOn = true))
         assertFalse(HiddenStartupConfirm.masksWithMode(null, hiddenOn = false))
     }
 
@@ -91,7 +89,6 @@ class HiddenStartupConfirmTest {
             requiresNewManager = false,
             isRootAvailable = true,
             isSafeMode = false,
-            isLateLoadMode = false,
             checkUpdateEnabled = false,
             latestVersionInfo = com.maplesu.core.ui.util.module.LatestVersionInfo(),
             currentManagerVersionCode = 1,

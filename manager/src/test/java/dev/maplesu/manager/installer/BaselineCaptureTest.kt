@@ -287,7 +287,7 @@ class BaselineCaptureTest {
 
     @Test
     fun captureSucceedsOnPermissiveSelinuxAndRecordsTheFact() = withHarness { h ->
-        // 2026-11-01 用户指令：只有「越狱模式」可拒绝刷写 ⇒ SELinux 不再是 baseline 判据。
+        // 2026-11-01 用户指令：只有「不可信来源」可拒绝刷写 ⇒ SELinux 不再是 baseline 判据。
         // 断言具体返回值：捕获成功 + manifest 干净 + 事实进 note（材料器与门面各一次）。
         h.source.snapshotValue = h.snapshot.copy(selinux = "Permissive")
         val manifest = assertOk(h.service.capture()).manifest

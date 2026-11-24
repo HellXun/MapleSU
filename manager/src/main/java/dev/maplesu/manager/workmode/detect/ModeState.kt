@@ -15,7 +15,7 @@ enum class ModeState {
     /** KSU 内核在、认主，ksud/工作目录缺失。 */
     MODE_B_KERNEL_ONLY,
 
-    /** Lite 凭据握手 UID0 / Ultra Running / 越狱租约。 */
+    /** Lite 凭据握手 UID0 / Ultra Running。 */
     MODE_A_ACTIVE,
 
     /** 有 A 不可重建证据但当前无 root 通道。 */

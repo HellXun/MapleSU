@@ -97,18 +97,16 @@ class ModeBootstrapCoordinator(
             origin = DetectionOrigin.STARTUP,
             allowRootProbe = false,
             allowLiteExecutor = false,
-            allowJailbreakProbe = false,
         )
 
         /**
          * 阶段二：UI 可见后取证（主文档:378-382 的"获得 root 后再判定"）。
-         * 只检查已经建立的越狱通道；不会运行提权或创建新会话。
+         * 只检查已经建立的通道；不会运行提权或创建新会话。
          */
         val AFTER_ROOT_GRANTED_REQUEST: DetectionRequest = DetectionRequest(
             origin = DetectionOrigin.AFTER_ROOT_GRANTED,
             allowRootProbe = true,
             allowLiteExecutor = true,
-            allowJailbreakProbe = true,
         )
     }
 }

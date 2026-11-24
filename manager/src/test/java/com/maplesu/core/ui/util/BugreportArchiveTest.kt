@@ -27,7 +27,7 @@ class BugreportArchiveTest {
     @Test fun reportWithoutRootIsNonEmptyAndContainsReadableDiagnostics() {
         val directory = temporary.newFolder("report")
         File(directory, "basic.txt").writeText("MapleSU 5.0.0\nRoot: unavailable\n")
-        File(directory, "越狱日志.txt").writeText("stage=ATTESTING\n")
+        File(directory, "清理日志.txt").writeText("stage=ATTESTING\n")
         val report = BugreportArchive.pack(directory, File(temporary.root, "report.tar.gz"))
         assertTrue(report.length() > 0)
         val entries = linkedMapOf<String, String>()
@@ -39,7 +39,7 @@ class BugreportArchiveTest {
                 }
             }
         }
-        assertEquals("stage=ATTESTING\n", entries["越狱日志.txt"])
+        assertEquals("stage=ATTESTING\n", entries["清理日志.txt"])
         assertTrue(entries.getValue("basic.txt").contains("Root: unavailable"))
     }
 

@@ -48,7 +48,8 @@ class ModuleActionLifecycleContractTest {
 
     @Test fun stdoutStderrAndExportUseTheSameWholeRecordLock() {
         val model = File(root, "ExecuteModuleActionViewModel.kt").readText()
-        assertTrue(model.contains("@Synchronized\n    fun logSnapshot()"))
-        assertTrue(model.contains("@Synchronized\n    private fun append(line: String)"))
+        val flat = model.replace("\r\n", "\n")
+        assertTrue(flat.contains("@Synchronized\n    fun logSnapshot()"))
+        assertTrue(flat.contains("@Synchronized\n    private fun append(line: String)"))
     }
 }

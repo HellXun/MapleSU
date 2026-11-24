@@ -17,8 +17,6 @@ class SpecialThanksTextTest {
         "佐佐鱼" to "https://github.com/Yutou04-sa",
         "知秋" to "https://github.com/947409161",
     )
-    private val jailbreakLinks = mapOf("佐佐鱼" to "https://github.com/Yutou04-sa")
-
     /** Exactly the names in [expected] link to their homepages; the rest of the sentence stays plain. */
     private fun checkNameLinks(text: String, expected: Map<String, String>) {
         val annotated = specialThanksText(text, Color.Red)
@@ -52,15 +50,8 @@ class SpecialThanksTextTest {
         }
     }
 
-    @Test fun jailbreakUsesTheExactRequestedSentenceAndOnlyLinksTheName() {
-        val text = resource("values-zh-rCN", "maplesu_93260", "maplesu_jailbreak_98260_credit")
-        assertEquals("特别致谢佐佐鱼对橘子7提权作出的贡献", text)
-        checkNameLinks(text, jailbreakLinks)
-    }
-
     @Test fun englishResourcesLinkTheSameNames() {
         checkNameLinks(resource("values", "maplesu_about", "about_maple_special_thanks"), aboutLinks)
-        checkNameLinks(resource("values", "maplesu_93260", "maplesu_jailbreak_98260_credit"), jailbreakLinks)
     }
 
     @Test fun contributorLinkReusesTheProjectCreditStyle() {
@@ -71,29 +62,23 @@ class SpecialThanksTextTest {
     }
 
     @Test fun bothThemesUseTheSameFontAsTheProjectCredits() {
-        val thanks = File("src/main/java/dev/maplesu/manager/jailbreak/JailbreakSpecialThanks.kt").readText()
         val materialCredits = File("src/main/java/com/maplesu/core/ui/screen/home/AboutMapleDialogMaterial.kt")
             .readText().substringAfter("private fun CreditsMaterial()")
         val miuixCredits = File("src/main/java/com/maplesu/core/ui/screen/home/AboutMapleDialogMiuix.kt")
             .readText().substringAfter("private fun CreditsMiuix()")
-        assertTrue(thanks.contains("style = MaterialTheme.typography.bodyMedium"))
         assertTrue(materialCredits.contains("style = MaterialTheme.typography.bodyMedium"))
-        assertTrue(thanks.contains("fontSize = 14.sp"))
         assertTrue(miuixCredits.contains("fontSize = 14.sp"))
-        assertFalse(thanks.contains("BasicText"))
-        assertFalse(thanks.contains("fontFamily ="))
-        assertFalse(thanks.contains("fontWeight ="))
+        assertFalse(materialCredits.contains("BasicText"))
+        assertFalse(miuixCredits.contains("BasicText"))
+        assertFalse(materialCredits.contains("fontFamily ="))
+        assertFalse(miuixCredits.contains("fontFamily ="))
     }
 
     @Test fun bothThemesPlaceTheNameInlineWithoutTheOldSeparateRow() {
         for (skin in listOf("Miuix", "Material")) {
             val source = File("src/main/java/com/maplesu/core/ui/screen/home/AboutMapleDialog$skin.kt").readText()
-            assertTrue(source.contains("JailbreakSpecialThanks(textRes = R.string.about_maple_special_thanks)"))
-            assertFalse(source.contains("JailbreakSpecialThanks()"))
+            assertTrue(source.contains("specialThanksText(stringResource(R.string.about_maple_special_thanks)"))
+            assertFalse(source.contains("JailbreakSpecialThanks"))
         }
-        val source = File("src/main/java/dev/maplesu/manager/jailbreak/JailbreakSpecialThanks.kt").readText()
-        assertFalse(source.contains("Color(0x"))
-        assertTrue(source.contains("MaterialTheme.colorScheme.primary"))
-        assertTrue(source.contains("MiuixTheme.colorScheme.primary"))
     }
 }

@@ -206,27 +206,6 @@ class WebUiSelfCheckUiContractTest {
     }
 
     @Test
-    fun selfCheckButtonsMapToControllerActions() {
-        val vm = read("src/main/java/dev/maplesu/manager/workmode/ui/WebUiSelfCheckViewModel.kt")
-        val screen = read("src/main/java/dev/maplesu/manager/workmode/ui/WebUiSelfCheckScreen.kt")
-        assumeTrue(vm != null && screen != null)
-        val v = vm!!
-        val s = screen!!
-        assertTrue(v.contains("fun startWebUi()"))
-        assertTrue(v.contains("LiteWebAdminController"))
-        assertTrue(v.contains("com.maplesu.core.ui.util.WebAdminCli.setEnabled(true)"))
-        assertTrue(v.contains("fun copyLink()"))
-        assertTrue(v.contains("fun checkStatus()"))
-        assertTrue(v.contains("fun loadBootEvidence()"))
-        assertTrue(v.contains("fun dryRunRestore()"))
-        assertTrue(v.contains("fun prepareBackup()"))
-        listOf("startWebUi", "copyLink", "checkStatus", "loadBootEvidence", "dryRunRestore", "prepareBackup").forEach {
-            assertTrue("按钮未接 $it", s.contains("viewModel::$it"))
-        }
-        assertTrue("dry-run 必须声明不改系统", v.contains("仅校验，不改变系统"))
-    }
-
-    @Test
     fun selfCheckFailureReasonsAreShownHonestly() {
         val vm = read("src/main/java/dev/maplesu/manager/workmode/ui/WebUiSelfCheckViewModel.kt")
         val zh = read("src/main/res/values-zh-rCN/maplesu_webui_selfcheck.xml")

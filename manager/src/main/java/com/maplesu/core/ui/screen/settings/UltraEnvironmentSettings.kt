@@ -167,7 +167,7 @@ class UltraEnvironmentPanel internal constructor(
     }
     /** 一次读全：减少重组次数，也避免版本行和状态胶囊错开刷新。 */
     private suspend fun readFacts(force: Boolean = false): Facts = withContext(Dispatchers.IO) {
-        // Ultra-only：hook 临时环境形态随越狱一并移除，直接走 Ultra 环境探测。
+        // Ultra-only：直接走 Ultra 环境探测。
         val key = UltraSdkCredentials.read(context)
         val boot = UltraEnvironmentAutoSetup.currentBootId()
         val nextState = runCatching { UltraEnvironmentProbe.refresh(context, force = force) }

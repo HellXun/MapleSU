@@ -72,7 +72,7 @@ class ComicStatusCardRenderTest(private val skin: UiMode, private val dark: Bool
         val state = HomeUiState(KernelVersion(6, 1, 31), 32680, 1, 1, true, false, true,
             isManagerPrBuild = false, isKernelPrBuild = false, requiresNewKernel = false,
             requiresNewManager = false, isRootAvailable = true, isSafeMode = false,
-            isLateLoadMode = false, checkUpdateEnabled = false, latestVersionInfo = LatestVersionInfo(),
+             checkUpdateEnabled = false, latestVersionInfo = LatestVersionInfo(),
             currentManagerVersionCode = 50008, systemInfo = SystemInfo("6.1.31", "5.0.8", "Device", "Fingerprint", "Enforcing", 2))
         compose.setContent {
             val density = LocalDensity.current

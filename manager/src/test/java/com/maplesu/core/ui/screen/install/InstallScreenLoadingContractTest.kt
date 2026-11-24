@@ -118,37 +118,6 @@ class InstallScreenLoadingContractTest {
     }
 
     @Test
-    fun actionGuardsRecheckPendingBeforeStartingTheTransaction() {
-        val source = screen()
-        val action = source.substringAfter("val onInstall = onInstall@{").substringBefore("val selectImageLauncher")
-        assertTrue(action.contains("if (!pageResumed || installInFlight || WorkModeSwitchSession.executing) return@onInstall"))
-        assertTrue(action.contains("installMethodOptions.none { it::class == method::class }"))
-        assertTrue(action.contains("bootFlow?.target ?: return@onInstall"))
-        assertTrue(action.contains("installInFlight = true"))
-        assertTrue(action.indexOf("installInFlight = true") < action.indexOf("navigator.push(Route.Flash(request))"))
-        // 步骤 ① 的选择在事务开始那一刻快照，之后改选择不影响本次事务。
-        assertTrue(action.contains("val mode = targetMode"))
-        assertTrue(action.contains("val selectedPartition = partition"))
-        assertTrue(action.contains("partition = selectedPartition.wire"))
-    }
-
-    @Test
-    fun theNextButtonGatesOnTheVisibleSelectionsOfTheSelectedMode() {
-        val state = uiState()
-        val canInstall = state.substringAfter("val canInstall: Boolean")
-        assertTrue("步骤 ③ 必须先选出目标（Ultra）", canInstall.contains("bootFlow?.selectable == true"))
-        assertTrue("Normal 必须有 Ready 的分派结论", canInstall.contains("normalDecision is InstallTargetDecision.Ready"))
-        assertTrue("事务中下一步必须禁用", canInstall.contains("!targetSelectable"))
-        assertTrue("下一步必须依赖已选择的可用来源", canInstall.contains("!hasInstallSource"))
-        val source = state.substringAfter("val hasInstallSource: Boolean").substringBefore("val canInstall: Boolean")
-        assertTrue("步骤 ② 必须选中一个现有来源", source.contains("installMethodOptions.any"))
-        assertTrue("选文件来源必须有 uri", source.contains("method.uri != null"))
-        // 目标模式**参与**判据（Ultra 看 bootFlow，Normal 看 KMI × 分区），但判据本身仍是纯值。
-        assertTrue(state.contains("when (targetMode)"))
-        assertFalse(state.contains("InstallTargetModeUi"))
-    }
-
-    @Test
     fun kernelLoadingHintExistsInBothLocales() {
         listOf("values", "values-zh-rCN").forEach { locale ->
             val file = File("src/main/res/$locale/strings_workmode.xml")

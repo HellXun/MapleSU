@@ -59,7 +59,6 @@ class ModeBootstrapPipelineTest {
         origin = DetectionOrigin.STARTUP,
         allowRootProbe = false,
         allowLiteExecutor = false,
-        allowJailbreakProbe = false,
     )
 
     @Test

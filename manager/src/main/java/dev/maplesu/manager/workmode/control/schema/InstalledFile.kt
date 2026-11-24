@@ -21,7 +21,7 @@ data class InstalledFile(
 }
 
 @Serializable
-data class Transports(val a1: Boolean, val ultra: Boolean, val jailbreak: Boolean)
+data class Transports(val a1: Boolean, val ultra: Boolean)
 
 @Serializable
 data class KernelFacts(

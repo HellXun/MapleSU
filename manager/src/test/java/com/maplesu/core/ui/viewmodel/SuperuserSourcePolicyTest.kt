@@ -33,25 +33,6 @@ class SuperuserSourcePolicyTest {
     }
 
     @Test
-    fun ksuModeUsesKsuBackendAndNeverLiteRuntime() {
-        val source = SuperuserSourcePolicy.resolve(WorkMode.LITE, ksuBackendAvailable = true)
-        assertEquals(SuperuserSource.KSU_BACKEND, source)
-        assertFalse(
-            "KSU mode must not call Lite runtime (DirectPolicy/statesFor/SuDelivery)",
-            SuperuserSourcePolicy.allowsLiteRuntimeCalls(source),
-        )
-        assertTrue(SuperuserSourcePolicy.allowsBackendCalls(source))
-    }
-
-    @Test
-    fun ksuModeWithUnavailableBackendIsExplicitlyBlocked() {
-        val source = SuperuserSourcePolicy.resolve(WorkMode.LITE, ksuBackendAvailable = false)
-        assertEquals(SuperuserSource.BLOCKED_BACKEND_UNAVAILABLE, source)
-        assertFalse(SuperuserSourcePolicy.allowsLiteRuntimeCalls(source))
-        assertFalse(SuperuserSourcePolicy.allowsBackendCalls(source))
-    }
-
-    @Test
     fun unresolvedModeBlocksEverything() {
         for (ksu in listOf(false, true)) {
             val source = SuperuserSourcePolicy.resolve(null, ksuBackendAvailable = ksu)

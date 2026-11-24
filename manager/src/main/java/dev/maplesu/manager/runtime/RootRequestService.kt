@@ -6,8 +6,8 @@ import android.os.IBinder
 
 /*
  * Retired on purpose: distribution goes through NativeSuBrokerService, which hands
- * out the published endpoint (the resident lease proxy in jailbreak mode, the real
- * daemon in normal mode). Keeping this binding closed means there is exactly one
+ * out the published endpoint (the resident Ultra supervised process). Keeping this binding
+ * closed means there is exactly one
  * public Root channel, and that channel's executor authorizes each caller uid.
  */
 class RootRequestService : Service() {

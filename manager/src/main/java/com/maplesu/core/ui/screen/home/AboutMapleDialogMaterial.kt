@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.maplesu.core.R
 import com.maplesu.core.ui.component.maple.BrandBannerKind
 import com.maplesu.core.ui.component.maple.BrandDialogMaterial
@@ -50,6 +51,12 @@ internal fun AboutMapleDialogMaterial(showModes: Boolean, onDismiss: () -> Unit)
             fontWeight = FontWeight.Medium,
         )
         CreditsMaterial()
+        Text(
+            text = specialThanksText(stringResource(R.string.about_maple_special_thanks), MaterialTheme.colorScheme.primary),
+            modifier = Modifier.fillMaxWidth(),
+            style = MaterialTheme.typography.bodyMedium,
+            fontSize = 14.sp,
+        )
         AdvisorWallMaterial(Modifier.padding(top = 4.dp))
     }
 }

@@ -317,7 +317,7 @@ internal object UltraSdkSession {
             echo MAPLESU_BOOT_SDK_RECOVERY_OK
         """.trimIndent()
         if (!usable(context, session)) return false
-        // Ultra-only：恢复只走 SDK 回执通道（越狱 hook 分支已移除）。
+        // Ultra-only：恢复只走 SDK 回执通道。
         val output = run {
             val command = UltraRootCommandReceipt(script)
             val client = client(context, session)
@@ -366,7 +366,7 @@ internal object UltraSdkCredentials {
     }
 
     /**
-     * Ultra-only：越狱 hook 形态已随 provider 一并移除，此判据恒为 false。
+     * Ultra-only：该形态已随 provider 一并移除，此判据恒为 false。
      * 保留函数签名只是为了让仍在调用它的 UI/仓储层在本次重构中保持编译；
      * 调用方会逐步收敛（见 S3 的 WorkMode 清理）。
      */

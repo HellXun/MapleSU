@@ -67,10 +67,9 @@ internal object TestFixtures {
     fun liteFacts(
         credentialPresent: Boolean = false,
         handshakeOk: Boolean? = null,
-        jailbreakLeaseValid: Boolean = false,
         ultraState: UltraState = UltraState.UNKNOWN,
         ultraKeyPresent: Boolean = false,
-    ) = LiteFacts(credentialPresent, handshakeOk, jailbreakLeaseValid, ultraState, ultraKeyPresent)
+    ) = LiteFacts(credentialPresent, handshakeOk, ultraState, ultraKeyPresent)
 
     fun rootFacts(
         channel: RootChannelKind = RootChannelKind.KSU_NATIVE,
@@ -219,7 +218,7 @@ internal object TestFixtures {
         packageName = "dev.maplesu.manager",
         apkSha256 = HASH_64,
         signerSha256 = listOf(hash('a')),
-        transports = Transports(a1 = true, ultra = false, jailbreak = false),
+        transports = Transports(a1 = true, ultra = false),
         kernel = KernelFacts(liteMarker = null, liteCredentialSha256 = null, ksuUapi = null, ksuVersion = null),
         writtenBy = "A_DIRECT",
     )

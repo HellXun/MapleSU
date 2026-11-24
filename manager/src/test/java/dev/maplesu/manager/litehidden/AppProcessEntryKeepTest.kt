@@ -52,12 +52,11 @@ class AppProcessEntryKeepTest {
     }
 
     @Test
-    fun keepsAuthorizationAndJailbreakMainMethodsByTheirStableNames() {
+    fun keepsAuthorizationMainMethodsByTheirStableNames() {
         val rules = proguardRules()
         for (entry in listOf(
             "dev.maplesu.manager.runtime.authorization.AuthorizationTool",
             "dev.maplesu.manager.runtime.authorization.SuperuserTool",
-            "dev.maplesu.manager.runtime.JailbreakDaemonMain",
         )) {
             assertTrue("app_process entry must retain its stable main method: $entry",
                 Regex("-keep\\s+class\\s+${Regex.escape(entry)}\\s*\\{\\s*" +

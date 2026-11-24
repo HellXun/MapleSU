@@ -347,7 +347,6 @@ class SuReadinessTest {
         requiresNewManager = false,
         isRootAvailable = true,
         isSafeMode = false,
-        isLateLoadMode = false,
         checkUpdateEnabled = false,
         latestVersionInfo = LatestVersionInfo(),
         currentManagerVersionCode = 1L,

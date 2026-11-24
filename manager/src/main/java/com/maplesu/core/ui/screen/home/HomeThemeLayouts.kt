@@ -149,7 +149,7 @@ private fun ThemeThreeStatus(state: HomeUiState, actions: HomeActions, modifier:
     val width = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp / 2
     val targetWidth = with(androidx.compose.ui.platform.LocalDensity.current) { width.dp.roundToPx() }
     val decoration = com.maplesu.core.ui.util.rememberStatusDecoration(targetWidth).takeIf { art.photo == null }
-    val protectedText = state.showSafeModeBanner || state.isSafeMode || state.isLateLoadMode
+    val protectedText = state.showSafeModeBanner || state.isSafeMode
     val title = when {
         state.isSafeMode -> stringResource(R.string.home_safe_mode_title)
         else -> STATUS_CARD_TEXT
@@ -188,16 +188,16 @@ private fun ThemeThreeStatus(state: HomeUiState, actions: HomeActions, modifier:
     }
     val click = {
         if (state.isSafeMode) actions.onManageModules()
-        else if (!state.isLateLoadMode) actions.onInstallClick()
+        else actions.onInstallClick()
     }
     when (LocalUiMode.current) {
         UiMode.Miuix -> top.yukonga.miuix.kmp.basic.Card(
-            modifier=modifier, onClick=click, showIndication=!state.isLateLoadMode,
+            modifier=modifier, onClick=click, showIndication=true,
             colors=top.yukonga.miuix.kmp.basic.CardDefaults.defaultColors(
                 color=if (art.photo != null || decoration != null) Color.Transparent else homeStatusContainerColor()),
         ) { content() }
         UiMode.Material -> androidx.compose.material3.Surface(
-            modifier=modifier.clickable(enabled=!state.isLateLoadMode,onClick=click),
+            modifier=modifier.clickable(onClick=click),
             shape=androidx.compose.material3.MaterialTheme.shapes.large,
             color=if (art.photo != null || decoration != null) Color.Transparent else homeStatusContainerColor(),
         ) { content() }

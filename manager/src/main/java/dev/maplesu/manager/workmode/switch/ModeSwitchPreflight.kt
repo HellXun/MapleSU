@@ -99,7 +99,7 @@ object ModeSwitchPreflight {
     /**
      * S0-12：SELinux 事实 → **非阻断**检查行。
      *
-     * 2026-11-01 用户指令：只有「越狱模式」可拒绝刷写，其它一律放行。SELinux 状态与分区字节
+     * 2026-11-01 用户指令：只有「不可信来源」可拒绝刷写，其它一律放行。SELinux 状态与分区字节
      * 是否安全无关，因此本行**恒 `ok = true`**：非 `Enforcing` 时把
      * `INSTALLER_SELINUX_NOT_ENFORCING:selinux=<值>` 写进 [S0Check.advisory]（证据/日志），
      * S0 判定继续往下走（`S0Report.ok` 不再被它影响）。
@@ -185,9 +185,6 @@ object ModeSwitchPreflight {
         checks += S0Check("S0-07", true,
             advisory = if (input.pending.switchPending) ModeSwitchCodes.PENDING else "")
 
-        // S0-08 无越狱活动租约。
-        add("S0-08", !input.pending.jailbreakLeaseActive, ModeSwitchCodes.JAILBREAK_ACTIVE)
-
         // S0-09 空间（逐挂载点；S0 用最保守的 /data 单点 + 预留）。
         val sizes = input.planned.associate { it.name to it.size }
         val target = input.planned.firstOrNull { it.role == "WRITE_CANDIDATE" }?.name
@@ -206,7 +203,7 @@ object ModeSwitchPreflight {
         // S0-11 root 通道可用且来源已验证。
         add("S0-11", input.rootRefusal == null, input.rootRefusal ?: ModeSwitchCodes.ROOT_UNAVAILABLE)
 
-        // S0-12 SELinux 事实：**只记录，不阻断**（2026-11-01 用户指令：只有越狱模式可拒绝刷写）。
+        // S0-12 SELinux 事实：**只记录，不阻断**（2026-11-01 用户指令：只有不可信来源可拒绝刷写）。
         // 非 Enforcing ⇒ 把事实写进 advisory（证据/日志），S0 继续；自动 setenforce 仍只在
         // `ModeSwitchFacade.startSwitch` 入口做一次（用户要的自动恢复，本文件不碰系统状态）。
         checks += selinuxCheck(input.device.selinux)

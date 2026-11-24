@@ -85,10 +85,10 @@ class ModuleTypeWiringTest {
     }
 
     @Test
-    fun ambiguousInKsuModeRejectsUltraChoiceOnly() {
+    fun ambiguousInUltraModeAcceptsBothExplicitTypes() {
         val evidence = ModuleTypeDetector.detect(zip(ambiguous()))
         assertTrue(ModuleTypeUi.routeWithChoice(evidence, WorkMode.LITE, ModuleType.KERNELSU).ok)
-        assertFalse(ModuleTypeUi.routeWithChoice(evidence, WorkMode.LITE, ModuleType.MAPLESU).ok)
+        assertTrue(ModuleTypeUi.routeWithChoice(evidence, WorkMode.LITE, ModuleType.MAPLESU).ok)
         assertFalse(ModuleTypeUi.dialogModel(evidence, WorkMode.LITE).installEnabled)
     }
 

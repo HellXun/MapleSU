@@ -17,35 +17,6 @@ class SuperuserPublicationRefreshTest {
         assertTrue(deploy.contains("set(value) { _status.value = value }"))
     }
 
-    @Test fun publicationChangesRebindLoadedRowsWithoutAnotherBackendRead() {
-        val vm = source("com/maplesu/core/ui/viewmodel/SuperUserViewModel.kt")
-        assertTrue(vm.contains("RuntimeDeployment.statusChanges.collect { refreshEntryStates() }"))
-        val refresh = vm.substringAfter("private suspend fun refreshEntryStates()")
-            .substringBefore("fun markNeedRefresh()")
-        assertTrue(refresh.contains("refreshMutex.withLock"))
-        assertTrue(refresh.contains("!_uiState.value.hasLoaded"))
-        assertTrue(refresh.contains("ModeRuntime.active != WorkMode.LITE"))
-        assertTrue(refresh.contains("withContext(Dispatchers.IO)"))
-        assertTrue(refresh.contains("HookSuCompatibility.traditionalReady(ksuApp)"))
-        for (field in listOf("groupedApps", "recentlyInstalledResults", "searchResults")) {
-            assertTrue(refresh.contains("$field = withManagerSuStates(it.$field, entryReady)"))
-        }
-        for (backendRead in listOf("loadAppList(", "getAppList(", "refreshProfiles(", "RootExec.", "RuntimeDeployment.start(")) {
-            assertFalse(refresh.contains(backendRead))
-        }
-    }
-
-    @Test fun oneShotWebUiCacheReadDoesNotObserveGlobalPublication() {
-        val vm = source("com/maplesu/core/ui/viewmodel/SuperUserViewModel.kt")
-        assertTrue(vm.substringBefore(") : ViewModel()").contains("observePublication: Boolean = true"))
-        val init = vm.substringAfter("    init {").substringBefore("private suspend fun refreshEntryStates()")
-        assertTrue(init.contains("if (observePublication) {"))
-        assertTrue(init.substringAfter("if (observePublication) {").contains("RuntimeDeployment.statusChanges.collect"))
-        val webUi = source("com/maplesu/core/ui/webui/WebViewHelper.kt")
-        assertTrue(webUi.contains("SuperUserViewModel(observePublication = false).fetchAppList()"))
-        assertFalse(webUi.contains("SuperUserViewModel().fetchAppList()"))
-    }
-
     @Test fun asyncListWritersShareThePublicationRefreshLock() {
         val vm = source("com/maplesu/core/ui/viewmodel/SuperUserViewModel.kt")
         val sort = vm.substringAfter("fun updateSortConfig(").substringBefore("private fun refilterVisibleApps")

@@ -14,8 +14,6 @@ data class FlashUiState(
     val showLog: Boolean = true,
     val showRebootAction: Boolean,
     val flashingStatus: FlashingStatus,
-    /** Ultra-only：越狱警告已停用，恒为 false（保留字段避免布局大改）。 */
-    val showJailbreakWarning: Boolean = false,
     @param:StringRes val rebootLabelRes: Int,
     /**
      * S5：当前粗粒度阶段（修补中 / 写入中 / 待重启）。`null` = 该入口不报阶段（模块/还原）。

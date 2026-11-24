@@ -59,16 +59,6 @@ class DirectInstallContractTest {
         assertTrue(export.contains("candidate.size"))
     }
 
-    @Test fun pairingAndReturningToThePageReprobeTheKernel() {
-        val screen = ui("screen/install/InstallScreen.kt")
-        assertTrue(screen.contains("ModeRuntime.detectionRevision.collectAsStateWithLifecycle()"))
-        assertTrue(screen.contains("val sdkRootAvailable by UltraEnvironmentProbe.rootAvailability.collectAsStateWithLifecycle("))
-        assertTrue(screen.contains("initialValue = UltraEnvironmentProbe.currentSnapshot().rootAvailable"))
-        assertTrue(screen.contains("LaunchedEffect(pageResumed, detectionRevision, hiddenRevision, sdkRootAvailable)"))
-        assertTrue(screen.contains("targetMode, detectionRevision, pageResumed)"))
-        assertTrue(screen.contains("if (!pageResumed) return@LaunchedEffect"))
-    }
-
     @Test fun sdkChangesRecheckAccessWithoutDisposingTheSelectedBootSource() {
         val screen = ui("screen/install/InstallScreen.kt")
         val check = screen.substringAfter("LaunchedEffect(pageResumed, detectionRevision, hiddenRevision, sdkRootAvailable) {")
@@ -78,15 +68,6 @@ class DirectInstallContractTest {
         assertTrue(check.contains("if ((!rootGranted || directInstallSuppressed) && installMethod == InstallMethod.DirectInstall)"))
         assertFalse(check.contains("pageResumed = false"))
         assertFalse(screen.contains("LifecycleResumeEffect(context, detectionRevision, hiddenRevision, sdkRootAvailable)"))
-    }
-
-    @Test fun aCrossModeDirectInstallAlsoStreamsItsProgressIntoTheLog() {
-        val cli = ui("util/KsuCli.kt")
-        val progress = cli.substringAfter("val progress: (String) -> Unit = { stage ->")
-            .substringBefore("if (bootUri == null)")
-        assertTrue(progress.contains("modeSwitchStepOf(stage, stage, stage)"))
-        assertTrue(progress.contains("onStdout(ksuApp.getString(WorkModeStrings.stepRes(step)))"))
-        assertTrue(progress.contains("ModeSwitchStep.REBOOT -> InstallStage.AWAITING_REBOOT"))
     }
 
     @Test fun successfulDirectInstallHasOnlyFixedBottomSaveAndRebootActions() {

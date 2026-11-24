@@ -67,7 +67,6 @@ object ModeSwitchCodes {
     const val INSTALL_PENDING = "SWITCH_INSTALL_PENDING"
     const val PENDING = "SWITCH_PENDING"
     const val BUSY = "SWITCH_BUSY"
-    const val JAILBREAK_ACTIVE = "SWITCH_JAILBREAK_ACTIVE"
     const val SPACE_INSUFFICIENT = "SWITCH_SPACE_INSUFFICIENT"
     const val BATTERY_LOW = "SWITCH_BATTERY_LOW"
     const val ROOT_UNAVAILABLE = "SWITCH_ROOT_UNAVAILABLE"
@@ -167,12 +166,11 @@ data class SwitchDeviceFacts(
 
 data class BatteryFacts(val levelPercent: Int, val charging: Boolean)
 
-/** pending/锁/租约的 App 侧视图（02 §2.2 S0-06/07/08/14）。 */
+/** pending/锁的 App 侧视图（02 §2.2 S0-06/07/14）。 */
 data class PendingFacts(
     val installPending: Boolean = false,
     val switchPending: Boolean = false,
     val deviceLockAvailable: Boolean = true,
-    val jailbreakLeaseActive: Boolean = false,
 )
 
 /** 只读分区清单（S0-17/18/22）。`sizes` 缺失 = 未读到，由网关预检复判。 */

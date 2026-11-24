@@ -56,18 +56,8 @@ internal object BugreportDiagnostics {
         val sources = protectedFiles.map { (source, name) -> File(protectedDirectory, source) to name } +
             listOf(
                 File(filesDirectory, "installer-io-failures.log") to "installer-io-failures.log",
-                File(filesDirectory, "jailbreak/status.json") to "jailbreak-status.json",
-                // T13 / §6.6: degraded events are append-only evidence, never a stage.
-                File(filesDirectory, "jailbreak/degraded.jsonl") to "degraded.jsonl",
             )
         sources.forEach { (source, name) -> copy(source, name) }
-        val attempts = File(filesDirectory, "jailbreak/attempts")
-        if (attempts.isDirectory) attempts.walkTopDown().filter {
-            it.isFile && it.extension in setOf("log", "json", "jsonl") &&
-                it.canonicalPath.startsWith(attempts.canonicalPath + File.separator)
-        }.forEach { source ->
-            copy(source, "jailbreak/attempts/" + source.relativeTo(attempts).invariantSeparatorsPath)
-        }
         File(destination, "diagnostics-collection.log").writeText(collection.toString())
     }
 }

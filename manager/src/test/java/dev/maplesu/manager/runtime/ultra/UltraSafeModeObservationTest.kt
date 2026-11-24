@@ -46,7 +46,7 @@ class UltraSafeModeObservationTest {
         isLkmBundled = false, isManager = true, isManagerPrBuild = false,
         isKernelPrBuild = false, requiresNewKernel = false, requiresNewManager = false,
         isRootAvailable = true, rootReadiness = SuReadiness.USABLE,
-        isSafeMode = false, isLateLoadMode = false, checkUpdateEnabled = false,
+        isSafeMode = false, checkUpdateEnabled = false,
         latestVersionInfo = LatestVersionInfo(), currentManagerVersionCode = 50102,
         systemInfo = SystemInfo("5.15.119", "5.1.2", "MEIZU 20", "fixture", "Enforcing", 0),
         environmentMode = WorkMode.LITE, liteInstalled = true,

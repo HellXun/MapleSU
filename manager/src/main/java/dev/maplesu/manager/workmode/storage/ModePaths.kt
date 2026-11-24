@@ -138,7 +138,7 @@ object ModePaths {
     /** 01 §3.2 filesDir 表：每个 A 实体在 B 下挂到 `filesDir/ksu/<同名>`。 */
     val FILES_SUBDIRS: List<String> = listOf(
         "images", "module-catalog", "module-runtime", "module_icons", "module_cards",
-        "nav_icons", "wallpaper", "wallpaper_land", "published-directory", "jailbreak",
+        "nav_icons", "wallpaper", "wallpaper_land", "published-directory",
     )
 
     /** 中性文件/目录（诊断/缓存与模式无关，05:637）。 */

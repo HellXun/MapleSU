@@ -13,7 +13,7 @@ class HomeActivationRefreshTest {
         managerUAPIVersion = 0, kernelUAPIVersion = null, lkmMode = null,
         isLkmBundled = false, isManager = false, isManagerPrBuild = false,
         isKernelPrBuild = false, requiresNewKernel = false, requiresNewManager = false,
-        isRootAvailable = false, isSafeMode = false, isLateLoadMode = false,
+        isRootAvailable = false, isSafeMode = false,
         checkUpdateEnabled = false, latestVersionInfo = LatestVersionInfo(),
         currentManagerVersionCode = 50108,
         systemInfo = SystemInfo("6.12.58", "5.1.8", "fixture", "fixture", "Unknown", 0),

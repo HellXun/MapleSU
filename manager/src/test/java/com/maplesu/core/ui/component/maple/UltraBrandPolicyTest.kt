@@ -61,11 +61,6 @@ class UltraBrandPolicyTest {
     }
 
     @Test
-    fun normalOnlyShowsMapleSU() {
-        assertFalse(shouldShowUltraBrand(installedUltra.copy(active = WorkMode.LITE)))
-    }
-
-    @Test
     fun currentModeWinsOverAnOlderEnvironmentSnapshotInBothDirections() {
         for ((current, previous) in listOf(WorkMode.LITE to WorkMode.LITE, WorkMode.LITE to WorkMode.LITE)) {
             val home = homeWorkModeSwitchState(HomeWorkModeSwitchFacts(current, HomeInstallSignal.INSTALLED))

@@ -9,7 +9,7 @@ package dev.maplesu.manager.runtime.authorization
  * fifth authority from reappearing.
  *
  * <p>Three sources, three shapes:
- *  - `jailbreak` (`JailbreakGrantStore`, uid list, app-private): uid -> identity;
+ *  - legacy lease grants (uid list, app-private): uid -> identity;
  *  - `ultra` (`UltraAuthorization` SDK `su_auth`, package names): package -> uid -> identity;
  *  - `ksu` (kernel allowlist, package names): package -> uid -> identity.
  *

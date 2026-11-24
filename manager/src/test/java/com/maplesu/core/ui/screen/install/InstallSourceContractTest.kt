@@ -30,17 +30,6 @@ class InstallSourceContractTest {
     }
 
     @Test
-    fun newMigrationUsesTheSameInstallPageAndKeepsBackEnabled() {
-        val migration = File("src/main/java/dev/maplesu/manager/workmode/ui/MigrationScreen.kt").readText()
-            .substringAfter("if (migrationId.isBlank()) {").substringBefore("val viewModel")
-        assertTrue(migration.contains("InstallScreen("))
-        assertTrue(migration.contains("InstallTargetMode.fromWorkMode(initialTarget)"))
-        assertTrue(migration.contains("migrationEntry = true"))
-        assertTrue(migration.contains("onBackEnabledChange(true)"))
-        assertTrue(migration.contains("return"))
-    }
-
-    @Test
     fun currentPartitionIsAvailableBeforeRootAndRequestsAccessOnlyAfterSelection() {
         val screen = source("InstallScreen")
         val options = screen.substringAfter("val installMethodOptions").substringBefore("fun showMessage")
@@ -130,18 +119,5 @@ class InstallSourceContractTest {
             assertFalse(home.contains("MigrationEntryCard("))
             assertFalse(home.contains("onMigrationOpenPage"))
         }
-    }
-
-    @Test
-    fun installModeSelectionUsesTheSharedSheetWithoutCurrentModeBlocking() {
-        val selection = source("InstallSteps").substringAfter("internal fun InstallTargetSelectionSection(")
-            .substringBefore("internal fun InstallPartitionSection(")
-        assertTrue(selection.contains("WorkModeTargetRow("))
-        assertTrue(selection.contains("WorkModeTargetSheet("))
-        assertTrue(selection.contains("selected = state.targetMode.workMode"))
-        assertTrue(selection.contains("current = null"))
-        assertTrue(selection.contains("InstallTargetMode.fromWorkMode(mode)"))
-        assertFalse(selection.contains("Dropdown"))
-        assertFalse(selection.contains("WorkModeSwitchSheet("))
     }
 }

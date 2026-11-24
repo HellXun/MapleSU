@@ -23,7 +23,6 @@ class DefaultModeDetector(
      */
     private val liteHandshakeProbe: LiteHandshakeProbe = LiteHandshakeProbe { null },
     private val ultraPort: UltraEnvironmentPort = UltraEnvironmentPort { UltraState.UNKNOWN },
-    private val jailbreakLease: JailbreakLeaseProbe = JailbreakLeaseProbe { false },
     private val bootIdSource: BootIdSource = ProcBootIdSource,
     private val clock: Clock = WallClock,
     private val rootEvidenceReader: RootEvidenceReader = UnavailableRootEvidenceReader,
@@ -90,23 +89,9 @@ class DefaultModeDetector(
             "L3", Strength.A, if (ultraIdentityKnown) true else null,
             "ultra=$ultraState kernelRootVerified=${ultra.kernelRootVerified} managerOwnerBound=${ultra.managerOwnerBound}", ultraElapsed,
         )
-        val leaseStarted = clock.nowMillis()
-        // A confirmed Ultra SDK wins both channel selection and rule evaluation.
-        // Reproving an unused Hook lease would start another process on this path.
-        val jailbreakLeaseValid = if (request.allowJailbreakProbe && !ksu.responded && !ultraConfirmed && handshakeOk != true) {
-            runCatching { jailbreakLease.valid() }.getOrDefault(false)
-        } else {
-            false
-        }
-        trace += ProbeTrace(
-            "L4", Strength.A, if (jailbreakLeaseValid) true else null,
-            "jailbreakLease=$jailbreakLeaseValid", clock.nowMillis() - leaseStarted,
-        )
-
         val lite = LiteFacts(
             credentialPresent = credentialPresent,
             handshakeOk = handshakeOk,
-            jailbreakLeaseValid = jailbreakLeaseValid,
             ultraState = ultraState,
             ultraKeyPresent = false,
             ultraKernelRootVerified = ultra.kernelRootVerified,
@@ -115,7 +100,7 @@ class DefaultModeDetector(
 
         // R6 already determines the mode; control-plane reads are separate recovery work.
         val ownerOnlyDecisive = !ksu.responded && !ultraConfirmed &&
-            ultra.managerOwnerBound && handshakeOk != true && !jailbreakLeaseValid
+            ultra.managerOwnerBound && handshakeOk != true
         val ultraIdentityDecisive = !ksu.responded && ultraConfirmed || ownerOnlyDecisive
         // 阶段 2：只在"已确认通道"上取证。
         var root: RootFacts? = null
@@ -186,7 +171,6 @@ class DefaultModeDetector(
         lite.ultraState == UltraState.FAULT -> null
         lite.ultraKernelRootVerified -> RootChannelKind.LITE_ULTRA
         lite.handshakeOk == true -> RootChannelKind.LITE_DIRECT
-        lite.jailbreakLeaseValid -> RootChannelKind.JAILBREAK
         lite.credentialPresent -> RootChannelKind.LITE_DIRECT
         else -> null
     }

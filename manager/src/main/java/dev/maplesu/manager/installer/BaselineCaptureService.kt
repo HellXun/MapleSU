@@ -29,7 +29,7 @@ import java.util.UUID
  * SELinux 观察落地（2026-11-01 用户指令）：非 `Enforcing` 时把事实交给 [note] 记录，**绝不阻断**。
  *
  * 取值语义与 `ModeSwitchPreflight.selinuxCheck` 相同（同一份 `getenforce` 事实），
- * 但这里只产生一行日志/诊断，不产生任何判定结果；只有「越狱模式」可拒绝刷写。
+ * 但这里只产生一行日志/诊断，不产生任何判定结果；只有不可信来源可拒绝刷写。
  */
 private fun recordSelinux(selinux: String, note: (String) -> Unit) {
     if (selinux != ModeSwitchPreflight.SELINUX_ENFORCING) {

@@ -6,7 +6,7 @@ import android.content.Context
  * One trusted runtime state for the Ultra-only build.
  *
  * <p>Readiness means "this device has a live Ultra kernel runtime credential".
- * The former Normal (KernelSU) credential and the jailbreak provider lease are
+ * The former legacy credentials are
  * both gone from this build; there is no second transport to fall back to, so an
  * absent credential is reported as a clear not-ready state rather than a
  * permanent "installed" flag.

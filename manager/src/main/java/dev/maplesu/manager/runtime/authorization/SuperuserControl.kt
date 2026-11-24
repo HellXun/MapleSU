@@ -634,7 +634,7 @@ object SuperuserControl {
     /**
      * Resolves the transport for one command.
      *
-     * <p>Ultra-only: the former jailbreak hook route is gone, so the decision is simply
+     * <p>Ultra-only: the legacy hook route is gone, so the decision is simply
      * "is there an SDK boot session, an owner scope, or a direct credential". Every
      * missing part answers [Resolution.Unavailable] rather than inventing success.
      */

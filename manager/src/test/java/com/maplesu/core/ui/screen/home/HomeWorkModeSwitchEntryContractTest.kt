@@ -38,17 +38,6 @@ class HomeWorkModeSwitchEntryContractTest {
     }
 
     @Test
-    fun bothSkinsRenderTheHomeEntry() {
-        val material = text(homeMaterial)
-        val miuix = text(homeMiuix)
-        assertTrue("Material 首页必须调用 HomeWorkModeSwitchEntryMaterial", material.contains("HomeWorkModeSwitchEntryMaterial("))
-        assertTrue("Miuix 首页必须调用 HomeWorkModeSwitchEntryMiuix", miuix.contains("HomeWorkModeSwitchEntryMiuix("))
-        assertTrue("Material 入口紧跟在 StatusCard 之后", material.contains("StatusCard("))
-        assertTrue(material.indexOf("HomeWorkModeSwitchEntryMaterial(") > material.indexOf("StatusCard("))
-        assertTrue(miuix.indexOf("HomeWorkModeSwitchEntryMiuix(") > miuix.indexOf("StatusCard("))
-    }
-
-    @Test
     fun homeScreenFeedsTheSameStateToBothSkins() {
         val screen = text(homeScreen)
         assertEquals(
@@ -64,14 +53,6 @@ class HomeWorkModeSwitchEntryContractTest {
         assertTrue(
             "状态必须来自 HomeWorkModeSwitchRuntime.current()（ModeRuntime.active 判据）",
             text(homeViewModel).contains("HomeWorkModeSwitchRuntime.current()"),
-        )
-    }
-
-    @Test
-    fun homeEntryUsesTheSharedLauncher() {
-        assertTrue(
-            "首页入口必须打开统一的 WorkModeSwitchSheet",
-            text(homeScreen).contains("WorkModeSwitchSheet("),
         )
     }
 

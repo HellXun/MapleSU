@@ -33,14 +33,13 @@ class ModuleTypeUiTest {
     }
 
     @Test
-    fun ksuModeUltraModuleIsUnsupportedAndDialogDisabled() {
+    fun ultraModeSupportsMaplesuModuleAndDialogEnabled() {
         val ev = evidence(ModuleType.MAPLESU)
         val routing = ModuleTypeUi.routeWithChoice(ev, WorkMode.LITE)
-        assertFalse(routing.ok)
-        assertEquals(ModuleInstallRouter.UNSUPPORTED_IN_MODE, routing.code)
+        assertTrue(routing.ok)
+        assertEquals(ModuleInstallBackend.MAPLESU_ULTRA, routing.backend)
         val model = ModuleTypeUi.dialogModel(ev, WorkMode.LITE)
-        assertFalse(model.installEnabled)
-        assertTrue(ModuleTypeUi.unsupportedInMode(ev, WorkMode.LITE))
+        assertTrue(model.installEnabled)
         assertFalse(ModuleTypeUi.unsupportedInMode(ev, WorkMode.LITE))
     }
 
@@ -66,9 +65,9 @@ class ModuleTypeUiTest {
             ModuleInstallBackend.MAPLESU_ULTRA,
             ModuleTypeUi.routeWithChoice(ev, WorkMode.LITE, ModuleType.MAPLESU).backend,
         )
-        // B 模式选择 KSU 可用、选择 Ultra 明确不支持。
+        // Ultra-only：两种显式类型都可用（KSU 兼容格式走 LiteScript 后端）。
         assertTrue(ModuleTypeUi.routeWithChoice(ev, WorkMode.LITE, ModuleType.KERNELSU).ok)
-        assertFalse(ModuleTypeUi.routeWithChoice(ev, WorkMode.LITE, ModuleType.MAPLESU).ok)
+        assertTrue(ModuleTypeUi.routeWithChoice(ev, WorkMode.LITE, ModuleType.MAPLESU).ok)
     }
 
     @Test

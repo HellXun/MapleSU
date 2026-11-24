@@ -55,7 +55,7 @@ internal class LocalInstallerGateway(
 
     internal fun preflight(request: ModeSwitchRequest, snapshot: InstallerSnapshot): GatewayPreflight {
         val device = deviceFacts(snapshot)
-        // SELinux 不再是判据（2026-11-01 用户指令：只有越狱模式可拒绝刷写）。
+        // SELinux 不再是判据（2026-11-01 用户指令：只有不可信来源可拒绝刷写）。
         // 非 Enforcing 时把事实放进 S0-12 的 advisory（证据），预检继续；
         // 恢复动作仍只在 `ModeSwitchFacade.startSwitch` 入口执行一次。
         val selinuxCheck = ModeSwitchPreflight.selinuxCheck(device.selinux)

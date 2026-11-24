@@ -22,8 +22,6 @@ enum class HomeWorkModeSwitchBlock {
     /** 上一次切换还没收尾（`switch.json` 非终态）：入口保留但禁用。 */
     SWITCH_PENDING,
 
-    /** Transient root cannot switch the boot-installed backend. Click explains how to choose again. */
-    JAILBREAK_ACTIVE,
 
     /** 当前模式还没判定（`ModeRuntime.active == null`）：不显示入口。 */
     MODE_UNDETERMINED,
@@ -105,7 +103,6 @@ data class HomeWorkModeSwitchFacts(
     val ksuStealth: HomeHiddenSignal = HomeHiddenSignal.OFF,
     /** 上一次切换未收尾（入口保留但禁用）。 */
     val switchPending: Boolean = false,
-    val jailbreak: Boolean = false,
 ) {
     /** 任意一路隐藏/隐身开启（含 UNKNOWN）→ 整个 App 必须呈"未安装"，入口不可见。 */
     val hiddenMasked: Boolean get() = liteHidden.masks || ksuStealth.masks
@@ -165,12 +162,6 @@ fun homeWorkModeSwitchState(facts: HomeWorkModeSwitchFacts): HomeWorkModeSwitchS
         blocked = HomeWorkModeSwitchBlock.NOT_INSTALLED,
     )
 
-    facts.jailbreak -> HomeWorkModeSwitchState(
-        visible = true,
-        enabled = false,
-        current = facts.active,
-        blocked = HomeWorkModeSwitchBlock.JAILBREAK_ACTIVE,
-    )
 
     facts.switchPending -> HomeWorkModeSwitchState(
         visible = true,

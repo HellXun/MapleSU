@@ -23,12 +23,11 @@ data class KsuFacts(
 /** Ultra 环境缓存状态（UltraEnvironmentProbe 的五态 + UNKNOWN）。 */
 enum class UltraState { RUNNING, NOT_INSTALLED, NO_KEY, FAULT, UNKNOWN }
 
-/** A 侧传输（凭据 / Ultra / 越狱）事实。 */
+/** A 侧传输（凭据 / Ultra）事实。 */
 data class LiteFacts(
     val credentialPresent: Boolean = false,
     /** null = 未尝试（**不是**失败；handshakeNullIsNotFalse）。 */
     val handshakeOk: Boolean? = null,
-    val jailbreakLeaseValid: Boolean = false,
     val ultraState: UltraState = UltraState.UNKNOWN,
     val ultraKeyPresent: Boolean = false,
     /** Current-boot, current-key SDK uid-0 proof; independent of userspace boot receipts. */
@@ -53,7 +52,7 @@ data class RootFacts(
 )
 
 /** 阶段 2 使用的 root 通道（禁止盲试；由阶段 0/1 结论决定）。 */
-enum class RootChannelKind { KSU_NATIVE, LITE_DIRECT, LITE_ULTRA, JAILBREAK }
+enum class RootChannelKind { KSU_NATIVE, LITE_DIRECT, LITE_ULTRA }
 
 /** 阶段 0 本地只读事实（<50ms，主线程可跑）。 */
 data class LocalFacts(

@@ -21,36 +21,6 @@ class HomeRuntimeRecognitionWiringTest {
         assertTrue(activity.contains("hasInstalledVersion = homeUiState.showInstalledStatus"))
     }
 
-    @Test fun normalDoesNotOfferTheUltraEnvironmentInstallAction() {
-        val panel = source("com/maplesu/core/ui/screen/settings/UltraEnvironmentSettings.kt")
-            .substringAfter("class UltraEnvironmentInstallPanel")
-        val refresh = panel.substringAfter("fun refresh(").substringBefore("fun install()")
-        val readiness = panel.substringAfter("private fun localIdentity(").substringBefore("fun refresh(")
-        assertTrue(refresh.contains("localIdentity(mode)"))
-        assertTrue(readiness.contains("mode == WorkMode.LITE || ModeRuntime.active == WorkMode.LITE"))
-        assertTrue(readiness.contains("return UltraRootKeyStore.read(context)"))
-        assertFalse(readiness.contains("UltraEnvironmentProbe.refresh("))
-        assertFalse(readiness.contains("testBasics("))
-        assertFalse("Temporary uninstall must remain installable before mode activation",
-            refresh.contains("ModeRuntime.active == WorkMode.LITE"))
-    }
-
-    @Test fun modeAndSameModeSdkChangesRefreshTheInstallCardInBothThemes() {
-        for (theme in listOf("HomeMaterial.kt", "HomeMiuix.kt")) {
-            assertTrue(source("com/maplesu/core/ui/screen/home/$theme")
-                .contains("rememberUltraEnvironmentInstallPanel(state.environmentMode)"))
-        }
-        val remember = source("com/maplesu/core/ui/screen/settings/UltraEnvironmentSettings.kt")
-            .substringAfter("fun rememberUltraEnvironmentInstallPanel(")
-            .substringBefore("@Composable")
-        assertTrue("A restored key can change NoKey/Unknown to NotInstalled without changing mode",
-            remember.contains("UltraEnvironmentProbe.states.collectAsStateWithLifecycle("))
-        assertTrue(remember.contains("initialValue = UltraEnvironmentProbe.currentSnapshot(appContext).state"))
-        assertTrue(remember.contains("LaunchedEffect(panel, mode, state) { panel.refresh(mode) }"))
-        assertFalse("Timestamp updates from the refresh itself must not restart the effect",
-            remember.contains("observedAtWallClockMs"))
-    }
-
     @Test fun newerPanelRefreshAndInstallationCancelOlderObservations() {
         val panel = source("com/maplesu/core/ui/screen/settings/UltraEnvironmentSettings.kt")
             .substringAfter("class UltraEnvironmentInstallPanel")

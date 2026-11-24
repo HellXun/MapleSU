@@ -59,7 +59,6 @@ class HomeUiStateLiteStatusTest {
         isRootAvailable = isRootAvailable,
         rootReadiness = if (liteRootFailure) SuReadiness.NOT_USABLE else null,
         isSafeMode = false,
-        isLateLoadMode = false,
         checkUpdateEnabled = false,
         latestVersionInfo = LatestVersionInfo(),
         currentManagerVersionCode = 0L,

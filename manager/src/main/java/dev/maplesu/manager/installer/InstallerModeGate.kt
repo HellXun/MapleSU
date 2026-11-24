@@ -7,11 +7,11 @@ import java.io.File
  *
  * <p>The service runs as UID 0 and is launched by the Root shell that bound it, so its own ancestor
  * chain says which transport produced it: a normal-mode MapleSU shell, the KSU native channel, or
- * the jailbreak lease consumer. The App cannot choose its ancestors, so this is not a UI flag and
+ * an untrusted transient. The App cannot choose its ancestors, so this is not a UI flag and
  * it cannot be cleared by deleting App data.
  *
  * <p>Product decision (2026-11-01, user directive): the <em>only</em> refusing origin is
- * [Origin.JAILBREAK], and it is refused in both write scopes. A jailbreak transient borrows
+ * [Origin.UNTRUSTED], and it is refused in both write scopes. An untrusted transient borrows
  * somebody else's exploit session, so it is never a licence for a partition write; the MapleSU
  * Lite runtime, the KSU native channel and an unreadable ancestor chain may all write. Both
  * scopes (`LITE_INSTALL`, `MODE_SWITCH`) share that one rule.
@@ -26,24 +26,24 @@ import java.io.File
  */
 internal object InstallerModeGate {
     /** The single refusal code left. Kept stable: the UI maps it to a user-facing message. */
-    const val REFUSED = "INSTALLER_JAILBREAK_PARTITION_WRITE_REFUSED"
+    const val REFUSED = "INSTALLER_UNTRUSTED_PARTITION_WRITE_REFUSED"
     private const val MAX_DEPTH = 12
 
     /** Partition-write scope. LITE_INSTALL is the pre-existing boot-install path. */
     enum class WriteScope { LITE_INSTALL, MODE_SWITCH }
 
     /** Which transport launched this service process. */
-    enum class Origin { LITE, KSU, JAILBREAK, UNKNOWN }
+    enum class Origin { LITE, KSU, UNTRUSTED, UNKNOWN }
 
-    private val JAILBREAK = listOf("libmaplesu_root_consumer.so", "libmaplesu_dirtyfrag_bootstrap.so")
+    private val UNTRUSTED_TRANSIENTS = listOf("libmaplesu_root_consumer.so", "libmaplesu_dirtyfrag_bootstrap.so")
     private val LITE = listOf("libmaplesu_runtime.so", "libmaplesu_su.so", "maplesu-runtime", "maplesu-su")
     // Classification hints only: their presence changes nothing about whether a write is allowed.
     private val KSU = listOf("ksud", "kernelsu", "libksu", "sucompat")
 
     /** Classifies a nearest-first ancestor command list; markers are never trusted alone. */
     fun classify(chain: List<String>): Origin {
-        // A jailbreak transient anywhere in the chain dominates: it is never a licence for a write.
-        if (chain.any { command -> JAILBREAK.any { command.contains(it) } }) return Origin.JAILBREAK
+        // An untrusted transient anywhere in the chain dominates: it is never a licence for a write.
+        if (chain.any { command -> UNTRUSTED_TRANSIENTS.any { command.contains(it) } }) return Origin.UNTRUSTED
         for (command in chain) {
             if (KSU.any { command.contains(it) }) return Origin.KSU
             if (LITE.any { command.contains(it) }) return Origin.LITE
@@ -52,7 +52,7 @@ internal object InstallerModeGate {
     }
 
     /**
-     * Pure refusal matrix; `null` means the write may proceed. Only a jailbreak transient is
+     * Pure refusal matrix; `null` means the write may proceed. Only an untrusted transient is
      * refused, identically in both scopes, so a user-initiated flash is never blocked by origin.
      *
      * `scope` is still a parameter so every call site keeps declaring which write it is about to
@@ -61,7 +61,7 @@ internal object InstallerModeGate {
      */
     @Suppress("UNUSED_PARAMETER")
     fun refusal(origin: Origin, scope: WriteScope): String? =
-        if (origin == Origin.JAILBREAK) REFUSED else null
+        if (origin == Origin.UNTRUSTED) REFUSED else null
 
     /** Resolves the transport that started this process, without trusting the caller. */
     fun origin(): Origin {
@@ -87,7 +87,7 @@ internal object InstallerModeGate {
     /**
      * Backwards-compatible entry point for the pre-existing boot-install methods (AIDL:8-17):
      * they are `LITE_INSTALL` scope. Under the current policy that accepts every origin except
-     * [Origin.JAILBREAK], in either scope.
+     * [Origin.UNTRUSTED], in either scope.
      */
     fun refusal(): String? = writeRefusal(WriteScope.LITE_INSTALL)
 

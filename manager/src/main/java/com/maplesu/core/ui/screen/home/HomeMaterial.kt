@@ -363,7 +363,7 @@ internal fun MaterialStatusCard(
             }
         } else ""
 
-        val keepProtectedText = state.showSafeModeBanner || state.isSafeMode || state.isLateLoadMode
+        val keepProtectedText = state.showSafeModeBanner || state.isSafeMode
         val statusTrailing: (@Composable () -> Unit)? = if (ksuActive && workingMode.isNotEmpty() && !themeArt.hideMode) {
             {
                 StatusTag(
@@ -374,7 +374,6 @@ internal fun MaterialStatusCard(
             }
         } else if (notInstalled) {
             {
-                // Ultra-only：未安装时的主动作是安装 Ultra（越狱入口已移除）。
                 Button(
                     onClick = actions.onInstallClick,
                     colors = ButtonDefaults.buttonColors(
@@ -405,11 +404,9 @@ internal fun MaterialStatusCard(
                     //    同时堵住安装页入口 —— **已撤**。用户判据:点「内核未就绪」弹出的那段
                     //    原始说明,正是一个**没有 root 的用户**点进来会看到的东西,
                     //    所以隐身时必须弹它(而不是弹一句"什么都不漏"的自造提示)。
-                    //    唯一保留的隐身差异:右边的「越狱」按钮不画(见上面的 statusTrailing)。
                     onClick = {
                         when {
                             state.isSafeMode -> actions.onManageModules()
-                            state.isLateLoadMode -> Unit
                             else -> actions.onInstallClick()
                         }
                     },
@@ -689,15 +686,6 @@ private fun StatusCardPermissivePreview() {
     )
 }
 
-@Preview(name = "Jailbreak")
-@Composable
-private fun StatusCardJailbreakPreview() {
-    MaterialStatusCard(
-        state = previewHomeScreenState(ksuVersion = 12345, lkmMode = true, isLateLoadMode = true),
-        actions = HomeActions({}, {})
-    )
-}
-
 private val previewSystemInfo = SystemInfo(
     kernelVersion = "6.1.0-android14-0-g123456789000-ab12345678",
     managerVersion = "3.0.0 (30000)",
@@ -716,7 +704,6 @@ private fun HomeScreenPreviewContent(
     ksuVersion: Int?,
     lkmMode: Boolean?,
     isSafeMode: Boolean = false,
-    isLateLoadMode: Boolean = false,
     selinuxStatus: String = "Enforcing",
 ) {
     CompositionLocalProvider(LocalUriHandler provides previewUriHandler) {
@@ -730,7 +717,6 @@ private fun HomeScreenPreviewContent(
                     ksuVersion = ksuVersion,
                     lkmMode = lkmMode,
                     isSafeMode = isSafeMode,
-                    isLateLoadMode = isLateLoadMode,
                     selinuxStatus = selinuxStatus,
                 ),
                 actions = actions
@@ -758,17 +744,10 @@ private fun HomeScreenPermissivePreview() {
     HomeScreenPreviewContent(ksuVersion = null, lkmMode = null, selinuxStatus = "Permissive")
 }
 
-@Preview(name = "Home Jailbreak", showBackground = true)
-@Composable
-private fun HomeScreenJailbreakPreview() {
-    HomeScreenPreviewContent(ksuVersion = 12345, lkmMode = true, isLateLoadMode = true)
-}
-
 private fun previewHomeScreenState(
     ksuVersion: Int?,
     lkmMode: Boolean?,
     isSafeMode: Boolean = false,
-    isLateLoadMode: Boolean = false,
     selinuxStatus: String = "Enforcing",
 ) = HomeUiState(
     kernelVersion = KernelVersion(6, 1, 0),
@@ -782,7 +761,6 @@ private fun previewHomeScreenState(
     requiresNewManager = false,
     isRootAvailable = ksuVersion != null,
     isSafeMode = isSafeMode,
-    isLateLoadMode = isLateLoadMode,
     checkUpdateEnabled = false,
     latestVersionInfo = com.maplesu.core.ui.util.module.LatestVersionInfo(),
     currentManagerVersionCode = 10000,

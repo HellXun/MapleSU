@@ -30,7 +30,6 @@ enum class LiteHiddenState {
 /** 痕迹收敛项（L2，用户逐项可选，默认全关）。 */
 enum class LiteHiddenTraceItem(val wire: String) {
     RECENT_INSTALL_LOG("recent_install_log"),
-    JAILBREAK_LOG("jailbreak_log"),
     LOGCAT_TAGS("logcat_tags"),
     DEBUG_EXPORTS("debug_exports"),
     INTENT_ALIASES("intent_aliases"),
@@ -68,7 +67,6 @@ data class LiteHiddenVisibility(
     val showModuleEntry: Boolean = true,
     val showRootSettings: Boolean = true,
     val showDirectInstall: Boolean = true,
-    val showJailbreakEntry: Boolean = true,
     val showUltraEnvironment: Boolean = true,
     val showModuleActions: Boolean = true,
     val showRecoveryEntry: Boolean = true,

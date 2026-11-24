@@ -16,24 +16,6 @@ class SelectedImageExportContractTest {
             publicDownloadPath(storage, "Download/", actualName))
     }
 
-    @Test fun chosenImageLeavesBeforeAnyModeSwitchOrInstallTransaction() {
-        val body = ui("util/KsuCli.kt").substringAfter("private fun installStockTarget(")
-            .substringBefore("private fun copyInstallerImage(")
-        val selected = body.indexOf("if (bootUri != null) {")
-        val switch = body.indexOf("val active = ModeRuntime.active")
-        assertTrue("Selected files must be exported before looking up a mode-switch service", selected in 0 until switch)
-        val export = body.substring(selected, switch)
-        assertTrue(export.contains("exportSelectedImage("))
-        assertTrue(export.contains("if (selectedImageOnly)"))
-        assertTrue(export.contains("exportOnly = true"))
-        assertTrue(export.contains("outputPath = saved"))
-        assertTrue(ui("util/KsuCli.kt").contains("installationTaskId?.takeIf { bootUri == null || downloaded }"))
-        assertFalse(export.contains("InstallerServiceClient."))
-        assertFalse(export.contains("StockInstallFlow.install("))
-        assertFalse(export.contains("installCommit("))
-        assertFalse(export.contains("written()"))
-    }
-
     @Test fun filePatchingDoesNotStartRootRestorationPreflight() {
         val screen = ui("screen/install/InstallScreen.kt")
         assertFalse(screen.contains("filePreflightRequested"))

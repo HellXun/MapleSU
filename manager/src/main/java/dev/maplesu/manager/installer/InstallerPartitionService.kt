@@ -243,7 +243,7 @@ class InstallerPartitionService : RootService() {
         //
         // 12 个方法全部委托给 W08 `ModeSwitchDeviceDelegate`（服务端增量状态机）。边界顺序不变：
         // callerVerifier → InstallerModeGate(MODE_SWITCH) → deviceOperation → delegate →
-        // InstallerGateway/installer-core 事务。门禁已收窄为“只拒越狱来源”，不再读 kernel proof。
+        // InstallerGateway/installer-core 事务。门禁已收窄为“只拒不可信来源”，不再读 kernel proof。
         // 任何失败都转成带契约错误码的 Bundle；
         // 只有 PFD 返回型方法（openSwitchImage/openSwitchLog）用 IllegalStateException 表达。
 
@@ -433,7 +433,7 @@ class InstallerPartitionService : RootService() {
         if (modeRootBridgeState.isInitialized()) modeRootBridgeState.value.withInstallLock(taskId, action) else action()
 
     /**
-     * Partition writes are refused when this service was started by a jailbreak transient, and
+     * Partition writes are refused when this service was started by an untrusted transient, and
      * only then: every other origin may write. The refusal happens here, before any file is opened
      * for writing, so it also covers a direct binder call that never went through the UI. The
      * in-service kernel proof is no longer consulted on this path (it selects the root channel
@@ -459,7 +459,7 @@ class InstallerPartitionService : RootService() {
     /**
      * Mode-switch write entry. Order stays fixed by 02-switch-contract §5.4: gate first (never
      * write an FD before the gate), then in-process exclusion; install.lock is taken by the
-     * transaction. The gate itself now refuses only a jailbreak origin.
+     * transaction. The gate itself now refuses only an untrusted origin.
      */
     private fun modeSwitchWrite(switchId: String, action: () -> Bundle): Bundle =
         callerVerifier.withCallingManager {

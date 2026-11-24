@@ -7,7 +7,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * Pure part of the origin gate: only a jailbreak transient is refused, in both write scopes.
+ * Pure part of the origin gate: only an untrusted transient is refused, in both write scopes.
  * No /proc and no JNI involved.
  */
 class InstallerModeGatePolicyTest {
@@ -33,8 +33,8 @@ class InstallerModeGatePolicyTest {
     }
 
     @Test
-    fun jailbreakWinsOverAnyOtherMarker() {
-        assertEquals(InstallerModeGate.Origin.JAILBREAK,
+    fun untrustedWinsOverAnyOtherMarker() {
+        assertEquals(InstallerModeGate.Origin.UNTRUSTED,
             InstallerModeGate.classify(listOf("/data/adb/ksud", "/data/local/tmp/libmaplesu_root_consumer.so")))
     }
 
@@ -45,9 +45,9 @@ class InstallerModeGatePolicyTest {
         assertEquals(InstallerModeGate.Origin.UNKNOWN, InstallerModeGate.classify(emptyList()))
     }
 
-    /** Every non-jailbreak origin is accepted, in every scope: "user tapped it, so flash it". */
+    /** Every trusted origin is accepted, in every scope: "user tapped it, so flash it". */
     @Test
-    fun onlyJailbreakIsEverRefused() {
+    fun onlyUntrustedIsEverRefused() {
         for (scope in scopes) {
             assertNull(scope.name, InstallerModeGate.refusal(InstallerModeGate.Origin.LITE, scope))
             assertNull(scope.name, InstallerModeGate.refusal(InstallerModeGate.Origin.KSU, scope))
@@ -55,12 +55,12 @@ class InstallerModeGatePolicyTest {
         }
     }
 
-    /** The jailbreak refusal must stay real: not a constant that every origin also returns. */
+    /** The untrusted refusal must stay real: not a constant that every origin also returns. */
     @Test
-    fun jailbreakIsRefusedInBothScopes() {
+    fun untrustedIsRefusedInBothScopes() {
         for (scope in scopes) {
             assertEquals(scope.name, InstallerModeGate.REFUSED,
-                InstallerModeGate.refusal(InstallerModeGate.Origin.JAILBREAK, scope))
+                InstallerModeGate.refusal(InstallerModeGate.Origin.UNTRUSTED, scope))
         }
     }
 
@@ -92,6 +92,6 @@ class InstallerModeGatePolicyTest {
 
     @Test
     fun refusalCodesAreStable() {
-        assertEquals("INSTALLER_JAILBREAK_PARTITION_WRITE_REFUSED", InstallerModeGate.REFUSED)
+        assertEquals("INSTALLER_UNTRUSTED_PARTITION_WRITE_REFUSED", InstallerModeGate.REFUSED)
     }
 }

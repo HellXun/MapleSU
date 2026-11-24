@@ -222,7 +222,7 @@ class ModeSwitchDeviceDelegate(
             return DevicePreflightResult(false, ModeSwitchCodes.LAYOUT_UNSUPPORTED, layoutFailure.message.orEmpty())
         }
         // SELinux 事实（2026-11-01 用户指令：**只记录，不阻断**）。
-        // 只有「越狱模式」可拒绝刷写；SELinux 与分区字节是否安全无关 ⇒ 不再产出
+        // 只有「不可信来源」可拒绝刷写；SELinux 与分区字节是否安全无关 ⇒ 不再产出
         // `SELINUX_NOT_ENFORCING` 失败，事实进 [DevicePreflightResult.advisory]，
         // preflight 继续（`ok=true`、`code=""`）。自动恢复仍只在
         // `ModeSwitchFacade.startSwitch` 入口做一次（setenforce + 回读 + 活性）。

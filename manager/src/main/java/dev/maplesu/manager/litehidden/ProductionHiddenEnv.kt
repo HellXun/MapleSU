@@ -50,7 +50,7 @@ object ProductionHiddenEnv {
             }.getOrNull()
         })
         val ultraSdkRoot = UltraEnvRootRunner(ultraClient)
-        // Ultra-only：隐藏模式的 root 通道只走 SDK（越狱 hook 通道已移除）。
+        // Ultra-only：隐藏模式的 root 通道只走 SDK。
         val ultraRoot = HiddenRootRunner { script -> ultraSdkRoot.run(script) }
 
         // 恢复包/清单/配置都在 /data/adb（App 无法直接写），全部经**当前模式**的 root 通道。

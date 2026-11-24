@@ -297,7 +297,6 @@ object LiteHiddenController {
             return LiteHiddenTraceResult(item, ok = true, reason = "no persistent artifact")
         }
         return when (item) {
-            LiteHiddenTraceItem.JAILBREAK_LOG -> deleteDirTree(filesRoot, "$filesRoot/jailbreak", item)
             LiteHiddenTraceItem.DEBUG_EXPORTS -> deleteDirTree(filesRoot, "$filesRoot/diagnostics", item)
             LiteHiddenTraceItem.LOGCAT_TAGS -> {
                 // 尽力而为：清 main/crash 两个 buffer 中的本 App 关键日志（-s 过滤在 -c 下不可用）。
